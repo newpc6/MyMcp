@@ -1,0 +1,220 @@
+@import '@/styles/variables.scss';
+@import '@/styles/mixins.scss';
+@import '@/styles/card.scss';
+
+// 重置默认样式
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  font-family: $font-family;
+  font-size: $font-size-base;
+  color: $text-color;
+  background-color: $bg-color;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+// 全局滚动条样式
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-track {
+  border-radius: 3px;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+// 通用类
+.text-primary {
+  color: $primary-color;
+}
+
+.text-success {
+  color: $success-color;
+}
+
+.text-warning {
+  color: $warning-color;
+}
+
+.text-danger {
+  color: $danger-color;
+}
+
+.text-info {
+  color: $info-color;
+}
+
+.bg-primary {
+  background-color: $primary-color;
+}
+
+.bg-success {
+  background-color: $success-color;
+}
+
+.bg-warning {
+  background-color: $warning-color;
+}
+
+.bg-danger {
+  background-color: $danger-color;
+}
+
+.bg-info {
+  background-color: $info-color;
+}
+
+// flex布局工具类
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  @include flex(row, center, center);
+}
+
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.flex-end {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.width-full {
+  width: 100%;
+}
+
+.flex-column {
+  @include flex(column);
+}
+
+// 间距工具类
+.m {
+  &t {
+    &-1 {
+      margin-top: $spacing-xs;
+    }
+    &-2 {
+      margin-top: $spacing-sm;
+    }
+    &-3 {
+      margin-top: $spacing-md;
+    }
+    &-4 {
+      margin-top: $spacing-lg;
+    }
+  }
+  &b {
+    &-1 {
+      margin-bottom: $spacing-xs;
+    }
+    &-2 {
+      margin-bottom: $spacing-sm;
+    }
+    &-3 {
+      margin-bottom: $spacing-md;
+    }
+    &-4 {
+      margin-bottom: $spacing-lg;
+    }
+  }
+}
+
+.p {
+  &t {
+    &-1 {
+      padding-top: $spacing-xs;
+    }
+    &-2 {
+      padding-top: $spacing-sm;
+    }
+    &-3 {
+      padding-top: $spacing-md;
+    }
+    &-4 {
+      padding-top: $spacing-lg;
+    }
+  }
+  &b {
+    &-1 {
+      padding-bottom: $spacing-xs;
+    }
+    &-2 {
+      padding-bottom: $spacing-sm;
+    }
+    &-3 {
+      padding-bottom: $spacing-md;
+    }
+    &-4 {
+      padding-bottom: $spacing-lg;
+    }
+  }
+}
+
+// 文本工具类
+.text-ellipsis {
+  @include text-ellipsis;
+}
+
+.text-ellipsis-2 {
+  @include multi-line-ellipsis(2);
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-left {
+  text-align: left;
+}
+
+// 阴影工具类
+.shadow {
+  &-sm {
+    @include box-shadow(1);
+  }
+  &-md {
+    @include box-shadow(2);
+  }
+  &-lg {
+    @include box-shadow(3);
+  }
+}
+
+// 圆角工具类
+.rounded {
+  &-sm {
+    border-radius: $border-radius-sm;
+  }
+  &-md {
+    border-radius: $border-radius;
+  }
+  &-lg {
+    border-radius: $border-radius-lg;
+  }
+  &-full {
+    border-radius: 9999px;
+  }
+}

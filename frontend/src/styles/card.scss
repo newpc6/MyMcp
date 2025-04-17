@@ -1,0 +1,28 @@
+.tech-header {
+    background: linear-gradient(90deg, rgba(64,158,255,0.1) 0%, rgba(64,158,255,0) 100%);
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin: -20px -20px 15px;
+
+    span {
+        font-size: 16px;
+        font-weight: 500;
+        background: linear-gradient(90deg, #409EFF 0%, #36CE9E 100%);
+        -webkit-background-clip: text;
+        color: transparent;
+        position: relative;
+        padding-left: 12px;
+
+        &::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 16px;
+            background: linear-gradient(180deg, #409EFF 0%, #36CE9E 100%);
+            border-radius: 2px;
+        }
+    }
+}

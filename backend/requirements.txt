@@ -1,0 +1,8 @@
+fastapi>=0.68.0
+uvicorn>=0.15.0
+python-multipart>=0.0.5
+pydantic>=1.8.2
+sqlalchemy>=1.4.0
+pydantic-settings>=2.0.0 
+psutil>=6.0.0
+sqlalchemy-serializer>=1.4.0
