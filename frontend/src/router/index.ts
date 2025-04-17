@@ -14,6 +14,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: 'MCP 工具管理' }
   },
   {
+    path: '/mcp',
+    name: 'mcp',
+    component: () => import('../views/mcp/index.vue'),
+    meta: { title: 'MCP 服务状态' }
+  },
+  {
     path: '/resources',
     name: 'resources',
     component: () => import('../views/resources/index.vue'),

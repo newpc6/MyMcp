@@ -1,6 +1,6 @@
 import os
 import json
-from typing import Dict, Any
+from typing import Dict, Any, List
 from pathlib import Path
 
 
@@ -40,6 +40,8 @@ class Settings:
         
         # MCP设置
         self.MCP_PORT: int = config.get("mcp", {}).get("port", 8002)
+        self.MCP_SSE_URL: str = config.get("mcp", {}).get("sse_url", f"http://localhost:{self.MCP_PORT}/sse")
+        self.MCP_ENABLED_TOOLS: List[str] = config.get("mcp", {}).get("enabled_tools", [])
         
         # 数据库设置
         self.DATABASE_FILE: str = config.get("database", {}).get("file", "egova-mcp.db")

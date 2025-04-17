@@ -1,15 +1,7 @@
 <template>
   <el-container class="app-container">
-    <el-header>
-      <el-menu
-        mode="horizontal"
-        :router="true"
-        class="main-menu"
-      >
-        <el-menu-item index="/">首页</el-menu-item>
-        <el-menu-item index="/tools">工具管理</el-menu-item>
-        <!-- <el-menu-item index="/modules">模块管理</el-menu-item> -->
-      </el-menu>
+    <el-header padding="0">
+      <NavbarComponent />
     </el-header>
     
     <el-main>
@@ -20,32 +12,30 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
-import { useMCPStore } from '@/store'
-
-const store = useMCPStore()
+import NavbarComponent from './components/NavbarComponent.vue'
 
 onMounted(async () => {
-  await store.fetchTools()
-  await store.fetchResources()
-  await store.fetchModules()
+  // 页面初始化时可以加载一些全局数据
+  console.log('App mounted')
 })
 </script>
 
 <style>
 .app-container {
   height: 100vh;
-}
-
-.main-menu {
-  border-bottom: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .el-header {
   padding: 0;
-  height: 60px;
+  height: auto;
+  z-index: 10;
 }
 
 .el-main {
   padding: 20px;
+  flex: 1;
+  overflow-y: auto;
 }
 </style>

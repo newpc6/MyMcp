@@ -27,11 +27,21 @@ def get_app_config() -> dict:
 def code_review_prompt(code: str) -> str:
     return f"请审查以下代码并指出问题：\n\n{code}"
 
-@record_execution
 @mcp.tool()
 def add(a: int, b: int) -> int:
     """Add two numbers"""
-    return a + b
+    result = a + b
+    print('add')
+    # 在函数内部直接记录执行
+    from app.services.execution.utils import record_tool_call
+    record_tool_call(
+        func_name="add", 
+        description="Add two numbers",
+        parameters={"a": a, "b": b},
+        result=result
+    )
+    
+    return result
 
 @record_execution
 @mcp.tool()
@@ -39,7 +49,6 @@ def calculate_bmi(weight_kg: float, height_m: float) -> float:
     """Calculate BMI given weight in kg and height in meters"""
     return weight_kg / (height_m**2)
 
-@record_execution
 @mcp.tool()
 def process_chrome(query: str) -> str:
     """打开Chrome浏览器并搜索指定的问题"""
@@ -50,7 +59,18 @@ def process_chrome(query: str) -> str:
     # 打开默认浏览器并搜索
     webbrowser.open(search_url)
     
-    return f"已在浏览器中搜索: {query}"
+    result = f"已在浏览器中搜索: {query}"
+    
+    # 在函数内部直接记录执行
+    from app.services.execution.utils import record_tool_call
+    record_tool_call(
+        func_name="process_chrome", 
+        description="打开Chrome浏览器并搜索指定的问题",
+        parameters={"query": query},
+        result=result
+    )
+    
+    return result
 
 # if __name__ == "__main__":
 #     mcp.run(transport='sse')
