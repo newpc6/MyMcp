@@ -2,6 +2,7 @@
 Egova AI MCP Server 应用程序入口
 """
 
+import signal
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -38,7 +39,7 @@ def create_app() -> FastAPI:
     return app
 
 
-app = create_app()
+app = None
 
 
 def init_app():
@@ -49,6 +50,7 @@ def init_app():
         fastapi.FastAPI: FastAPI应用程序实例
     """
     from app.models.engine import init_db
+    global app
     app = create_app()
     # 初始化数据库
     init_db()

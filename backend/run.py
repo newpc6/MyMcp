@@ -4,7 +4,7 @@ import sys
 from app.core.config import settings
 from app.main import init_app
 import threading
-from mcp_server import start_mcp_server
+from app.server.mcp_server import start_mcp_server
 
 # 添加当前目录到路径
 current_dir = os.path.dirname(os.path.abspath(__file__))

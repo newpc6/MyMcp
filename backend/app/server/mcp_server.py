@@ -247,10 +247,9 @@ def restart_mcp_server():
     return True
 
 
-def signal_handler(sig, frame):
-    em_logger.info("接收到终止信号，正在关闭MCP服务器...")
-    stop_mcp_server()
-    sys.exit(0)
+def get_mcp_server():
+    global server_instance
+    return server_instance
 
 
 def start_mcp_server():
@@ -278,10 +277,6 @@ def start_mcp_server():
     
     # 自动注册仓库中的函数
     register_repository_functions()
-    
-    # 注册信号处理器
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
     
     # 启动服务器
     em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")

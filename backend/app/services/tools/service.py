@@ -6,7 +6,7 @@ import time
 from typing import Dict, Any, List
 
 # 导入MCP服务器实例
-from ...server.mcp_server import server_instance
+from ...server.mcp_server import get_mcp_server
 from ...core.config import settings
 from ...models.tools.schemas import ToolContent
 # 导入历史服务
@@ -20,6 +20,7 @@ class ToolService:
     def __init__(self):
         self.base_dir = settings.MCP_BASE_DIR
         self.modules = settings.MCP_MODULES
+        server_instance = get_mcp_server()
         # 缓存已注册的工具名称 (使用内部属性，注意风险)
         try:
             self._registered_tool_names = {
@@ -33,6 +34,7 @@ class ToolService:
         """获取所有工具信息"""
         # 每次调用都重新扫描，以反映文件系统变化（如手动添加/删除文件）
         # 并尝试更新已注册工具列表缓存
+        server_instance = get_mcp_server()
         try:
             self._registered_tool_names = {
                 tool.name for tool in server_instance._tool_manager.list_tools()
@@ -112,7 +114,7 @@ class ToolService:
     def scan_tools(self) -> Dict[str, Any]:
         """扫描所有MCP工具"""
         tools = {}
-        
+        server_instance = get_mcp_server()
         # 每次扫描都实时获取最新的工具列表，不依赖于缓存
         try:
             if server_instance and hasattr(server_instance, '_tool_manager'):
@@ -255,7 +257,7 @@ class ToolService:
             # 获取工具信息
             tools = self.scan_tools()
             description = tools.get(tool_name, {}).get("doc", "")
-            
+            server_instance = get_mcp_server()
             if not server_instance:
                 raise ValueError("MCP服务器实例未初始化")
                 
@@ -297,6 +299,7 @@ class ToolService:
     def get_tool_info(self, tool_name: str) -> Dict[str, Any]:
         """获取特定工具的信息"""
         try:
+            server_instance = get_mcp_server()
             if not server_instance:
                 raise ValueError("MCP服务器实例未初始化")
                 

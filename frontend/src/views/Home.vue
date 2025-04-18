@@ -255,9 +255,6 @@ const loading = ref({
 // 收藏/常用工具
 const favoriteTools = ref<ToolInfo[]>([])
 
-// 最近活动
-const recentActivities = ref<RecentActivity[]>([])
-
 // 分页相关
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -331,19 +328,6 @@ const fetchToolCount = async () => {
     }
 }
 
-// 获取最近活动
-const fetchRecentActivities = async () => {
-    loading.value.activities = true
-    try {
-        const response = await axios.get('/api/history/activities')
-        recentActivities.value = response.data
-    } catch (error) {
-        console.error('获取最近活动失败:', error)
-    } finally {
-        loading.value.activities = false
-    }
-}
-
 // 获取最近执行记录
 const fetchRecentExecutions = async () => {
     loading.value.executions = true
@@ -414,7 +398,6 @@ const handleCurrentChange = (val: number) => {
 const refreshData = () => {
     fetchModuleCount()
     fetchToolCount()
-    fetchRecentActivities()
     fetchRecentExecutions()
     fetchStats()
     fetchFavoriteTools()
