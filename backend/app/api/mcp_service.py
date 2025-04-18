@@ -2,8 +2,8 @@ from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 
-from repository.mcp_base import (
-    add_tool, remove_tool, restart_mcp, check_mcp_status, get_enabled_tools
+from app.server.mcp_server import (
+    add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools
 )
 from ..core.config import settings
 
@@ -77,7 +77,7 @@ async def unload_tool(request: ToolRemoveRequest):
 async def restart_service():
     """重启MCP服务"""
     try:
-        success = restart_mcp()
+        success = restart_mcp_server()
         if success:
             return {"message": "MCP服务已成功重启"}
         else:

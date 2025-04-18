@@ -82,4 +82,6 @@ ehthumbs.db
 Thumbs.db
 backend/egova-mcp.db
 backend/config.json
+backend/repository/
+backend/repository
 

@@ -12,7 +12,7 @@
       
       <el-menu-item index="/">首页</el-menu-item>
       <el-menu-item index="/tools">工具管理</el-menu-item>
-      <el-menu-item index="/mcp">服务状态</el-menu-item>
+      <el-menu-item index="/mcp">MCP服务管理</el-menu-item>
       <el-menu-item index="/resources">资源管理</el-menu-item>
       <el-menu-item index="/protocols">协议管理</el-menu-item>
       

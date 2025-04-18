@@ -5,11 +5,15 @@ import inspect
 import time
 from typing import Dict, Any, List
 
-# 导入全局 mcp 实例
-from repository.mcp_base import mcp
+# 导入MCP服务器实例
+from ...server.mcp_server import server_instance
 from ...core.config import settings
-from ...models.tools.schemas import ToolInfo, ToolContent
+from ...models.tools.schemas import ToolContent
+# 导入历史服务
 from ..history.service import HistoryService
+
+# 创建历史服务实例
+history_service = HistoryService()
 
 
 class ToolService:
@@ -19,10 +23,10 @@ class ToolService:
         # 缓存已注册的工具名称 (使用内部属性，注意风险)
         try:
             self._registered_tool_names = {
-                tool.name for tool in mcp._tool_manager.list_tools()
-            }
+                tool.name for tool in server_instance._tool_manager.list_tools()
+            } if server_instance else set()
         except Exception as e:
-            print(f"初始化时无法从 mcp._tool_manager 获取工具列表: {e}")
+            print(f"初始化时无法从server_instance._tool_manager获取工具列表: {e}")
             self._registered_tool_names = set()
 
     def get_all_tools(self) -> List[Dict[str, Any]]:
@@ -31,10 +35,10 @@ class ToolService:
         # 并尝试更新已注册工具列表缓存
         try:
             self._registered_tool_names = {
-                tool.name for tool in mcp._tool_manager.list_tools()
-            }
+                tool.name for tool in server_instance._tool_manager.list_tools()
+            } if server_instance else set()
         except Exception as e:
-            print(f"更新时无法从 mcp._tool_manager 获取工具列表: {e}")
+            print(f"更新时无法从server_instance._tool_manager获取工具列表: {e}")
             # 保留旧缓存或清空？这里选择保留旧缓存
             # self._registered_tool_names = set()
 
@@ -111,11 +115,15 @@ class ToolService:
         
         # 每次扫描都实时获取最新的工具列表，不依赖于缓存
         try:
-            registered_tools = mcp._tool_manager.list_tools()
-            registered_tool_names = {tool.name for tool in registered_tools}
-            print(f"从mcp._tool_manager获取到的工具列表: {registered_tool_names}")
-            if not registered_tool_names:
-                print("警告: mcp._tool_manager中没有找到任何注册工具！")
+            if server_instance and hasattr(server_instance, '_tool_manager'):
+                registered_tools = server_instance._tool_manager.list_tools()
+                registered_tool_names = {tool.name for tool in registered_tools}
+                print(f"从server_instance._tool_manager获取到的工具列表: {registered_tool_names}")
+                if not registered_tool_names:
+                    print("警告: server_instance._tool_manager中没有找到任何注册工具！")
+            else:
+                print("警告: server_instance不存在或未初始化")
+                registered_tool_names = set()
         except Exception as e:
             print(f"获取已注册工具列表时出错: {e}")
             registered_tool_names = set()
@@ -128,7 +136,8 @@ class ToolService:
         repository_path = os.path.join(self.base_dir, "repository")
         for root, _, files in os.walk(repository_path):
             for file in files:
-                if file.endswith(".py") and file != "_init_.py" and file != "__init__.py":
+                if (file.endswith(".py") and file != "_init_.py" and 
+                    file != "__init__.py"):
                     py_files.append(os.path.join(root, file))
         
         print(f"找到{len(py_files)}个Python文件")
@@ -139,20 +148,16 @@ class ToolService:
         if self.base_dir not in sys.path:
             sys.path.insert(0, self.base_dir)
         
-        # 确保mcp_base已被导入
-        try:
-            import repository.mcp_base
-            print(f"成功导入repository.mcp_base, mcp实例: {repository.mcp_base.mcp}")
-        except ImportError as e:
-            print(f"警告: 导入mcp_base失败: {e}")
-        
         # 加载所有模块并扫描工具
         for py_file in py_files:
             module_rel_path = os.path.relpath(py_file, repository_path)
-            module_dot_path = module_rel_path.replace(os.sep, ".").replace(".py", "")
+            module_dot_path = module_rel_path.replace(
+                os.sep, "."
+            ).replace(".py", "")
             module_key = f"repository.{module_dot_path}"
             
             if module_key == "repository.mcp_base":
+                # 跳过已移除的mcp_base文件
                 continue
             
             print(f"处理模块: {module_key}")
@@ -160,7 +165,9 @@ class ToolService:
             # 加载模块
             module = None
             try:
-                spec = importlib.util.spec_from_file_location(module_key, py_file)
+                spec = importlib.util.spec_from_file_location(
+                    module_key, py_file
+                )
                 if not spec or not spec.loader:
                     continue
                 
@@ -190,36 +197,50 @@ class ToolService:
                             if hasattr(param.annotation, '__name__'):
                                 param_type_str = param.annotation.__name__
                             elif hasattr(param.annotation, '__origin__'):
-                                origin_name = getattr(param.annotation.__origin__, '__name__', 
-                                             str(param.annotation.__origin__))
+                                origin_name = getattr(
+                                    param.annotation.__origin__, 
+                                    '__name__', 
+                                    str(param.annotation.__origin__)
+                                )
                                 args_str = ", ".join(
                                     getattr(arg, '__name__', str(arg)) 
-                                    for arg in getattr(param.annotation, '__args__', [])
+                                    for arg in getattr(
+                                        param.annotation, '__args__', []
+                                    )
                                 )
                                 param_type_str = f"{origin_name}[{args_str}]"
                             
                             param_info[param_name] = {
-                                "type": param_type_str if param_type_str != '_empty' else 'Any',
+                                "type": param_type_str 
+                                    if param_type_str != '_empty' else 'Any',
                                 "default": repr(param.default) 
-                                if param.default is not inspect.Parameter.empty
-                                else None
+                                    if param.default is not inspect.Parameter.empty
+                                    else None
                             }
                         
                         # 使用相对于 base_dir 的路径
-                        relative_file_path = os.path.relpath(py_file, self.base_dir)
+                        relative_file_path = os.path.relpath(
+                            py_file, self.base_dir
+                        )
                         
                         tools[obj.__name__] = {
                             "name": obj.__name__,
                             "doc": inspect.getdoc(obj) or "",
                             "parameters": param_info,
-                            "return_type": str(sig.return_annotation)
-                                if str(sig.return_annotation) != '_empty' else 'Any',
+                            "return_type": (
+                                str(sig.return_annotation)
+                                if str(sig.return_annotation) != '_empty' 
+                                else 'Any'
+                            ),
                             "module": module_key,
                             "file_path": relative_file_path.replace("\\", "/")
                         }
                     else:
                         # 额外打印未注册的函数，帮助诊断
-                        print(f"× 模块 {module_key} 中的函数 {obj.__name__} 未在工具管理器中注册")
+                        print(
+                            f"× 模块 {module_key} 中的函数 {obj.__name__} "
+                            f"未在工具管理器中注册"
+                        )
         
         print(f"扫描完成，找到已注册工具: {list(tools.keys())}")
         return tools
@@ -235,8 +256,11 @@ class ToolService:
             tools = self.scan_tools()
             description = tools.get(tool_name, {}).get("doc", "")
             
+            if not server_instance:
+                raise ValueError("MCP服务器实例未初始化")
+                
             # 获取工具函数对象
-            tool_info = mcp._tool_manager._tools.get(tool_name)
+            tool_info = server_instance._tool_manager._tools.get(tool_name)
             if not tool_info:
                 raise ValueError(f"工具 {tool_name} 未在 ToolManager 中注册")
 
@@ -258,7 +282,9 @@ class ToolService:
             try:
                 history_service.record_tool_execution(
                     tool_name=tool_name,
-                    description=description if 'description' in locals() else "",
+                    description=(
+                        description if 'description' in locals() else ""
+                    ),
                     parameters=parameters,
                     result=result,
                     status=status,
@@ -271,8 +297,11 @@ class ToolService:
     def get_tool_info(self, tool_name: str) -> Dict[str, Any]:
         """获取特定工具的信息"""
         try:
+            if not server_instance:
+                raise ValueError("MCP服务器实例未初始化")
+                
             # 直接从内部工具注册表获取
-            tool_info = mcp._tool_manager._tools.get(tool_name)
+            tool_info = server_instance._tool_manager._tools.get(tool_name)
             if not tool_info:
                 raise ValueError(f"工具 {tool_name} 未在 ToolManager 中注册")
             
@@ -288,7 +317,11 @@ class ToolService:
                     
                 param_info[param_name] = {
                     "type": param_type_str,
-                    "default": repr(param.default) if param.default is not inspect.Parameter.empty else None
+                    "default": (
+                        repr(param.default) 
+                        if param.default is not inspect.Parameter.empty 
+                        else None
+                    )
                 }
             
             # 获取文件路径（相对于 base_dir）
@@ -300,10 +333,19 @@ class ToolService:
                 
             return {
                 "name": tool_info.name,
-                "doc": tool_info.description or inspect.getdoc(tool_info.fn) or "",
+                "doc": (
+                    tool_info.description or 
+                    inspect.getdoc(tool_info.fn) or ""
+                ),
                 "parameters": param_info,
-                "return_type": str(sig.return_annotation) if str(sig.return_annotation) != '_empty' else 'Any',
-                "module": getattr(inspect.getmodule(tool_info.fn), '__name__', '未知模块'),
+                "return_type": (
+                    str(sig.return_annotation) 
+                    if str(sig.return_annotation) != '_empty' 
+                    else 'Any'
+                ),
+                "module": getattr(
+                    inspect.getmodule(tool_info.fn), '__name__', '未知模块'
+                ),
                 "file_path": relative_path.replace("\\", "/")
             }
         except Exception as e:
@@ -338,7 +380,10 @@ class ToolService:
             # 对模块列表按模块名排序
             module_list.sort(key=lambda x: x["module_name"])
             
-            print(f"list_tools返回模块列表: {[module['module_name'] for module in module_list]}")
+            print(
+                f"list_tools返回模块列表: "
+                f"{[module['module_name'] for module in module_list]}"
+            )
             return module_list
         except Exception as e:
             import traceback
