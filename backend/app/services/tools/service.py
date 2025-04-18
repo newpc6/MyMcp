@@ -11,7 +11,7 @@ from ...core.config import settings
 from ...models.tools.schemas import ToolContent
 # 导入历史服务
 from ..history.service import HistoryService
-
+from ...utils.logging import em_logger
 # 创建历史服务实例
 history_service = HistoryService()
 
@@ -237,7 +237,7 @@ class ToolService:
                         }
                     else:
                         # 额外打印未注册的函数，帮助诊断
-                        print(
+                        em_logger.warning(
                             f"× 模块 {module_key} 中的函数 {obj.__name__} "
                             f"未在工具管理器中注册"
                         )

@@ -7,6 +7,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .api.urls import get_router  # 导入 urls.py 中的聚合路由
+from .middleware.logging_middleware import APILoggingMiddleware
+from .utils.logging import em_logger
 
 
 def create_app() -> FastAPI:
@@ -25,13 +27,19 @@ def create_app() -> FastAPI:
         allow_headers=settings.CORS_HEADERS,
     )
     
+    # 添加日志中间件
+    app.add_middleware(APILoggingMiddleware)
+    
     # 注册路由
     app = get_router(app)
+    
+    em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
     
     return app
 
 
 app = create_app()
+
 
 def init_app():
     """

@@ -84,4 +84,7 @@ backend/egova-mcp.db
 backend/config.json
 backend/repository/
 backend/repository
-
+backend/log/
+backend/log
+backend/logs/
+backend/logs

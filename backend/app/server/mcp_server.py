@@ -8,6 +8,7 @@ from typing import Callable, Dict, Any, Optional, List
 
 # 导入配置和基础模块
 from ..core.config import settings
+from ..utils.logging import em_logger
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
 
@@ -43,7 +44,7 @@ def add_tool(
         doc: 工具文档，如果不提供则使用函数文档
     """
     if server_instance is None:
-        print("警告: MCP服务器尚未启动，无法添加工具")
+        em_logger.warning("MCP服务器尚未启动，无法添加工具")
         return func
         
     tool_name = name or func.__name__
@@ -55,10 +56,10 @@ def add_tool(
             tool.name for tool in server_instance._tool_manager.list_tools()
         }
         if tool_name in existing_tools:
-            print(f"工具 {tool_name} 已存在，将先移除")
+            em_logger.warning(f"工具 {tool_name} 已存在，将先移除")
             remove_tool(tool_name)
     except Exception as e:
-        print(f"检查现有工具时出错: {e}")
+        em_logger.error(f"检查现有工具时出错: {str(e)}")
     
     # 使用mcp的tool装饰器添加工具
     server_instance.tool(name=tool_name, description=tool_doc)(func)
@@ -70,7 +71,7 @@ def add_tool(
         "doc": tool_doc
     })
     
-    print(f"已成功添加工具: {tool_name}")
+    em_logger.info(f"已成功添加工具: {tool_name}")
     return func  # 返回函数便于链式调用
 
 
@@ -85,7 +86,7 @@ def remove_tool(tool_name: str) -> bool:
         bool: 是否成功移除
     """
     if server_instance is None:
-        print("警告: MCP服务器尚未启动，无法移除工具")
+        em_logger.warning("MCP服务器尚未启动，无法移除工具")
         return False
         
     try:
@@ -93,7 +94,7 @@ def remove_tool(tool_name: str) -> bool:
         if (hasattr(server_instance._tool_manager, "_tools") 
                 and tool_name in server_instance._tool_manager._tools):
             del server_instance._tool_manager._tools[tool_name]
-            print(f"已从工具管理器中移除工具: {tool_name}")
+            em_logger.info(f"已从工具管理器中移除工具: {tool_name}")
             
             # 从手动添加列表中移除
             global _manually_added_tools
@@ -103,10 +104,10 @@ def remove_tool(tool_name: str) -> bool:
             
             return True
         else:
-            print(f"工具 {tool_name} 不存在，无需移除")
+            em_logger.warning(f"工具 {tool_name} 不存在，无需移除")
             return False
     except Exception as e:
-        print(f"移除工具 {tool_name} 时出错: {e}")
+        em_logger.error(f"移除工具 {tool_name} 时出错: {str(e)}")
         return False
 
 
@@ -125,7 +126,7 @@ def get_enabled_tools() -> List[str]:
             tool.name for tool in server_instance._tool_manager.list_tools()
         ]
     except Exception as e:
-        print(f"获取启用工具列表时出错: {e}")
+        em_logger.error(f"获取启用工具列表时出错: {str(e)}")
         return []
 
 
@@ -154,7 +155,7 @@ def is_running() -> bool:
         tools = get_enabled_tools()
         return len(tools) > 0
     except Exception as e:
-        print(f"检查MCP运行状态时出错: {e}")
+        em_logger.error(f"检查MCP运行状态时出错: {str(e)}")
         return False
 
 
@@ -202,7 +203,7 @@ def register_repository_functions():
             module_path = f'repository.{module_name}'
             try:
                 module = importlib.import_module(module_path)
-                print(f"成功导入模块: {module_path}")
+                em_logger.info(f"成功导入模块: {module_path}")
                 
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
@@ -220,7 +221,36 @@ def register_repository_functions():
                             add_tool(func, name, doc)
                 
             except Exception as e:
-                print(f"导入模块 {module_path} 失败: {e}")
+                em_logger.error(f"导入模块 {module_path} 失败: {str(e)}")
+
+
+def stop_mcp_server():
+    global server_instance
+    if server_instance:
+        try:
+            server_instance.stop()
+            server_instance = None
+            em_logger.info("已停止MCP服务器")
+            return True
+        except Exception as e:
+            em_logger.error(f"停止MCP服务器时出错: {str(e)}")
+            return False
+    return False
+
+
+def restart_mcp_server():
+    em_logger.info("正在重启MCP服务器...")
+    stop_mcp_server()
+    time.sleep(1)  # 等待资源释放
+    start_mcp_server()
+    em_logger.info("MCP服务器已重新启动")
+    return True
+
+
+def signal_handler(sig, frame):
+    em_logger.info("接收到终止信号，正在关闭MCP服务器...")
+    stop_mcp_server()
+    sys.exit(0)
 
 
 def start_mcp_server():
@@ -249,37 +279,14 @@ def start_mcp_server():
     # 自动注册仓库中的函数
     register_repository_functions()
     
+    # 注册信号处理器
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
     # 启动服务器
-    print(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
+    em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
     server_instance.run(transport='sse')
     return server_instance
-
-
-def stop_mcp_server():
-    global server_instance
-    if server_instance:
-        print("停止MCP服务器...")
-        server_instance.stop()
-        server_instance = None
-
-
-def restart_mcp_server():
-    print("重启MCP服务器...")
-    stop_mcp_server()
-    time.sleep(1)  # 等待服务器完全停止
-    return start_mcp_server()
-
-
-# 处理终止信号
-def signal_handler(sig, frame):
-    print("接收到终止信号，正在关闭服务器...")
-    stop_mcp_server()
-    sys.exit(0)
-
-
-# 注册信号处理器
-signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTERM, signal_handler)
 
 
 # 如果直接运行此文件

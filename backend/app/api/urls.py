@@ -1,34 +1,8 @@
-from fastapi import APIRouter
-
-# from .tools import router as tools_router
-# from .resources import router as resources_router
-# from .modules import router as modules_router
-# from .execution import router as execution_router
-from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from . import tools, resources, modules, protocols, mcp_service, history, execution
-# router = APIRouter()
-
-# router.include_router(
-#     tools_router,
-#     prefix="/tools",
-#     tags=["tools"]
-# )
-# router.include_router(
-#     resources_router,
-#     prefix="/resources",
-#     tags=["resources"]
-# )
-# router.include_router(
-#     modules_router,
-#     prefix="/modules",
-#     tags=["modules"]
-# )
-# router.include_router(
-#     execution_router,
-#     prefix="/execute",
-#     tags=["execution"]
-# )
+from . import (
+    tools, resources, modules, protocols, mcp_service, 
+    history, execution, log
+)
 
 
 def get_router(app):
@@ -75,5 +49,10 @@ def get_router(app):
         execution.router,
         prefix=f"{settings.API_PREFIX}/execute",
         tags=["execute"]
+    )
+    app.include_router(
+        log.router,
+        prefix=f"{settings.API_PREFIX}/log",
+        tags=["log"]
     )
     return app

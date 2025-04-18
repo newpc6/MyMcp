@@ -45,6 +45,10 @@ class Settings:
         
         # 数据库设置
         self.DATABASE_FILE: str = config.get("database", {}).get("file", "egova-mcp.db")
+        
+        # 日志设置
+        self.LOG_LEVEL: str = config.get("logging", {}).get("level", "info")
+        self.LOG_BACKUP_COUNT: int = config.get("logging", {}).get("backup_count", 7)
 
 
 settings = Settings() 

@@ -10,7 +10,6 @@ from ...models.protocols.schemas import (
     ProtocolCreate, 
     ProtocolUpdate
 )
-from ...config import settings
 
 
 class ProtocolService:
@@ -18,7 +17,10 @@ class ProtocolService:
 
     def __init__(self):
         # 协议文件根目录
-        self.protocols_dir = settings.PROTOCOLS_DIR
+        # self.protocols_dir = settings.PROTOCOLS_DIR
+        self.protocols_dir = os.path.join(
+            os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "protocols"
+        )
         os.makedirs(self.protocols_dir, exist_ok=True)
 
     def get_all_protocols(self) -> List[ProtocolInfo]:
