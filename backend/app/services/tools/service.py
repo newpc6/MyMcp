@@ -22,13 +22,17 @@ class ToolService:
         self.modules = settings.MCP_MODULES
         server_instance = get_mcp_server()
         # 缓存已注册的工具名称 (使用内部属性，注意风险)
+        self._registered_tool_names = set()
         try:
-            self._registered_tool_names = {
-                tool.name for tool in server_instance._tool_manager.list_tools()
-            } if server_instance else set()
+            if server_instance and hasattr(server_instance, '_tool_manager'):
+                self._registered_tool_names = {
+                    tool.name for tool in server_instance._tool_manager.list_tools()
+                }
+                em_logger.info(f"初始化时加载了 {len(self._registered_tool_names)} 个注册工具")
+            else:
+                em_logger.warning("初始化时server_instance未找到或未初始化")
         except Exception as e:
-            print(f"初始化时无法从server_instance._tool_manager获取工具列表: {e}")
-            self._registered_tool_names = set()
+            em_logger.error(f"初始化时无法从server_instance._tool_manager获取工具列表: {e}")
 
     def get_all_tools(self) -> List[Dict[str, Any]]:
         """获取所有工具信息"""
@@ -36,13 +40,16 @@ class ToolService:
         # 并尝试更新已注册工具列表缓存
         server_instance = get_mcp_server()
         try:
-            self._registered_tool_names = {
-                tool.name for tool in server_instance._tool_manager.list_tools()
-            } if server_instance else set()
+            if server_instance and hasattr(server_instance, '_tool_manager'):
+                self._registered_tool_names = {
+                    tool.name for tool in server_instance._tool_manager.list_tools()
+                }
+                em_logger.info(f"更新时加载了 {len(self._registered_tool_names)} 个注册工具")
+            else:
+                em_logger.warning("更新时server_instance未找到或未初始化")
         except Exception as e:
-            print(f"更新时无法从server_instance._tool_manager获取工具列表: {e}")
-            # 保留旧缓存或清空？这里选择保留旧缓存
-            # self._registered_tool_names = set()
+            em_logger.error(f"更新时无法从server_instance._tool_manager获取工具列表: {e}")
+            # 这里保留旧缓存
 
         tools = self.scan_tools()
         return list(tools.values())
@@ -116,19 +123,18 @@ class ToolService:
         tools = {}
         server_instance = get_mcp_server()
         # 每次扫描都实时获取最新的工具列表，不依赖于缓存
+        registered_tool_names = set()
         try:
             if server_instance and hasattr(server_instance, '_tool_manager'):
                 registered_tools = server_instance._tool_manager.list_tools()
                 registered_tool_names = {tool.name for tool in registered_tools}
-                print(f"从server_instance._tool_manager获取到的工具列表: {registered_tool_names}")
+                em_logger.info(f"从server_instance._tool_manager获取到的工具列表: {registered_tool_names}")
                 if not registered_tool_names:
-                    print("警告: server_instance._tool_manager中没有找到任何注册工具！")
+                    em_logger.warning("警告: server_instance._tool_manager中没有找到任何注册工具！")
             else:
-                print("警告: server_instance不存在或未初始化")
-                registered_tool_names = set()
+                em_logger.warning("警告: server_instance不存在或未初始化")
         except Exception as e:
-            print(f"获取已注册工具列表时出错: {e}")
-            registered_tool_names = set()
+            em_logger.error(f"获取已注册工具列表时出错: {e}")
         
         # 更新实例变量，以便其他方法使用
         self._registered_tool_names = registered_tool_names

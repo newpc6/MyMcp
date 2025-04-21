@@ -10,6 +10,7 @@ from .core.config import settings
 from .api.urls import get_router  # 导入 urls.py 中的聚合路由
 from .middleware.logging_middleware import APILoggingMiddleware
 from .utils.logging import em_logger
+from .models.engine import init_db
 
 
 def create_app() -> FastAPI:
@@ -39,21 +40,8 @@ def create_app() -> FastAPI:
     return app
 
 
-app = None
+# 初始化数据库
+init_db()
 
-
-def init_app():
-    """
-    初始化应用程序
-    
-    Returns:
-        fastapi.FastAPI: FastAPI应用程序实例
-    """
-    from app.models.engine import init_db
-    global app
-    app = create_app()
-    # 初始化数据库
-    init_db()
-    
-    # 返回应用程序实例
-    return app 
+# 创建应用实例
+app = create_app() 

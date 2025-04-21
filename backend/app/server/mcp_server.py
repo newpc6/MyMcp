@@ -5,6 +5,7 @@ import signal
 import time
 import inspect
 from typing import Callable, Dict, Any, Optional, List
+import threading
 
 # 导入配置和基础模块
 from ..core.config import settings
@@ -31,13 +32,13 @@ _manually_added_tools: List[Dict[str, Any]] = []
 
 
 def add_tool(
-    func: Callable, 
-    name: Optional[str] = None, 
+    func: Callable,
+    name: Optional[str] = None,
     doc: Optional[str] = None
 ) -> None:
     """
     动态添加MCP工具
-    
+
     Args:
         func: 要添加为工具的函数
         name: 工具名称，如果不提供则使用函数名
@@ -46,10 +47,10 @@ def add_tool(
     if server_instance is None:
         em_logger.warning("MCP服务器尚未启动，无法添加工具")
         return func
-        
+
     tool_name = name or func.__name__
     tool_doc = doc or inspect.getdoc(func) or ""
-    
+
     # 检查工具是否已存在
     try:
         existing_tools = {
@@ -60,17 +61,17 @@ def add_tool(
             remove_tool(tool_name)
     except Exception as e:
         em_logger.error(f"检查现有工具时出错: {str(e)}")
-    
+
     # 使用mcp的tool装饰器添加工具
     server_instance.tool(name=tool_name, description=tool_doc)(func)
-    
+
     # 存储工具信息，用于重启时
     _manually_added_tools.append({
         "func": func,
         "name": tool_name,
         "doc": tool_doc
     })
-    
+
     em_logger.info(f"已成功添加工具: {tool_name}")
     return func  # 返回函数便于链式调用
 
@@ -78,30 +79,30 @@ def add_tool(
 def remove_tool(tool_name: str) -> bool:
     """
     动态移除MCP工具
-    
+
     Args:
         tool_name: 要移除的工具名称
-        
+
     Returns:
         bool: 是否成功移除
     """
     if server_instance is None:
         em_logger.warning("MCP服务器尚未启动，无法移除工具")
         return False
-        
+
     try:
         # 直接从工具管理器中移除
-        if (hasattr(server_instance._tool_manager, "_tools") 
+        if (hasattr(server_instance._tool_manager, "_tools")
                 and tool_name in server_instance._tool_manager._tools):
             del server_instance._tool_manager._tools[tool_name]
             em_logger.info(f"已从工具管理器中移除工具: {tool_name}")
-            
+
             # 从手动添加列表中移除
             global _manually_added_tools
             _manually_added_tools = [
                 t for t in _manually_added_tools if t["name"] != tool_name
             ]
-            
+
             return True
         else:
             em_logger.warning(f"工具 {tool_name} 不存在，无需移除")
@@ -114,13 +115,13 @@ def remove_tool(tool_name: str) -> bool:
 def get_enabled_tools() -> List[str]:
     """
     获取当前启用的工具列表
-    
+
     Returns:
         List[str]: 启用的工具名称列表
     """
     if server_instance is None:
         return []
-        
+
     try:
         return [
             tool.name for tool in server_instance._tool_manager.list_tools()
@@ -133,24 +134,24 @@ def get_enabled_tools() -> List[str]:
 def is_running() -> bool:
     """
     检查MCP服务是否正在运行
-    
+
     Returns:
         bool: 服务是否正在运行
     """
     if server_instance is None:
         return False
-        
+
     try:
         # 逐层检查各种可能的运行状态属性
         if hasattr(server_instance, 'is_running'):
             return server_instance.is_running()
-        elif (hasattr(server_instance, '_server') and 
+        elif (hasattr(server_instance, '_server') and
               hasattr(server_instance._server, 'is_running')):
             return server_instance._server.is_running
-        elif (hasattr(server_instance, '_server') and 
+        elif (hasattr(server_instance, '_server') and
               hasattr(server_instance._server, 'running')):
             return server_instance._server.running
-        
+
         # 如果以上都没有，检查是否有工具注册作为后备策略
         tools = get_enabled_tools()
         return len(tools) > 0
@@ -162,7 +163,7 @@ def is_running() -> bool:
 def check_mcp_status() -> Dict[str, Any]:
     """
     检查MCP服务状态
-    
+
     Returns:
         Dict: 包含状态信息的字典
     """
@@ -172,19 +173,19 @@ def check_mcp_status() -> Dict[str, Any]:
         "enabled_tools_count": 0,
         "enabled_tools": []
     }
-    
+
     try:
         # 获取工具列表
         tools = get_enabled_tools()
         status["enabled_tools"] = tools
         status["enabled_tools_count"] = len(tools)
-        
+
         # 检查运行状态
         status["running"] = is_running()
     except Exception as e:
         status["error"] = str(e)
         status["running"] = False
-    
+
     return status
 
 
@@ -192,11 +193,11 @@ def check_mcp_status() -> Dict[str, Any]:
 def register_repository_functions():
     # 获取repository目录
     repo_dir = os.path.join(current_dir, 'repository')
-    
+
     # 导入所有模块
     for file in os.listdir(repo_dir):
-        if (file.endswith('.py') and 
-                file != '_init_.py' and 
+        if (file.endswith('.py') and
+                file != '_init_.py' and
                 file != '__init__.py' and
                 file != 'mcp_base.py'):
             module_name = file[:-3]  # 去掉.py后缀
@@ -204,7 +205,7 @@ def register_repository_functions():
             try:
                 module = importlib.import_module(module_path)
                 em_logger.info(f"成功导入模块: {module_path}")
-                
+
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
                     module, inspect.isfunction
@@ -219,7 +220,7 @@ def register_repository_functions():
                         ):
                             # 注册为工具
                             add_tool(func, name, doc)
-                
+
             except Exception as e:
                 em_logger.error(f"导入模块 {module_path} 失败: {str(e)}")
 
@@ -248,23 +249,27 @@ def restart_mcp_server():
 
 
 def get_mcp_server():
+    main_thread = threading.main_thread()
+    current_thread = threading.current_thread()
     global server_instance
+    em_logger.info("获取MCP变量，主线程：%s 当前线程：%s，是否是主线程：%s， 进程ID：%s， server_instance：%s",
+                   main_thread, current_thread, main_thread == current_thread, os.getpid(), server_instance is not None)
     return server_instance
 
 
 def start_mcp_server():
     global server_instance
-    
+
     # 创建FastMCP实例
     server = FastMCP(
         name="MCP Server",
         host=settings.HOST,
         port=settings.MCP_PORT,
     )
-    
+
     # 保存服务器实例
     server_instance = server
-    
+
     # 创建SSE应用并配置中间件
     app = server.sse_app()
     app.add_middleware(
@@ -274,16 +279,27 @@ def start_mcp_server():
         allow_methods=settings.CORS_METHODS,
         allow_headers=settings.CORS_HEADERS,
     )
-    
+
     # 自动注册仓库中的函数
     register_repository_functions()
-    
+
     # 启动服务器
-    em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
-    server_instance.run(transport='sse')
+    # em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
+    if threading.current_thread() is not threading.main_thread():
+        import time
+        time.sleep(0.5)  # 给其他线程一点时间来访问server_instance
+
+    # 这是阻塞调用
+    try:
+        em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
+        server_instance.run(transport='sse')
+    except Exception as e:
+        em_logger.error(f"启动MCP服务器时出错: {str(e)}")
+        # 出错时不要重置server_instance，保持其已初始化状态
+
     return server_instance
 
 
 # 如果直接运行此文件
 if __name__ == "__main__":
-    start_mcp_server() 
+    start_mcp_server()

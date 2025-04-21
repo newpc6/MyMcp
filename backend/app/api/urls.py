@@ -9,9 +9,7 @@ def get_router(app):
     @app.get("/")
     async def root():
         return {
-            "message": "欢迎使用 Egova AI MCP Server API",
-            "docs_url": "/docs",
-            "redoc_url": "/redoc"
+            "message": "欢迎使用 Egova AI MCP Server API"
         }
 
     # 注册API路由
