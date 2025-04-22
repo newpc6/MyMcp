@@ -41,6 +41,16 @@ const routes: Array<RouteRecordRaw> = [
     path: '/editor/:path*',
     name: 'Editor',
     component: () => import('../views/Editor.vue')
+  },
+  {
+    path: '/marketplace',
+    name: 'Marketplace',
+    component: () => import('../views/marketplace/index.vue')
+  },
+  {
+    path: '/marketplace/module/:id',
+    name: 'ModuleDetail',
+    component: () => import('../views/marketplace/ModuleDetail.vue')
   }
 ]
 

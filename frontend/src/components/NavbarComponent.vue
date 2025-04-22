@@ -10,11 +10,12 @@
         <h1 class="text-xl font-bold text-primary">智能MCP管理平台</h1>
       </div>
       
-      <el-menu-item index="/">首页</el-menu-item>
-      <el-menu-item index="/tools">工具管理</el-menu-item>
-      <el-menu-item index="/mcp">MCP服务管理</el-menu-item>
-      <el-menu-item index="/resources">资源管理</el-menu-item>
-      <el-menu-item index="/protocols">协议管理</el-menu-item>
+      <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item>
+      <el-menu-item index="/tools" @mouseup="handleMouseUp($event, '/tools')">工具管理</el-menu-item>
+      <el-menu-item index="/mcp" @mouseup="handleMouseUp($event, '/mcp')">MCP服务管理</el-menu-item>
+      <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">MCP广场</el-menu-item>
+      <el-menu-item index="/resources" @mouseup="handleMouseUp($event, '/resources')">资源管理</el-menu-item>
+      <el-menu-item index="/protocols" @mouseup="handleMouseUp($event, '/protocols')">协议管理</el-menu-item>
       
       <div class="version-info">
         <span class="text-sm">版本: v1.0.0</span>
@@ -27,6 +28,15 @@
 defineOptions({
   name: 'NavbarComponent'
 });
+
+const handleMouseUp = (event: MouseEvent, path: string) => {
+  // 鼠标中键点击 (button === 1)
+  if (event.button === 1) {
+    event.preventDefault();
+    // 在新标签页打开链接
+    window.open(path, '_blank');
+  }
+};
 </script>
 
 <style scoped>

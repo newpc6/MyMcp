@@ -2,7 +2,7 @@ from starlette.responses import JSONResponse
 from app.core.config import settings
 from . import (
     tools, resources, modules, protocols, mcp_service, 
-    history, execution, log
+    history, execution, log, marketplace
 )
 
 
@@ -83,6 +83,15 @@ def get_router(app):
     for route in log.get_router():
         app.add_route(
             f"{settings.API_PREFIX}/log{route.path}", 
+            route.endpoint, 
+            methods=route.methods, 
+            name=route.name
+        )
+    
+    # 添加MCP广场路由
+    for route in marketplace.get_router():
+        app.add_route(
+            f"{settings.API_PREFIX}/marketplace{route.path}", 
             route.endpoint, 
             methods=route.methods, 
             name=route.name
