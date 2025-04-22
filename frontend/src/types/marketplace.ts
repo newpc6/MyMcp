@@ -21,6 +21,7 @@ export interface McpModuleInfo {
   tools_count: number;
   category_id?: number;
   category_name?: string;
+  code?: string;
 }
 
 /**

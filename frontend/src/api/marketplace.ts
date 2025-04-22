@@ -100,6 +100,16 @@ export async function updateModuleCategory(moduleId: number, categoryId: number 
 }
 
 /**
+ * 更新模块信息
+ * @param moduleId - 模块ID
+ * @param data - 要更新的模块数据
+ */
+export async function updateModule(moduleId: number, data: Partial<McpModuleInfo>): Promise<McpModuleInfo> {
+  const response = await httpClient.put(`/api/marketplace/modules/${moduleId}`, data);
+  return response.data;
+}
+
+/**
  * 测试模块工具
  * @param toolId - 工具ID
  * @param params - 工具参数

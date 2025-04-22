@@ -127,6 +127,38 @@
               </div>
               <el-empty v-else description="请选择要测试的工具" />
             </el-tab-pane>
+            
+            <el-tab-pane label="代码查看/编辑" name="code-edit">
+              <div class="code-editor-container">
+                <div v-if="!moduleInfo.code" class="p-4">
+                  <el-empty description="该模块暂无代码" />
+                </div>
+                <div v-else>
+                  <div class="mb-4 flex justify-between items-center">
+                    <h3 class="text-lg font-medium">模块代码</h3>
+                    <div>
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="saveModuleCode" 
+                        :loading="saving"
+                        :disabled="!hasCodeChanged"
+                      >
+                        保存修改
+                      </el-button>
+                    </div>
+                  </div>
+                  <Codemirror
+                    v-model="codeContent"
+                    :extensions="extensions"
+                    :style="{ height: '500px' }"
+                    :indent-with-tab="true"
+                    :tab-size="4"
+                    class="code-editor"
+                  />
+                </div>
+              </div>
+            </el-tab-pane>
           </el-tabs>
         </el-card>
       </div>
@@ -139,9 +171,12 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElNotification } from 'element-plus';
 import { 
-  getModule, getModuleTools, testModuleTool 
+  getModule, getModuleTools, testModuleTool, updateModule
 } from '../../api/marketplace';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter } from '../../types/marketplace';
+import Codemirror from 'vue-codemirror6';
+import { python } from '@codemirror/lang-python';
+import { oneDark } from '@codemirror/theme-one-dark';
 
 const route = useRoute();
 const router = useRouter();
@@ -156,6 +191,15 @@ const testParams = ref<Record<string, any>>({});
 const testResult = ref<any>(null);
 const testError = ref<string | null>(null);
 const testing = ref(false);
+const codeContent = ref('');
+const originalCode = ref('');
+const saving = ref(false);
+const hasCodeChanged = computed(() => {
+  return codeContent.value !== originalCode.value;
+});
+
+// CodeMirror 扩展配置
+const extensions = [python(), oneDark];
 
 // 加载模块详情
 async function loadModuleInfo() {
@@ -163,6 +207,12 @@ async function loadModuleInfo() {
   try {
     moduleInfo.value = await getModule(moduleId.value);
     moduleTools.value = await getModuleTools(moduleId.value);
+    
+    // 如果模块有代码，初始化编辑器内容
+    if (moduleInfo.value.code) {
+      codeContent.value = moduleInfo.value.code;
+      originalCode.value = moduleInfo.value.code;
+    }
   } catch (error) {
     console.error("加载模块详情失败", error);
     ElNotification({
@@ -236,6 +286,31 @@ function getModuleIcon(module: McpModuleInfo) {
   }
 }
 
+// 保存模块代码
+async function saveModuleCode() {
+  if (!hasCodeChanged.value) return;
+  
+  saving.value = true;
+  try {
+    await updateModule(moduleId.value, { code: codeContent.value });
+    originalCode.value = codeContent.value;
+    ElNotification({
+      title: '成功',
+      message: '模块代码已保存',
+      type: 'success'
+    });
+  } catch (error) {
+    console.error("保存模块代码失败", error);
+    ElNotification({
+      title: '错误',
+      message: '保存模块代码失败',
+      type: 'error'
+    });
+  } finally {
+    saving.value = false;
+  }
+}
+
 // 页面加载时获取模块详情
 onMounted(() => {
   loadModuleInfo();
@@ -245,5 +320,24 @@ onMounted(() => {
 <style scoped>
 .tool-test-panel {
   max-width: 800px;
+}
+
+.code-editor {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+:deep(.cm-editor) {
+  height: 100%;
+}
+
+:deep(.cm-scroller) {
+  overflow: auto;
+}
+
+.code-editor-container {
+  width: 100%;
 }
 </style> 
