@@ -404,48 +404,64 @@ class MarketplaceService:
     ) -> Optional[Dict[str, Any]]:
         """更新MCP模块"""
         with get_db() as db:
-            # 检查模块是否存在
-            module_query = select(McpModule).where(
-                McpModule.id == module_id
-            )
-            module = db.execute(module_query).scalar_one_or_none()
-            if not module:
-                return None
-            
-            # 构建更新数据
-            update_data = {}
-            fields = [
-                "name", "description", "author", "version", 
-                "tags", "icon", "repository_url", "category_id",
-                "code", "config_schema", "is_hosted"
-            ]
-            
-            for field in fields:
-                if field in data:
-                    if field == "tags" and isinstance(data[field], list):
-                        update_data[field] = ",".join(data[field])
-                    else:
-                        update_data[field] = data[field]
-            
-            # 如果名称更新，也要更新模块路径
-            if "name" in update_data:
-                name = update_data["name"]
-                update_data["module_path"] = f"repository.{name}"
+            try:
+                # 查询模块是否存在
+                query = select(McpModule).where(McpModule.id == module_id)
+                module = db.execute(query).scalar_one_or_none()
                 
-            update_data["updated_at"] = now_beijing()
-            
-            # 执行更新
-            stmt = (
-                update(McpModule)
-                .where(McpModule.id == module_id)
-                .values(**update_data)
-            )
-            db.execute(stmt)
-            db.commit()
-            
-            # 返回更新后的模块信息
-            updated_module = db.execute(module_query).scalar_one()
-            return updated_module.to_dict()
+                if not module:
+                    return None
+                
+                # 更新字段
+                update_data = {
+                    "updated_at": now_beijing()
+                }
+                
+                if "name" in data:
+                    update_data["name"] = data["name"]
+                if "description" in data:
+                    update_data["description"] = data["description"]
+                if "module_path" in data:
+                    update_data["module_path"] = data["module_path"]
+                if "author" in data:
+                    update_data["author"] = data["author"]
+                if "version" in data:
+                    update_data["version"] = data["version"]
+                if "tags" in data:
+                    # 如果是列表，则转换为逗号分隔的字符串
+                    if isinstance(data["tags"], list):
+                        update_data["tags"] = ",".join(data["tags"])
+                    else:
+                        update_data["tags"] = data["tags"]
+                if "icon" in data:
+                    update_data["icon"] = data["icon"]
+                if "is_hosted" in data:
+                    update_data["is_hosted"] = data["is_hosted"]
+                if "repository_url" in data:
+                    update_data["repository_url"] = data["repository_url"]
+                if "code" in data:
+                    update_data["code"] = data["code"]
+                if "config_schema" in data:
+                    update_data["config_schema"] = data["config_schema"]
+                if "markdown_docs" in data:
+                    update_data["markdown_docs"] = data["markdown_docs"]
+                
+                # 更新数据库
+                stmt = (
+                    update(McpModule)
+                    .where(McpModule.id == module_id)
+                    .values(**update_data)
+                )
+                db.execute(stmt)
+                db.commit()
+                
+                # 返回更新后的模块信息
+                return self.get_module(module_id)
+                
+            except SQLAlchemyError as e:
+                em_logger.error(f"更新模块失败: {str(e)}")
+                db.rollback()
+                return None
     
     def delete_module(self, module_id: int) -> bool:
         """删除MCP模块"""
