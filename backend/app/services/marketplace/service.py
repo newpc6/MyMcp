@@ -2,6 +2,12 @@
 MCP广场服务
 """
 from typing import List, Dict, Any, Optional
+import os
+import sys
+import inspect
+import importlib.util
+import importlib
+import tempfile
 
 from sqlalchemy import select, update, delete
 from sqlalchemy.exc import SQLAlchemyError
@@ -55,7 +61,7 @@ class MarketplaceService:
             return [t.to_dict() for t in tools]
     
     def get_tool(self, tool_id: int) -> Optional[Dict[str, Any]]:
-        """获取指定的MCP工具信息"""
+        """获取指定MCP工具的详情"""
         with get_db() as db:
             query = select(McpTool).where(McpTool.id == tool_id)
             tool = db.execute(query).scalar_one_or_none()
@@ -64,9 +70,159 @@ class MarketplaceService:
             return None
     
     def scan_repository_modules(self) -> Dict[str, int]:
-        """扫描仓库中的MCP模块并更新数据库"""
-        # 实现细节省略
-        pass
+        """扫描数据库中的MCP模块并更新工具信息"""
+        # 结果统计
+        stats = {
+            "total": 0,      # 总共扫描的模块数
+            "updated": 0,    # 更新工具的模块数
+            "tools": 0       # 扫描到的工具数
+        }
+        
+        try:
+            with get_db() as db:
+                # 查询所有模块
+                modules = db.execute(select(McpModule)).scalars().all()
+                stats["total"] = len(modules)
+                
+                if not modules:
+                    em_logger.warning("数据库中没有找到MCP模块")
+                    return stats
+                
+                em_logger.info(f"在数据库中找到{len(modules)}个MCP模块")
+                
+                # 创建临时目录存放模块代码
+                temp_dir = tempfile.mkdtemp(prefix="mcp_modules_")
+                
+                # 添加临时目录到Python路径
+                if temp_dir not in sys.path:
+                    sys.path.insert(0, temp_dir)
+                
+                # 处理每个模块
+                for module in modules:
+                    if not module.code:
+                        em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
+                        continue
+                    
+                    # 创建临时模块文件
+                    module_file = os.path.join(temp_dir, f"{module.name}.py")
+                    
+                    try:
+                        # 写入代码到临时文件
+                        with open(module_file, "w", encoding="utf-8") as f:
+                            f.write(module.code)
+                        
+                        # 动态导入模块
+                        module_name = module.name
+                        
+                        spec = importlib.util.spec_from_file_location(
+                            module_name, module_file
+                        )
+                        if spec and spec.loader:
+                            module_obj = importlib.util.module_from_spec(spec)
+                            spec.loader.exec_module(module_obj)
+                            
+                            # 扫描模块中的函数
+                            tool_count = self._scan_module_tools(
+                                db, module_obj, module.id, module_name
+                            )
+                            
+                            if tool_count > 0:
+                                stats["updated"] += 1
+                                stats["tools"] += tool_count
+                                
+                    except Exception as e:
+                        em_logger.error(
+                            f"处理模块 {module.name} 失败: {str(e)}"
+                        )
+                
+                # 清理临时目录
+                try:
+                    import shutil
+                    shutil.rmtree(temp_dir)
+                except Exception as e:
+                    em_logger.warning(f"清理临时目录失败: {str(e)}")
+                
+                db.commit()
+                return stats
+                
+        except Exception as e:
+            em_logger.error(f"扫描模块时出错: {str(e)}")
+            return stats
+    
+    def _scan_module_tools(
+        self, db, module_obj, module_id: int, module_name: str
+    ) -> int:
+        """扫描模块中的函数作为工具"""
+        tool_count = 0
+        
+        for func_name, func in inspect.getmembers(module_obj, inspect.isfunction):
+            # 过滤出该模块定义的函数(而不是导入的函数)
+            if func.__module__ == module_name:
+                # 获取函数文档和参数信息
+                doc = inspect.getdoc(func) or f"{func_name} 函数"
+                signature = inspect.signature(func)
+                parameters = {}
+                
+                for param_name, param in signature.parameters.items():
+                    if param_name == 'self':  # 跳过self参数
+                        continue
+                        
+                    param_type = "any"
+                    if param.annotation != param.empty:
+                        param_type = str(param.annotation)
+                    
+                    param_info = {
+                        "type": param_type,
+                        "required": param.default == param.empty
+                    }
+                    
+                    if param.default != param.empty:
+                        param_info["default"] = param.default
+                        
+                    parameters[param_name] = param_info
+                
+                # 查询该工具是否已存在
+                query_conditions = [
+                    McpTool.module_id == module_id,
+                    McpTool.function_name == func_name
+                ]
+                tool_query = select(McpTool).where(*query_conditions)
+                
+                # 获取现有工具
+                existing_tool = db.execute(
+                    tool_query
+                ).scalar_one_or_none()
+                
+                if existing_tool:
+                    # 更新现有工具
+                    stmt = (
+                        update(McpTool)
+                        .where(McpTool.id == existing_tool.id)
+                        .values(
+                            name=func_name,
+                            description=doc,
+                            parameters=str(parameters) if parameters else None,
+                            updated_at=now_beijing()
+                        )
+                    )
+                    db.execute(stmt)
+                else:
+                    # 创建新工具
+                    new_tool = McpTool(
+                        module_id=module_id,
+                        name=func_name,
+                        function_name=func_name,
+                        description=doc,
+                        parameters=str(parameters) if parameters else None,
+                        created_at=now_beijing(),
+                        updated_at=now_beijing(),
+                        is_enabled=True
+                    )
+                    db.add(new_tool)
+                
+                tool_count += 1
+                
+        return tool_count
     
     def list_categories(self) -> List[Dict[str, Any]]:
         """获取所有MCP分组"""
@@ -215,6 +371,103 @@ class MarketplaceService:
             # 返回更新后的模块信息
             updated_module = db.execute(module_query).scalar_one()
             return updated_module.to_dict()
+
+    def create_module(self, data: Dict[str, Any]) -> Dict[str, Any]:
+        """创建MCP模块"""
+        with get_db() as db:
+            # 创建模块记录
+            module = McpModule(
+                name=data.get("name"),
+                description=data.get("description", ""),
+                module_path=f"repository.{data.get('name')}",
+                author=data.get("author", "系统创建"),
+                version=data.get("version", "1.0.0"),
+                tags=",".join(data.get("tags", [])),
+                icon=data.get("icon", ""),
+                is_hosted=True,  # 使用数据库存储的模块默认为托管模块
+                repository_url=data.get("repository_url", ""),
+                category_id=data.get("category_id"),
+                code=data.get("code", ""),
+                config_schema=data.get("config_schema", "{}"),
+                created_at=now_beijing(),
+                updated_at=now_beijing()
+            )
+            
+            db.add(module)
+            db.commit()
+            db.refresh(module)
+            
+            return module.to_dict()
+    
+    def update_module(
+        self, module_id: int, data: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
+        """更新MCP模块"""
+        with get_db() as db:
+            # 检查模块是否存在
+            module_query = select(McpModule).where(
+                McpModule.id == module_id
+            )
+            module = db.execute(module_query).scalar_one_or_none()
+            if not module:
+                return None
+            
+            # 构建更新数据
+            update_data = {}
+            fields = [
+                "name", "description", "author", "version", 
+                "tags", "icon", "repository_url", "category_id",
+                "code", "config_schema", "is_hosted"
+            ]
+            
+            for field in fields:
+                if field in data:
+                    if field == "tags" and isinstance(data[field], list):
+                        update_data[field] = ",".join(data[field])
+                    else:
+                        update_data[field] = data[field]
+            
+            # 如果名称更新，也要更新模块路径
+            if "name" in update_data:
+                name = update_data["name"]
+                update_data["module_path"] = f"repository.{name}"
+                
+            update_data["updated_at"] = now_beijing()
+            
+            # 执行更新
+            stmt = (
+                update(McpModule)
+                .where(McpModule.id == module_id)
+                .values(**update_data)
+            )
+            db.execute(stmt)
+            db.commit()
+            
+            # 返回更新后的模块信息
+            updated_module = db.execute(module_query).scalar_one()
+            return updated_module.to_dict()
+    
+    def delete_module(self, module_id: int) -> bool:
+        """删除MCP模块"""
+        with get_db() as db:
+            try:
+                # 检查模块是否存在
+                module_query = select(McpModule).where(
+                    McpModule.id == module_id
+                )
+                module = db.execute(module_query).scalar_one_or_none()
+                if not module:
+                    return False
+                
+                # 删除模块记录（关联的工具会通过级联关系自动删除）
+                stmt = delete(McpModule).where(McpModule.id == module_id)
+                db.execute(stmt)
+                db.commit()
+                return True
+            except SQLAlchemyError as e:
+                em_logger.error(f"删除模块失败: {str(e)}")
+                db.rollback()
+                return False
 
 
 # 创建服务实例

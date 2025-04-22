@@ -58,6 +58,8 @@ class McpModule(Base):
     category_id = Column(Integer, ForeignKey("mcp_categories.id"), nullable=True)  # 分组ID
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
+    code = Column(Text)  # 模块代码
+    config_schema = Column(Text)  # 配置项模式，用于存储key, secret等字段的配置模式，JSON格式
     
     # 关联分组
     category = relationship("McpCategory", back_populates="modules")
@@ -86,7 +88,9 @@ class McpModule(Base):
             "category_name": self.category.name if self.category else None,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "tools_count": len(self.tools)
+            "tools_count": len(self.tools),
+            "code": self.code,
+            "config_schema": json.loads(self.config_schema) if self.config_schema else {}
         }
 
 

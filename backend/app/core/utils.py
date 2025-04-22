@@ -1,7 +1,8 @@
 """
 工具函数模块
 """
-from datetime import datetime, timedelta
+from datetime import datetime
+from pytz import timezone
 
 
 def now_beijing():
@@ -10,6 +11,6 @@ def now_beijing():
     用于数据库模型的默认时间，替代func.now()
     """
     def _beijing_time():
-        return datetime.utcnow() + timedelta(hours=8)
+        return datetime.now(timezone('Asia/Shanghai'))
     
     return _beijing_time 

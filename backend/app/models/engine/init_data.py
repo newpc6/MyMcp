@@ -3,7 +3,7 @@
 
 用于在数据库初始化时添加基础数据
 """
-from sqlalchemy import select, text
+from sqlalchemy import select
 from datetime import datetime
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpCategory, McpModule
@@ -12,13 +12,50 @@ from pytz import timezone
 
 
 def migrate_database():
-    """
-    迁移数据库结构
-    处理表结构变更，例如添加字段等
-    """
+    """执行数据库迁移"""
+    try:
+        # 导入迁移模块
+        try:
+            from app.models.engine.migrations import get_all_migrations
+        except ImportError as e:
+            em_logger.warning(f"迁移模块导入失败，使用内置迁移: {str(e)}")
+            # 使用内置迁移作为后备方案
+            _run_builtin_migrations()
+            return
+        
+        # 获取所有迁移模块
+        migrations = get_all_migrations()
+        if not migrations:
+            em_logger.warning("未找到迁移模块，使用内置迁移")
+            _run_builtin_migrations()
+            return
+            
+        em_logger.info(f"找到 {len(migrations)} 个迁移模块")
+        
+        # 执行所有迁移
+        with get_db() as db:
+            for migration in migrations:
+                try:
+                    migration_name = migration.__name__.split('.')[-1]
+                    em_logger.info(f"执行迁移: {migration_name}")
+                    migration.run(db)
+                except Exception as e:
+                    em_logger.error(f"迁移 {migration_name} 执行失败: {str(e)}")
+                    raise
+                
+            em_logger.info("所有迁移执行完成")
+    
+    except Exception as e:
+        em_logger.error(f"数据库迁移失败: {str(e)}")
+
+
+def _run_builtin_migrations():
+    """执行内置的迁移，作为后备方案"""
+    from sqlalchemy import text
+    
     try:
         with get_db() as db:
-            # 检查mcp_categories表是否存在
+            # 1. 检查mcp_categories表是否存在
             check_categories_sql = text(
                 "SELECT name FROM sqlite_master "
                 "WHERE type='table' AND name='mcp_categories'"
@@ -38,26 +75,43 @@ def migrate_database():
                         updated_at TIMESTAMP
                     )
                 """))
-                
-            # 检查mcp_modules表中是否存在category_id字段
+            
+            # 2. 检查字段
             check_column_sql = text(
                 "PRAGMA table_info(mcp_modules)"
             )
             columns = db.execute(check_column_sql).fetchall()
             column_names = [col[1] for col in columns]  # 字段名在结果的第2列
             
+            # 3. 添加category_id字段
             if 'category_id' not in column_names:
-                # 添加category_id字段
                 em_logger.info("向mcp_modules表添加category_id字段")
                 db.execute(text(
                     "ALTER TABLE mcp_modules "
                     "ADD COLUMN category_id INTEGER"
                 ))
             
+            # 4. 添加code字段
+            if 'code' not in column_names:
+                em_logger.info("向mcp_modules表添加code字段")
+                db.execute(text(
+                    "ALTER TABLE mcp_modules "
+                    "ADD COLUMN code TEXT"
+                ))
+            
+            # 5. 添加config_schema字段
+            if 'config_schema' not in column_names:
+                em_logger.info("向mcp_modules表添加config_schema字段")
+                db.execute(text(
+                    "ALTER TABLE mcp_modules "
+                    "ADD COLUMN config_schema TEXT"
+                ))
+            
             db.commit()
-            em_logger.info("数据库迁移完成")
+            em_logger.info("内置迁移完成")
     except Exception as e:
-        em_logger.error(f"数据库迁移失败: {str(e)}")
+        em_logger.error(f"执行内置迁移失败: {str(e)}")
+        raise
 
 
 def init_category_data():
@@ -190,3 +244,257 @@ def auto_categorize_modules():
             db.rollback()
         except Exception:  # 不使用裸except
             pass 
+
+
+def init_demo_modules():
+    """初始化演示模块数据"""
+    try:
+        with get_db() as db:
+            # 检查是否已有模块
+            count_query = select(McpModule)
+            modules_count = len(db.execute(count_query).all())
+            
+            # 如果没有模块，添加演示模块
+            if modules_count == 0:
+                # 获取分类ID
+                cat_query = select(McpCategory).where(
+                    McpCategory.name == "开发者工具"
+                )
+                dev_cat = db.execute(cat_query).scalar_one_or_none()
+                dev_cat_id = dev_cat.id if dev_cat else None
+                
+                cat_query = select(McpCategory).where(
+                    McpCategory.name == "搜索工具"
+                )
+                search_cat = db.execute(cat_query).scalar_one_or_none()
+                search_cat_id = search_cat.id if search_cat else None
+                
+                # 添加演示模块1：计算工具
+                calc_module = McpModule(
+                    name="calculator",
+                    description="简单计算工具模块",
+                    module_path="repository.calculator",
+                    author="系统",
+                    version="1.0.0",
+                    tags="计算,数学,工具",
+                    icon="calculator",
+                    is_hosted=True,
+                    category_id=dev_cat_id,
+                    code="""
+\"\"\"
+计算工具模块，提供基本的数学计算功能
+\"\"\"
+from typing import List, Union, Dict, Any
+
+
+def add_numbers(numbers: List[int]) -> int:
+    \"\"\"
+    计算一组数字的和
+    
+    参数:
+        numbers: 需要求和的数字列表
+        
+    返回:
+        所有数字的和
+    \"\"\"
+    return sum(numbers)
+
+
+def multiply_numbers(numbers: List[int]) -> int:
+    \"\"\"
+    计算一组数字的乘积
+    
+    参数:
+        numbers: 需要相乘的数字列表
+        
+    返回:
+        所有数字的乘积
+    \"\"\"
+    if not numbers:
+        return 0
+    
+    result = 1
+    for num in numbers:
+        result *= num
+    return result
+
+
+def calculate_expression(expression: str) -> Dict[str, Any]:
+    \"\"\"
+    计算数学表达式
+    
+    参数:
+        expression: 数学表达式字符串，如 "1 + 2 * 3"
+        
+    返回:
+        计算结果和解析过程
+    \"\"\"
+    try:
+        # 安全的表达式评估
+        result = eval(expression, {"__builtins__": {}})
+        
+        return {
+            "expression": expression,
+            "result": result,
+            "success": True
+        }
+    except Exception as e:
+        return {
+            "expression": expression,
+            "error": str(e),
+            "success": False
+        }
+"""
+                )
+                db.add(calc_module)
+                
+                # 添加演示模块2：Web搜索工具
+                search_module = McpModule(
+                    name="web_search",
+                    description="网络搜索工具模块",
+                    module_path="repository.web_search",
+                    author="系统",
+                    version="1.0.0",
+                    tags="搜索,网络,工具",
+                    icon="search",
+                    is_hosted=True,
+                    category_id=search_cat_id,
+                    config_schema="""
+{
+    "api_key": {
+        "type": "string",
+        "description": "搜索API密钥",
+        "required": true
+    },
+    "search_engine": {
+        "type": "string",
+        "description": "搜索引擎类型",
+        "choices": ["google", "bing", "baidu"],
+        "default": "google"
+    },
+    "result_count": {
+        "type": "integer",
+        "description": "返回结果数量",
+        "default": 5,
+        "min": 1,
+        "max": 20
+    }
+}
+""",
+                    code="""
+\"\"\"
+网络搜索工具模块，提供基本的网络搜索功能
+\"\"\"
+from typing import List, Dict, Any, Optional
+
+# 配置模式，定义需要的配置字段
+CONFIG_SCHEMA = {
+    "api_key": {
+        "type": "string",
+        "description": "搜索API密钥",
+        "required": True
+    },
+    "search_engine": {
+        "type": "string",
+        "description": "搜索引擎类型",
+        "choices": ["google", "bing", "baidu"],
+        "default": "google"
+    },
+    "result_count": {
+        "type": "integer",
+        "description": "返回结果数量",
+        "default": 5,
+        "min": 1,
+        "max": 20
+    }
+}
+
+# 演示用配置，实际会被用户配置覆盖
+config = {
+    "api_key": "demo_key",
+    "search_engine": "google",
+    "result_count": 5
+}
+
+
+def search_web(
+    query: str, result_count: Optional[int] = None
+) -> Dict[str, Any]:
+    \"\"\"
+    在网络上搜索内容
+    
+    参数:
+        query: 搜索查询词
+        result_count: 返回结果数量，如果不指定则使用配置值
+        
+    返回:
+        搜索结果和元数据
+    \"\"\"
+    # 使用配置中的值或参数中的值
+    count = result_count or config.get("result_count", 5)
+    
+    # 演示用结果
+    demo_results = [
+        {
+            "title": f"搜索结果 1 - {query}",
+            "url": f"https://example.com/1?q={query}",
+            "snippet": f"这是关于 {query} 的第一个结果的摘要内容..."
+        },
+        {
+            "title": f"搜索结果 2 - {query}",
+            "url": f"https://example.com/2?q={query}",
+            "snippet": f"这是关于 {query} 的另一个相关页面..."
+        },
+        {
+            "title": f"详解{query}的完整指南",
+            "url": f"https://example.com/guide?topic={query}",
+            "snippet": f"{query}的完整教程和指南，包含详细的步骤和示例..."
+        },
+        {
+            "title": f"{query} 相关的最新新闻",
+            "url": f"https://example.com/news?topic={query}",
+            "snippet": f"最新的关于{query}的新闻报道和行业动态..."
+        },
+        {
+            "title": f"{query} 官方文档和资源",
+            "url": f"https://example.com/docs?subject={query}",
+            "snippet": f"官方提供的{query}文档、API参考和开发资源..."
+        }
+    ]
+    
+    # 根据请求数量返回结果
+    actual_results = demo_results[:min(count, len(demo_results))]
+    
+    return {
+        "query": query,
+        "results": actual_results,
+        "total_results": len(actual_results),
+        "search_engine": config.get("search_engine", "google"),
+        "success": True
+    }
+
+
+def get_trending_topics() -> List[str]:
+    \"\"\"
+    获取当前热门搜索话题
+    
+    返回:
+        热门话题列表
+    \"\"\"
+    # 演示用热门话题
+    return [
+        "人工智能最新进展",
+        "Web开发趋势2024",
+        "数据科学教程",
+        "Python编程技巧",
+        "云计算服务比较"
+    ]
+"""
+                )
+                db.add(search_module)
+                
+                db.commit()
+                em_logger.info("初始化了演示模块数据")
+    
+    except Exception as e:
+        em_logger.error(f"初始化演示模块失败: {str(e)}") 

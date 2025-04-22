@@ -193,38 +193,103 @@ def check_mcp_status() -> Dict[str, Any]:
 
 # 用于自动注册仓库中的函数为工具
 def register_repository_functions():
+    """注册仓库中的函数为工具"""
+    from app.models.engine import get_db
+    from app.models.modules.mcp_marketplace import McpModule
+    from sqlalchemy import select
+    import importlib
+    import inspect
+    import os
+    import sys
+    import tempfile
+    from types import ModuleType
+    
+    try:
+        # 从数据库获取所有模块
+        with get_db() as db:
+            query = select(McpModule).where(McpModule.is_hosted == True)
+            modules = db.execute(query).scalars().all()
+            
+            em_logger.info(f"从数据库加载模块: 找到{len(modules)}个模块")
+            
+            # 创建临时目录存放代码文件
+            temp_dir = tempfile.mkdtemp(prefix="mcp_modules_")
+            
+            # 添加临时目录到Python路径
+            if temp_dir not in sys.path:
+                sys.path.insert(0, temp_dir)
+            
+            for module in modules:
+                if not module.code:
+                    em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
+                    continue
+                
+                # 创建临时模块文件
+                module_filename = f"{module.name}.py"
+                module_path = os.path.join(temp_dir, module_filename)
+                
+                try:
+                    # 将代码写入临时文件
+                    with open(module_path, "w", encoding="utf-8") as f:
+                        f.write(module.code)
+                        
+                    # 动态导入模块
+                    module_name = module.name
+                    spec = importlib.util.spec_from_file_location(module_name, module_path)
+                    if spec and spec.loader:
+                        module_obj = importlib.util.module_from_spec(spec)
+                        spec.loader.exec_module(module_obj)
+                        em_logger.info(f"成功导入模块: {module_name}")
+                        
+                        # 遍历模块中的所有函数
+                        for name, func in inspect.getmembers(module_obj, inspect.isfunction):
+                            # 过滤出该模块定义的函数(而不是导入的函数)
+                            if func.__module__ == module_name:
+                                # 获取函数文档
+                                doc = inspect.getdoc(func)
+                                # 检查是否已经通过其他方式注册
+                                if not any(t['func'] == func for t in _manually_added_tools):
+                                    # 注册为工具
+                                    add_tool(func, name, doc)
+                except Exception as e:
+                    em_logger.error(f"导入模块 {module.name} 失败: {str(e)}")
+                    
+    except Exception as e:
+        em_logger.error(f"注册仓库函数失败: {str(e)}")
+    
+    # 兼容性保留：加载实体文件中的函数
     # 获取repository目录
     repo_dir = os.path.join(current_dir, 'repository')
+    if os.path.exists(repo_dir):
+        # 导入所有模块
+        for file in os.listdir(repo_dir):
+            if (file.endswith('.py') and
+                    file != '_init_.py' and
+                    file != '__init__.py' and
+                    file != 'mcp_base.py'):
+                module_name = file[:-3]  # 去掉.py后缀
+                module_path = f'repository.{module_name}'
+                try:
+                    module = importlib.import_module(module_path)
+                    em_logger.info(f"成功导入实体模块: {module_path}")
 
-    # 导入所有模块
-    for file in os.listdir(repo_dir):
-        if (file.endswith('.py') and
-                file != '_init_.py' and
-                file != '__init__.py' and
-                file != 'mcp_base.py'):
-            module_name = file[:-3]  # 去掉.py后缀
-            module_path = f'repository.{module_name}'
-            try:
-                module = importlib.import_module(module_path)
-                em_logger.info(f"成功导入模块: {module_path}")
+                    # 遍历模块中的所有函数
+                    for name, func in inspect.getmembers(
+                        module, inspect.isfunction
+                    ):
+                        # 过滤出该模块定义的函数(而不是导入的函数)
+                        if func.__module__ == module_path:
+                            # 获取函数文档
+                            doc = inspect.getdoc(func)
+                            # 检查是否已经通过其他方式注册
+                            if not any(
+                                t['func'] == func for t in _manually_added_tools
+                            ):
+                                # 注册为工具
+                                add_tool(func, name, doc)
 
-                # 遍历模块中的所有函数
-                for name, func in inspect.getmembers(
-                    module, inspect.isfunction
-                ):
-                    # 过滤出该模块定义的函数(而不是导入的函数)
-                    if func.__module__ == module_path:
-                        # 获取函数文档
-                        doc = inspect.getdoc(func)
-                        # 检查是否已经通过其他方式注册
-                        if not any(
-                            t['func'] == func for t in _manually_added_tools
-                        ):
-                            # 注册为工具
-                            add_tool(func, name, doc)
-
-            except Exception as e:
-                em_logger.error(f"导入模块 {module_path} 失败: {str(e)}")
+                except Exception as e:
+                    em_logger.error(f"导入实体模块 {module_path} 失败: {str(e)}")
 
 
 def stop_mcp_server():
