@@ -19,6 +19,8 @@ export interface McpModuleInfo {
   created_at: string;
   updated_at: string;
   tools_count: number;
+  category_id?: number;
+  category_name?: string;
 }
 
 /**
@@ -40,7 +42,7 @@ export interface McpToolInfo {
   name: string;
   function_name: string;
   description: string;
-  parameters: McpToolParameter[];
+  parameters: any;
   sample_usage?: string;
   created_at: string;
   updated_at: string;
@@ -49,12 +51,23 @@ export interface McpToolInfo {
 }
 
 /**
+ * MCP分组信息
+ */
+export interface McpCategoryInfo {
+  id: number;
+  name: string;
+  description?: string;
+  icon?: string;
+  order: number;
+  created_at: string;
+  updated_at: string;
+  modules_count: number;
+}
+
+/**
  * 扫描结果
  */
 export interface ScanResult {
-  total: number;
   new_modules: number;
-  updated_modules: number;
   new_tools: number;
-  updated_tools: number;
 } 

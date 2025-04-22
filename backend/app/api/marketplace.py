@@ -10,7 +10,12 @@ from app.services.marketplace.service import marketplace_service
 
 async def list_modules(request: Request):
     """获取所有MCP模块列表"""
-    result = marketplace_service.list_modules()
+    # 支持按分组查询
+    category_id = request.query_params.get("category_id")
+    if category_id:
+        category_id = int(category_id)
+    
+    result = marketplace_service.list_modules(category_id=category_id)
     return JSONResponse(result)
 
 
@@ -47,6 +52,59 @@ async def scan_repository_modules(request: Request):
     return JSONResponse(result)
 
 
+async def list_categories(request: Request):
+    """获取所有MCP分组列表"""
+    result = marketplace_service.list_categories()
+    return JSONResponse(result)
+
+
+async def get_category(request: Request):
+    """获取指定MCP分组详情"""
+    category_id = int(request.path_params["category_id"])
+    result = marketplace_service.get_category(category_id)
+    if result is None:
+        return JSONResponse({"detail": "分组不存在"}, status_code=404)
+    return JSONResponse(result)
+
+
+async def create_category(request: Request):
+    """创建MCP分组"""
+    data = await request.json()
+    result = marketplace_service.create_category(data)
+    return JSONResponse(result)
+
+
+async def update_category(request: Request):
+    """更新MCP分组"""
+    category_id = int(request.path_params["category_id"])
+    data = await request.json()
+    result = marketplace_service.update_category(category_id, data)
+    if result is None:
+        return JSONResponse({"detail": "分组不存在"}, status_code=404)
+    return JSONResponse(result)
+
+
+async def delete_category(request: Request):
+    """删除MCP分组"""
+    category_id = int(request.path_params["category_id"])
+    result = marketplace_service.delete_category(category_id)
+    if not result:
+        return JSONResponse({"detail": "分组不存在或无法删除"}, status_code=404)
+    return JSONResponse({"success": True})
+
+
+async def update_module_category(request: Request):
+    """更新模块所属分组"""
+    module_id = int(request.path_params["module_id"])
+    data = await request.json()
+    category_id = data.get("category_id")
+    
+    result = marketplace_service.update_module_category(module_id, category_id)
+    if result is None:
+        return JSONResponse({"detail": "模块不存在"}, status_code=404)
+    return JSONResponse(result)
+
+
 def get_router():
     """获取MCP广场路由"""
     routes = [
@@ -54,8 +112,17 @@ def get_router():
         Route("/modules/{module_id}", endpoint=get_module, methods=["GET"]),
         Route("/modules/{module_id}/tools", endpoint=get_module_tools, 
               methods=["GET"]),
+        Route("/modules/{module_id}/category", endpoint=update_module_category, 
+              methods=["PUT"]),
         Route("/tools/{tool_id}", endpoint=get_tool, methods=["GET"]),
-        Route("/scan", endpoint=scan_repository_modules, methods=["POST"])
+        Route("/scan", endpoint=scan_repository_modules, methods=["POST"]),
+        
+        # 分组相关路由
+        Route("/categories", endpoint=list_categories, methods=["GET"]),
+        Route("/categories", endpoint=create_category, methods=["POST"]),
+        Route("/categories/{category_id}", endpoint=get_category, methods=["GET"]),
+        Route("/categories/{category_id}", endpoint=update_category, methods=["PUT"]),
+        Route("/categories/{category_id}", endpoint=delete_category, methods=["DELETE"]),
     ]
     
     return routes

@@ -40,8 +40,22 @@ def init_db():
     from app.models.activities.activity import Activity  # noqa: F401
     # 导入MCP广场相关模型
     from app.models.modules.mcp_marketplace import (  # noqa: F401
-        McpModule, McpTool
+        McpModule, McpTool, McpCategory
     )
     
     # 创建所有表
-    Base.metadata.create_all(bind=engine) 
+    Base.metadata.create_all(bind=engine)
+    
+    # 初始化基础数据
+    from app.models.engine.init_data import (
+        migrate_database, init_category_data, auto_categorize_modules
+    )
+    
+    # 先执行数据库迁移，确保表结构正确
+    migrate_database()
+    
+    # 初始化分类数据
+    init_category_data()
+    
+    # 自动对现有模块进行分类
+    auto_categorize_modules() 

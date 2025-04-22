@@ -11,6 +11,35 @@ from app.models.engine import Base
 from app.core.utils import now_beijing
 
 
+class McpCategory(Base):
+    """MCP分组信息模型"""
+    __tablename__ = "mcp_categories"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String(100), index=True, unique=True)  # 分组名称
+    description = Column(Text, nullable=True)  # 分组描述
+    icon = Column(String(200), nullable=True)  # 分组图标
+    order = Column(Integer, default=0)  # 排序序号
+    created_at = Column(DateTime, default=now_beijing())
+    updated_at = Column(DateTime, default=now_beijing())
+    
+    # 关联该分组下的模块
+    modules = relationship("McpModule", back_populates="category")
+    
+    def to_dict(self):
+        """转换为字典格式"""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "description": self.description,
+            "icon": self.icon,
+            "order": self.order,
+            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
+            "modules_count": len(self.modules)
+        }
+
+
 class McpModule(Base):
     """MCP模块信息模型"""
     __tablename__ = "mcp_modules"
@@ -26,8 +55,12 @@ class McpModule(Base):
     icon = Column(String(200))  # 图标URL
     is_hosted = Column(Boolean, default=False)  # 是否为托管模块
     repository_url = Column(String(200))  # 代码仓库地址
+    category_id = Column(Integer, ForeignKey("mcp_categories.id"), nullable=True)  # 分组ID
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
+    
+    # 关联分组
+    category = relationship("McpCategory", back_populates="modules")
     
     # 关联该模块下的工具
     tools = relationship(
@@ -49,6 +82,8 @@ class McpModule(Base):
             "icon": self.icon,
             "is_hosted": self.is_hosted,
             "repository_url": self.repository_url,
+            "category_id": self.category_id,
+            "category_name": self.category.name if self.category else None,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
             "tools_count": len(self.tools)
