@@ -13,35 +13,40 @@ from .utils.logging import em_logger
 from .models.engine import init_db
 
 
+def init_app():
+    # 初始化数据库
+    init_db()
+
+
 def create_app() -> FastAPI:
-    app = FastAPI(
-        title=settings.API_TITLE,
-        version=settings.API_VERSION,
-        debug=settings.DEBUG
-    )
-    
-    # 配置CORS
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=settings.CORS_ORIGINS,
-        allow_credentials=settings.CORS_CREDENTIALS,
-        allow_methods=settings.CORS_METHODS,
-        allow_headers=settings.CORS_HEADERS,
-    )
-    
-    # 添加日志中间件
-    app.add_middleware(APILoggingMiddleware)
-    
-    # 注册路由
-    app = get_router(app)
-    
-    em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
-    
-    return app
+    # app = FastAPI(
+    #     title=settings.API_TITLE,
+    #     version=settings.API_VERSION,
+    #     debug=settings.DEBUG
+    # )
+
+    # # 配置CORS
+    # app.add_middleware(
+    #     CORSMiddleware,
+    #     allow_origins=settings.CORS_ORIGINS,
+    #     allow_credentials=settings.CORS_CREDENTIALS,
+    #     allow_methods=settings.CORS_METHODS,
+    #     allow_headers=settings.CORS_HEADERS,
+    # )
+
+    # # 添加日志中间件
+    # app.add_middleware(APILoggingMiddleware)
+
+    # # 注册路由
+    # app = get_router(app)
+
+    # em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
+
+    return None
 
 
 # 初始化数据库
-init_db()
+# init_db()
 
 # 创建应用实例
-app = create_app() 
+# app = create_app()

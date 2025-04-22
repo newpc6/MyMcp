@@ -1,11 +1,13 @@
 import os
 import sys
 import importlib
-import signal
 import time
 import inspect
 from typing import Callable, Dict, Any, Optional, List
 import threading
+
+import anyio
+import uvicorn
 
 # 导入配置和基础模块
 from ..core.config import settings
@@ -252,13 +254,46 @@ def get_mcp_server():
     main_thread = threading.main_thread()
     current_thread = threading.current_thread()
     global server_instance
-    em_logger.info("获取MCP变量，主线程：%s 当前线程：%s，是否是主线程：%s， 进程ID：%s， server_instance：%s",
-                   main_thread, current_thread, main_thread == current_thread, os.getpid(), server_instance is not None)
+    em_logger.info(
+        "获取MCP变量，主线程：%s 当前线程：%s，是否是主线程：%s， "
+        "进程ID：%s， server_instance：%s",
+        main_thread, current_thread, main_thread == current_thread,
+        os.getpid(), server_instance is not None
+    )
     return server_instance
 
 
+async def run_sse_async(app) -> None:
+    """Run the server using SSE transport."""
+    #  starlette_app = self.sse_app()
+    #  starlette_app.routes.extend(routes)
+    config = uvicorn.Config(
+        app,
+        host=settings.HOST,
+        port=settings.MCP_PORT,
+        log_level=settings.LOG_LEVEL.lower(),
+    )
+    server = uvicorn.Server(config)
+    await server.serve()
+
+
 def start_mcp_server():
+    """启动MCP服务器"""
     global server_instance
+
+    # 导入中间件和路由配置 - 在函数内部导入，避免循环导入
+    from app.middleware.logging_middleware import APILoggingMiddleware
+
+    # 打印当前环境信息以便调试
+    main_thread = threading.main_thread()
+    current_thread = threading.current_thread()
+    is_main_thread = main_thread == current_thread
+
+    em_logger.info(
+        f"启动MCP服务器 - 进程ID: {os.getpid()}, "
+        f"是否主线程: {is_main_thread}, "
+        f"线程ID: {current_thread.ident}"
+    )
 
     # 创建FastMCP实例
     server = FastMCP(
@@ -266,9 +301,6 @@ def start_mcp_server():
         host=settings.HOST,
         port=settings.MCP_PORT,
     )
-
-    # 保存服务器实例
-    server_instance = server
 
     # 创建SSE应用并配置中间件
     app = server.sse_app()
@@ -280,11 +312,25 @@ def start_mcp_server():
         allow_headers=settings.CORS_HEADERS,
     )
 
+    # 添加日志中间件
+    app.add_middleware(APILoggingMiddleware)
+
+    # 在实例创建后导入和注册路由，避免循环导入
+    from app.api.urls import get_router
+    # 使用Starlette Router对象代替FastAPI应用
+    get_router(app)
+    # 将路由器挂载到应用
+    # app.mount("/", router)
+    # app.routes.extend(router.routes)
+
+    # 保存服务器实例
+    server_instance = server
+    em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
+
     # 自动注册仓库中的函数
     register_repository_functions()
 
     # 启动服务器
-    # em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
     if threading.current_thread() is not threading.main_thread():
         import time
         time.sleep(0.5)  # 给其他线程一点时间来访问server_instance
@@ -292,7 +338,18 @@ def start_mcp_server():
     # 这是阻塞调用
     try:
         em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
-        server_instance.run(transport='sse')
+        # starlette_app = self.sse_app()
+        # app.routes.extend(routes)
+        # config = uvicorn.Config(
+        #     app,
+        #     host=settings.HOST,
+        #     port=settings.MCP_PORT,
+        #     log_level=settings.LOG_LEVEL.lower(),
+        # )
+        # server = uvicorn.Server(config)
+        # server.serve()
+        anyio.run(run_sse_async, app)
+        # server_instance.run(transport='sse', routes=app.routes)
     except Exception as e:
         em_logger.error(f"启动MCP服务器时出错: {str(e)}")
         # 出错时不要重置server_instance，保持其已初始化状态

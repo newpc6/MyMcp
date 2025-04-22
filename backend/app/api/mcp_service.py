@@ -1,21 +1,21 @@
-from fastapi import APIRouter, HTTPException, Depends
-from typing import List, Dict, Any, Optional
-from pydantic import BaseModel
+from starlette.routing import Route
+from starlette.responses import JSONResponse
+from starlette.requests import Request
+from pydantic import BaseModel, ValidationError
+import importlib
 
 from app.server.mcp_server import (
     add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools
 )
 from ..core.config import settings
 
-router = APIRouter()
-
 
 class ToolLoadRequest(BaseModel):
     """加载工具请求模型"""
     module_path: str  # 模块路径，例如 "repository.demo_tool"
     function_name: str  # 函数名称
-    tool_name: Optional[str] = None  # 可选的工具名称，默认使用函数名
-    description: Optional[str] = None  # 可选的工具描述
+    tool_name: str = None  # 可选的工具名称，默认使用函数名
+    description: str = None  # 可选的工具描述
 
 
 class ToolRemoveRequest(BaseModel):
@@ -28,95 +28,124 @@ class UpdateSSEUrlRequest(BaseModel):
     sse_url: str  # 新的SSE URL
 
 
-@router.post("/load_tool")
-async def load_tool(request: ToolLoadRequest):
+async def load_tool(request: Request):
     """动态加载工具"""
     try:
+        # 解析请求数据
+        data = await request.json()
+        request_data = ToolLoadRequest(**data)
+        
         # 动态导入模块
-        import importlib
         try:
-            module = importlib.import_module(request.module_path)
+            module = importlib.import_module(request_data.module_path)
         except ImportError as e:
-            raise HTTPException(status_code=404, detail=f"模块 {request.module_path} 导入失败: {str(e)}")
+            error_msg = f"模块 {request_data.module_path} 导入失败: {str(e)}"
+            return JSONResponse({"detail": error_msg}, status_code=404)
         
         # 获取函数
-        if not hasattr(module, request.function_name):
-            raise HTTPException(status_code=404, detail=f"函数 {request.function_name} 在模块 {request.module_path} 中不存在")
+        if not hasattr(module, request_data.function_name):
+            error_msg = (f"函数 {request_data.function_name} 在模块 "
+                        f"{request_data.module_path} 中不存在")
+            return JSONResponse({"detail": error_msg}, status_code=404)
         
-        func = getattr(module, request.function_name)
+        func = getattr(module, request_data.function_name)
         
         # 添加为工具
         add_tool(
             func=func,
-            name=request.tool_name,
-            doc=request.description
+            name=request_data.tool_name,
+            doc=request_data.description
         )
         
-        return {
-            "message": f"工具 {request.tool_name or request.function_name} 已成功加载",
-            "tool_name": request.tool_name or request.function_name
-        }
+        tool_name = request_data.tool_name or request_data.function_name
+        return JSONResponse({
+            "message": f"工具 {tool_name} 已成功加载",
+            "tool_name": tool_name
+        })
+    except ValidationError as e:
+        return JSONResponse({"detail": str(e)}, status_code=422)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"加载工具失败: {str(e)}")
+        return JSONResponse({"detail": f"加载工具失败: {str(e)}"}, status_code=500)
 
 
-@router.post("/unload_tool")
-async def unload_tool(request: ToolRemoveRequest):
+async def unload_tool(request: Request):
     """动态卸载工具"""
     try:
-        success = remove_tool(request.tool_name)
+        data = await request.json()
+        request_data = ToolRemoveRequest(**data)
+        
+        success = remove_tool(request_data.tool_name)
         if success:
-            return {"message": f"工具 {request.tool_name} 已成功卸载"}
+            return JSONResponse({"message": f"工具 {request_data.tool_name} 已成功卸载"})
         else:
-            raise HTTPException(status_code=404, detail=f"工具 {request.tool_name} 不存在或卸载失败")
+            error_msg = f"工具 {request_data.tool_name} 不存在或卸载失败"
+            return JSONResponse({"detail": error_msg}, status_code=404)
+    except ValidationError as e:
+        return JSONResponse({"detail": str(e)}, status_code=422)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"卸载工具失败: {str(e)}")
+        return JSONResponse({"detail": f"卸载工具失败: {str(e)}"}, status_code=500)
 
 
-@router.post("/restart")
-async def restart_service():
+async def restart_service(request: Request):
     """重启MCP服务"""
     try:
         success = restart_mcp_server()
         if success:
-            return {"message": "MCP服务已成功重启"}
+            return JSONResponse({"message": "MCP服务已成功重启"})
         else:
-            raise HTTPException(status_code=500, detail="MCP服务重启失败")
+            return JSONResponse({"detail": "MCP服务重启失败"}, status_code=500)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"重启服务失败: {str(e)}")
+        return JSONResponse({"detail": f"重启服务失败: {str(e)}"}, status_code=500)
 
 
-@router.get("/status")
-async def get_status():
+async def get_status(request: Request):
     """获取MCP服务状态"""
     try:
         status = check_mcp_status()
-        return status
+        return JSONResponse(status)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取服务状态失败: {str(e)}")
+        return JSONResponse({"detail": f"获取服务状态失败: {str(e)}"}, status_code=500)
 
 
-@router.get("/enabled_tools")
-async def enabled_tools():
+async def enabled_tools(request: Request):
     """获取当前启用的工具列表"""
     try:
-        tools = get_enabled_tools()
-        return {"enabled_tools": tools, "count": len(tools)}
+        tools_list = get_enabled_tools()
+        return JSONResponse({"enabled_tools": tools_list, "count": len(tools_list)})
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取启用工具列表失败: {str(e)}")
+        error_msg = f"获取启用工具列表失败: {str(e)}"
+        return JSONResponse({"detail": error_msg}, status_code=500)
 
 
-@router.put("/sse_url")
-async def update_sse_url(request: UpdateSSEUrlRequest):
+async def update_sse_url(request: Request):
     """更新MCP SSE URL"""
     try:
+        data = await request.json()
+        request_data = UpdateSSEUrlRequest(**data)
+        
         # 更新配置
-        settings.MCP_SSE_URL = request.sse_url
+        settings.MCP_SSE_URL = request_data.sse_url
         
         # 返回更新后的状态
-        return {
+        return JSONResponse({
             "message": "MCP SSE URL已更新",
             "new_sse_url": settings.MCP_SSE_URL
-        }
+        })
+    except ValidationError as e:
+        return JSONResponse({"detail": str(e)}, status_code=422)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"更新SSE URL失败: {str(e)}") 
+        return JSONResponse({"detail": f"更新SSE URL失败: {str(e)}"}, status_code=500)
+
+
+def get_router():
+    """获取MCP服务路由"""
+    routes = [
+        Route("/load_tool", endpoint=load_tool, methods=["POST"]),
+        Route("/unload_tool", endpoint=unload_tool, methods=["POST"]),
+        Route("/restart", endpoint=restart_service, methods=["POST"]),
+        Route("/status", endpoint=get_status, methods=["GET"]),
+        Route("/enabled_tools", endpoint=enabled_tools, methods=["GET"]),
+        Route("/sse_url", endpoint=update_sse_url, methods=["PUT"])
+    ]
+    
+    return routes 

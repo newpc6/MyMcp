@@ -4,11 +4,12 @@
 展示如何在API中使用日志功能
 """
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
-from app.utils.logging import em_logger
+from starlette.routing import Route
+from starlette.responses import JSONResponse
+from starlette.requests import Request
+from pydantic import BaseModel, ValidationError
 
-router = APIRouter()
+from app.utils.logging import em_logger
 
 
 class LogTestRequest(BaseModel):
@@ -17,43 +18,49 @@ class LogTestRequest(BaseModel):
     level: str = "info"
 
 
-@router.get("/log_test")
-async def log_test(message: str = "测试日志消息"):
+async def log_test(request: Request):
     """
     测试日志功能
     
     Args:
-        message: 要记录的日志消息
+        request: 请求对象，包含查询参数
         
     Returns:
-        dict: 操作结果
+        JSONResponse: 操作结果
     """
+    # 获取请求参数
+    params = request.query_params
+    message = params.get("message", "测试日志消息")
+    
     # 记录不同级别的日志
     em_logger.debug(f"调试日志: {message}")
     em_logger.info(f"信息日志: {message}")
     em_logger.warning(f"模块警告日志: {message}")
     
-    return {
+    return JSONResponse({
         "message": "日志已记录",
         "status": "success"
-    }
+    })
 
 
-@router.post("/log_level")
-async def log_level(request: LogTestRequest):
+async def log_level(request: Request):
     """
     测试不同级别的日志
     
     Args:
-        request: 日志请求
+        request: 请求对象
         
     Returns:
-        dict: 操作结果
+        JSONResponse: 操作结果
     """
-    level = request.level.lower()
-    message = request.message
-    
     try:
+        # 获取JSON请求体
+        data = await request.json()
+        request_data = LogTestRequest(**data)
+        
+        level = request_data.level.lower()
+        message = request_data.message
+        
         if level == "debug":
             em_logger.debug(message)
         elif level == "info":
@@ -65,12 +72,24 @@ async def log_level(request: LogTestRequest):
         elif level == "critical":
             em_logger.critical(message)
         else:
-            raise HTTPException(status_code=400, detail="无效的日志级别")
+            return JSONResponse({"detail": "无效的日志级别"}, status_code=400)
         
-        return {
+        return JSONResponse({
             "message": f"已记录{level}级别日志",
             "status": "success"
-        }
+        })
+    except ValidationError as e:
+        return JSONResponse({"detail": str(e)}, status_code=422)
     except Exception as e:
         em_logger.error(f"记录日志时出错: {str(e)}")
-        raise HTTPException(status_code=500, detail="记录日志时出错") 
+        return JSONResponse({"detail": "记录日志时出错"}, status_code=500)
+
+
+def get_router():
+    """获取日志路由"""
+    routes = [
+        Route("/log_test", endpoint=log_test, methods=["GET"]),
+        Route("/log_level", endpoint=log_level, methods=["POST"])
+    ]
+    
+    return routes 

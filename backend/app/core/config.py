@@ -35,7 +35,7 @@ class Settings:
         
         # 服务器设置
         self.HOST: str = config.get("server", {}).get("host", "0.0.0.0")
-        self.PORT: int = config.get("server", {}).get("port", 8003)
+        self.PORT: int = config.get("server", {}).get("port", 8002)
         self.DEBUG: bool = config.get("server", {}).get("debug", True)
         
         # MCP设置

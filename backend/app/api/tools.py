@@ -1,74 +1,98 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Dict, Any
+from starlette.routing import Route
+from starlette.responses import JSONResponse
+from starlette.requests import Request
 
 from ..models.tools.schemas import (
-    ToolInfo, ToolContent, ToolCreate, ToolUpdate
+    ToolCreate, ToolUpdate
 )
 from ..services.tools.service import ToolService
+from app.core.config import settings
 
-router = APIRouter()
 tool_service = ToolService()
 
 
-@router.get("", response_model=List[ToolInfo])
-async def get_tools():
+async def get_tools(request: Request):
     """获取所有工具信息"""
-    return tool_service.get_all_tools()
+    result = tool_service.get_all_tools()
+    return JSONResponse(result)
 
 
-@router.get("/list", response_model=List[Any])
-async def list_tools():
+async def list_tools(request: Request):
     """获取所有工具信息列表"""
-    return tool_service.list_tools()
+    result = tool_service.list_tools()
+    return JSONResponse(result)
 
 
-@router.get("/info/{tool_name}", response_model=Dict[str, Any])
-async def get_tool_info(tool_name: str):
+async def get_tool_info(request: Request):
     """获取特定工具信息"""
+    tool_name = request.path_params["tool_name"]
     try:
-        return tool_service.get_tool_info(tool_name)
+        result = tool_service.get_tool_info(tool_name)
+        return JSONResponse(result)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        return JSONResponse({"detail": str(e)}, status_code=404)
 
 
-@router.get("/{tool_path:path}", response_model=ToolContent)
-async def get_tool(tool_path: str):
+async def get_tool(request: Request):
     """获取工具内容"""
+    tool_path = request.path_params["tool_path"]
     try:
-        return tool_service.get_tool_content(tool_path)
+        result = tool_service.get_tool_content(tool_path)
+        return JSONResponse(result)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="工具未找到")
+        return JSONResponse({"detail": "工具未找到"}, status_code=404)
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限访问该工具")
+        return JSONResponse({"detail": "没有权限访问该工具"}, status_code=403)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"获取工具内容失败: {str(e)}")
+        error_msg = f"获取工具内容失败: {str(e)}"
+        return JSONResponse({"detail": error_msg}, status_code=500)
 
 
-@router.put("/{tool_path:path}")
-async def update_tool(tool_path: str, tool_update: ToolUpdate):
+async def update_tool(request: Request):
     """更新工具内容"""
+    tool_path = request.path_params["tool_path"]
     try:
+        data = await request.json()
+        tool_update = ToolUpdate(**data)
+        
         tool_service.update_tool(tool_path, tool_update.content)
-        return {"message": "Tool updated successfully"}
+        return JSONResponse({"message": "Tool updated successfully"})
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Tool not found")
+        return JSONResponse({"detail": "Tool not found"}, status_code=404)
 
 
-@router.post("")
-async def create_tool(tool_create: ToolCreate):
+async def create_tool(request: Request):
     """创建新工具"""
     try:
+        data = await request.json()
+        tool_create = ToolCreate(**data)
+        
         tool_service.create_tool(tool_create.path, tool_create.content)
-        return {"message": "Tool created successfully"}
+        return JSONResponse({"message": "Tool created successfully"})
     except FileExistsError:
-        raise HTTPException(status_code=409, detail="Tool already exists")
+        return JSONResponse({"detail": "Tool already exists"}, status_code=409)
 
 
-@router.delete("/{tool_path:path}")
-async def delete_tool(tool_path: str):
+async def delete_tool(request: Request):
     """删除工具"""
+    tool_path = request.path_params["tool_path"]
     try:
         tool_service.delete_tool(tool_path)
-        return {"message": "Tool deleted successfully"}
+        return JSONResponse({"message": "Tool deleted successfully"})
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Tool not found") 
+        return JSONResponse({"detail": "Tool not found"}, status_code=404)
+
+
+def get_router():
+    """获取工具路由"""
+    routes = [
+        Route("/", endpoint=get_tools, methods=["GET"]),
+        Route("/list", endpoint=list_tools, methods=["GET"]),
+        Route("/info/{tool_name}", endpoint=get_tool_info, methods=["GET"]),
+        Route("/{tool_path:path}", endpoint=get_tool, methods=["GET"]),
+        Route("/{tool_path:path}", endpoint=update_tool, methods=["PUT"]),
+        Route("/", endpoint=create_tool, methods=["POST"]),
+        Route("/{tool_path:path}", endpoint=delete_tool, methods=["DELETE"])
+    ]
+    
+    return routes 

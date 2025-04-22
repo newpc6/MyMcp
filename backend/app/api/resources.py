@@ -1,79 +1,102 @@
-from fastapi import APIRouter, HTTPException
-from typing import List, Dict, Any
+from starlette.routing import Route
+from starlette.responses import JSONResponse
+from starlette.requests import Request
 
-from ..models.resources.schemas import (
-    ResourceInfo, ResourceContent, ResourceCreate, ResourceUpdate
-)
+from ..models.resources.schemas import ResourceCreate, ResourceUpdate
 from ..services.resources.service import ResourceService
 
-router = APIRouter()
 resource_service = ResourceService()
 
 
-@router.get("", response_model=List[ResourceInfo])
-async def get_resources():
+async def get_resources(request: Request):
     """获取所有资源信息"""
-    return resource_service.get_all_resources()
+    result = resource_service.get_all_resources()
+    return JSONResponse(result)
 
 
-@router.get("/list", response_model=List[str])
-async def list_resources():
+async def list_resources(request: Request):
     """获取所有资源路径列表"""
-    return resource_service.list_resources()
+    result = resource_service.list_resources()
+    return JSONResponse(result)
 
 
-@router.get("/info/{resource_path:path}", response_model=Dict[str, Any])
-async def get_resource_info(resource_path: str):
+async def get_resource_info(request: Request):
     """获取特定资源信息"""
+    resource_path = request.path_params["resource_path"]
     try:
-        return resource_service.get_resource_info(resource_path)
+        result = resource_service.get_resource_info(resource_path)
+        return JSONResponse(result)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        return JSONResponse({"detail": str(e)}, status_code=404)
 
 
-@router.get("/{resource_path:path}", response_model=ResourceContent)
-async def get_resource(resource_path: str):
+async def get_resource(request: Request):
     """获取资源内容"""
+    resource_path = request.path_params["resource_path"]
     try:
-        return resource_service.get_resource_content(resource_path)
+        result = resource_service.get_resource_content(resource_path)
+        return JSONResponse(result)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Resource not found")
+        return JSONResponse({"detail": "Resource not found"}, status_code=404)
 
 
-@router.put("/{resource_path:path}")
-async def update_resource(
-    resource_path: str, 
-    resource_update: ResourceUpdate
-):
+async def update_resource(request: Request):
     """更新资源内容"""
+    resource_path = request.path_params["resource_path"]
     try:
+        data = await request.json()
+        resource_update = ResourceUpdate(**data)
+        
         resource_service.update_resource(
             resource_path, 
             resource_update.content
         )
-        return {"message": "Resource updated successfully"}
+        return JSONResponse({"message": "Resource updated successfully"})
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Resource not found")
+        return JSONResponse({"detail": "Resource not found"}, status_code=404)
 
 
-@router.post("")
-async def create_resource(resource_create: ResourceCreate):
+async def create_resource(request: Request):
     """创建新资源"""
     try:
+        data = await request.json()
+        resource_create = ResourceCreate(**data)
+        
         resource_service.create_resource(
             resource_create.path, 
             resource_create.content
         )
-        return {"message": "Resource created successfully"}
+        return JSONResponse({"message": "Resource created successfully"})
     except FileExistsError:
-        raise HTTPException(status_code=409, detail="Resource already exists")
+        return JSONResponse(
+            {"detail": "Resource already exists"}, status_code=409
+        )
 
 
-@router.delete("/{resource_path:path}")
-async def delete_resource(resource_path: str):
+async def delete_resource(request: Request):
     """删除资源"""
+    resource_path = request.path_params["resource_path"]
     try:
         resource_service.delete_resource(resource_path)
-        return {"message": "Resource deleted successfully"}
+        return JSONResponse({"message": "Resource deleted successfully"})
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="Resource not found") 
+        return JSONResponse({"detail": "Resource not found"}, status_code=404)
+
+
+def get_router():
+    """获取资源路由"""
+    routes = [
+        Route("/", endpoint=get_resources, methods=["GET"]),
+        Route("/list", endpoint=list_resources, methods=["GET"]),
+        Route("/info/{resource_path:path}", endpoint=get_resource_info, 
+              methods=["GET"]),
+        Route("/{resource_path:path}", endpoint=get_resource, 
+              methods=["GET"]),
+        Route("/{resource_path:path}", endpoint=update_resource, 
+              methods=["PUT"]),
+        Route("/", endpoint=create_resource, methods=["POST"]),
+        Route("/{resource_path:path}", endpoint=delete_resource, 
+              methods=["DELETE"])
+    ]
+    
+    return routes 
