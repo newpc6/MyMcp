@@ -83,39 +83,32 @@
             <el-tab-pane label="工具测试" name="tool-test">
               <div class="flex">
                 <!-- 左侧工具列表 -->
-                <div class="w-1/3 pr-4 border-r">
+                <div class="mcp-tool-list border-r">
                   <div class="mb-4">
-                    <el-input
-                      v-model="toolSearchQuery"
-                      placeholder="搜索工具名称"
-                      prefix-icon="Search"
-                      clearable
-                    />
+                    <el-input v-model="toolSearchQuery" placeholder="搜索工具名称" prefix-icon="Search" clearable />
                   </div>
-                  
+
                   <div class="tools-list max-h-[600px] overflow-y-auto pr-2">
-                    <div 
-                      v-for="tool in filteredTools" 
-                      :key="tool.function_name"
-                      class="tool-card mb-3 cursor-pointer"
-                      :class="{'tool-card-active': currentTool && currentTool.function_name === tool.function_name}"
-                      @click="selectTool(tool)"
-                    >
-                      <h3 class="text-lg font-bold mb-1">{{ tool.name }}</h3>
-                      <p class="text-gray-500 text-sm whitespace-pre-line line-clamp-2">{{ tool.description }}</p>
+                    <div v-for="tool in filteredTools" :key="tool.function_name" class="tool-card mb-3 cursor-pointer"
+                      :class="{ 'tool-card-active': currentTool && currentTool.function_name === tool.function_name }"
+                      @click="selectTool(tool)">
+                      <el-text truncated>
+                        <h3 class="text-lg font-bold mb-1">{{ tool.name }}</h3>
+                      </el-text>
+                      <el-text truncated>{{ tool.description }}</el-text>
                     </div>
-                    
+
                     <el-empty v-if="filteredTools.length === 0" description="没有找到工具" />
                   </div>
                 </div>
-                
+
                 <!-- 右侧工具详情和测试区域 -->
                 <div class="w-2/3 pl-4">
                   <div v-if="currentTool" class="tool-test-area">
                     <div class="mb-6">
                       <h2 class="text-xl font-bold mb-2 text-primary">{{ currentTool.name }}</h2>
                       <p class="text-gray-600 mb-4 whitespace-pre-line">{{ currentTool.description }}</p>
-                      
+
                       <!-- 参数输入表单 -->
                       <el-card shadow="hover" class="mb-4">
                         <template #header>
@@ -123,17 +116,14 @@
                             <span class="font-medium">参数设置</span>
                           </div>
                         </template>
-                        
+
                         <el-form :model="testParams" label-position="top">
                           <el-form-item v-for="param in getToolParams()" :key="param.name"
                             :label="param.name + (param.required ? ' (必填)' : '')">
                             <div class="text-xs text-gray-500 mb-1">{{ param.type }}</div>
-                            <el-input 
-                              v-model="testParams[param.name]" 
-                              :placeholder="'请输入' + param.name" 
-                            />
+                            <el-input v-model="testParams[param.name]" :placeholder="'请输入' + param.name" />
                           </el-form-item>
-                          
+
                           <el-form-item>
                             <el-button type="primary" @click="testTool" :loading="testing" class="w-full">
                               执行测试
@@ -141,7 +131,7 @@
                           </el-form-item>
                         </el-form>
                       </el-card>
-                      
+
                       <!-- 测试结果 -->
                       <el-card v-if="testResult || testError" shadow="hover" class="result-card">
                         <template #header>
@@ -149,7 +139,7 @@
                             <span class="font-medium">测试结果</span>
                           </div>
                         </template>
-                        
+
                         <el-alert v-if="testError" :title="testError" type="error" show-icon class="mb-3" />
                         <div v-else class="bg-gray-50 p-4 rounded">
                           <pre class="whitespace-pre-wrap result-content">{{ formatResult(testResult) }}</pre>
@@ -157,7 +147,7 @@
                       </el-card>
                     </div>
                   </div>
-                  
+
                   <el-empty v-else description="请选择要测试的工具" />
                 </div>
               </div>
@@ -233,10 +223,10 @@ const toolSearchQuery = ref('');
 // 过滤工具列表
 const filteredTools = computed(() => {
   if (!toolSearchQuery.value) return moduleTools.value;
-  
+
   const query = toolSearchQuery.value.toLowerCase();
-  return moduleTools.value.filter(tool => 
-    tool.name.toLowerCase().includes(query) || 
+  return moduleTools.value.filter(tool =>
+    tool.name.toLowerCase().includes(query) ||
     tool.description.toLowerCase().includes(query)
   );
 });
@@ -294,7 +284,7 @@ async function testTool() {
     // 由于新的工具没有ID，我们需要使用模块ID和函数名来调用
     const toolName = currentTool.value!.function_name;
     const moduleId = moduleInfo.value.id;
-    
+
     // 构建调用参数对象
     const params: Record<string, any> = {};
     for (const param of getToolParams()) {
@@ -308,7 +298,7 @@ async function testTool() {
             // 尝试解析为JSON数组
             if (value.trim().startsWith('[') && value.trim().endsWith(']')) {
               value = JSON.parse(value);
-            } 
+            }
             // 否则按逗号分隔处理
             else {
               value = value.split(',').map(item => {
@@ -335,14 +325,14 @@ async function testTool() {
           console.warn(`无法解析参数 ${param.name} 的值`, e);
           // 如果解析失败，使用原始值
         }
-        
+
         params[param.name] = value;
       }
     }
-    
+
     // 直接使用现有API，通过endpoint修改为调用新的API
     const response = await httpClient.post(
-      `/api/execute/module/${moduleId}/function/${toolName}`, 
+      `/api/execute/module/${moduleId}/function/${toolName}`,
       params
     );
     testResult.value = response.data.result;
@@ -365,17 +355,17 @@ function formatResult(result: any) {
 // 格式化类型信息
 function formatType(type: string): string {
   if (!type) return 'unknown';
-  
+
   // 简化类型信息，移除<class>前缀
   if (type.startsWith('<class ')) {
     return type.replace(/<class '(.+?)'>/, '$1');
   }
-  
+
   // 简化typing类型
   if (type.startsWith('typing.')) {
     return type.replace('typing.', '');
   }
-  
+
   return type;
 }
 
@@ -628,5 +618,11 @@ onMounted(() => {
 .result-content {
   max-height: 300px;
   overflow-y: auto;
+}
+
+.mcp-tool-list {
+  width: 420px;
+  /* max-height: 600px; */
+  /* overflow-y: auto; */
 }
 </style>
