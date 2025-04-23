@@ -47,36 +47,6 @@
                 <VueMarkdownRender :source="moduleInfo.markdown_docs" class="markdown-body" />
               </div>
 
-              <div v-if="moduleTools.length > 0">
-                <h3 class="text-lg font-medium mb-4">工具列表</h3>
-                <el-table :data="moduleTools" border>
-                  <el-table-column prop="name" label="工具名称" />
-                  <el-table-column label="描述" show-overflow-tooltip>
-                    <template #default="scope">
-                      <div class="whitespace-pre-line">{{ scope.row.description }}</div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="参数" width="200">
-                    <template #default="scope">
-                      <div v-for="param in scope.row.parameters" :key="param.name" class="mb-1">
-                        <strong>{{ param.name }}</strong>
-                        <span class="text-xs ml-1">({{ param.type }})</span>
-                        <span v-if="param.required" class="text-red-600 text-xs ml-1">*</span>
-                      </div>
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="返回类型" width="150" show-overflow-tooltip>
-                    <template #default="scope">
-                      {{ formatType(scope.row.return_type) }}
-                    </template>
-                  </el-table-column>
-                  <el-table-column label="操作" width="120">
-                    <template #default="scope">
-                      <el-button type="primary" size="small" @click="switchToToolTest(scope.row)">测试</el-button>
-                    </template>
-                  </el-table-column>
-                </el-table>
-              </div>
               <el-empty v-else description="没有找到工具" />
             </el-tab-pane>
 
@@ -103,14 +73,14 @@
                 </div>
 
                 <!-- 右侧工具详情和测试区域 -->
-                <div class="w-2/3 pl-4">
+                <div class="tool-test-content">
                   <div v-if="currentTool" class="tool-test-area">
                     <div class="mb-6">
                       <h2 class="text-xl font-bold mb-2 text-primary">{{ currentTool.name }}</h2>
                       <p class="text-gray-600 mb-4 whitespace-pre-line">{{ currentTool.description }}</p>
 
                       <!-- 参数输入表单 -->
-                      <el-card shadow="hover" class="mb-4">
+                      <el-card shadow="hover" class="mb-4 tool-params-card">
                         <template #header>
                           <div class="flex justify-between items-center">
                             <span class="font-medium">参数设置</span>
@@ -125,7 +95,7 @@
                           </el-form-item>
 
                           <el-form-item>
-                            <el-button type="primary" @click="testTool" :loading="testing" class="w-full">
+                            <el-button type="primary" @click="testTool" :loading="testing" class="w-full test-button">
                               执行测试
                             </el-button>
                           </el-form-item>
@@ -141,7 +111,7 @@
                         </template>
 
                         <el-alert v-if="testError" :title="testError" type="error" show-icon class="mb-3" />
-                        <div v-else class="bg-gray-50 p-4 rounded">
+                        <div v-else class="result-content-wrapper">
                           <pre class="whitespace-pre-wrap result-content">{{ formatResult(testResult) }}</pre>
                         </div>
                       </el-card>
@@ -169,7 +139,7 @@
                     </div>
                   </div>
                   <Codemirror v-model="codeContent" :extensions="extensions" :style="{ height: '500px' }"
-                    :indent-with-tab="true" :tab-size="4" class="code-editor" />
+                    :indent-with-tab="true" :tab-size="4" class="code-editor" @ready="handleEditorCreated" />
                 </div>
               </div>
             </el-tab-pane>
@@ -193,6 +163,8 @@ import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
 import VueMarkdownRender from 'vue-markdown-render';
+import { keymap } from '@codemirror/view';
+import { defaultKeymap } from '@codemirror/commands';
 
 const route = useRoute();
 const router = useRouter();
@@ -215,7 +187,11 @@ const hasCodeChanged = computed(() => {
 });
 
 // CodeMirror 扩展配置
-const extensions = [python(), oneDark];
+const extensions = [
+  python(), 
+  oneDark,
+  keymap.of(defaultKeymap),
+];
 
 // 添加常量和方法
 const toolSearchQuery = ref('');
@@ -424,6 +400,12 @@ async function saveModuleCode() {
   }
 }
 
+// 在代码编辑页面中添加编辑器扩展配置
+function handleEditorCreated(editor: any) {
+  // 这里可以添加编辑器创建后的回调处理
+  console.log('编辑器已创建');
+}
+
 // 页面加载时获取模块详情
 onMounted(() => {
   loadModuleInfo();
@@ -613,6 +595,11 @@ onMounted(() => {
 .result-card {
   max-height: 400px;
   overflow-y: auto;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
 }
 
 .result-content {
@@ -620,9 +607,62 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+.result-content-wrapper {
+  background-color: rgba(246, 248, 250, 0.8);
+  border-radius: 8px;
+  padding: 12px;
+}
+
 .mcp-tool-list {
-  width: 420px;
-  /* max-height: 600px; */
-  /* overflow-y: auto; */
+  width: 400px;
+  padding-right: 20px;
+}
+
+.tool-test-content {
+  flex: 1;
+  padding-left: 24px;
+}
+
+.tool-params-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #fff, #f9fdff);
+}
+
+.tool-test-area {
+  padding: 8px;
+}
+
+:deep(.el-card) {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+:deep(.el-button.test-button) {
+  border-radius: 8px;
+  background: linear-gradient(90deg, #409eff, #79bbff);
+  border: none;
+  height: 40px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
+}
+
+:deep(.el-button.test-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
+  background: linear-gradient(90deg, #409eff, #a0cfff);
+}
+
+:deep(.el-input__inner) {
+  border-radius: 8px;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
 }
 </style>
