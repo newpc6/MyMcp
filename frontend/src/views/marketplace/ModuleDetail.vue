@@ -81,34 +81,86 @@
             </el-tab-pane>
 
             <el-tab-pane label="工具测试" name="tool-test">
-              <div v-if="currentTool" class="tool-test-panel">
-                <div class="mb-4">
-                  <h3 class="text-lg font-medium mb-2">{{ currentTool.name }}</h3>
-                  <p class="text-gray-600 mb-4">{{ currentTool.description }}</p>
-
-                  <!-- 参数输入表单 -->
-                  <el-form :model="testParams" label-position="top">
-                    <el-form-item v-for="param in getToolParams()" :key="param.name"
-                      :label="param.name + (param.required ? ' (必填)' : '')">
-                      <el-input v-model="testParams[param.name]" :placeholder="param.type" />
-                    </el-form-item>
-
-                    <el-form-item>
-                      <el-button type="primary" @click="testTool" :loading="testing">执行测试</el-button>
-                    </el-form-item>
-                  </el-form>
-                </div>
-
-                <!-- 测试结果 -->
-                <div v-if="testResult" class="mt-4">
-                  <h4 class="font-medium mb-2">测试结果</h4>
-                  <el-alert v-if="testError" :title="testError" type="error" show-icon class="mb-3" />
-                  <div v-else class="bg-gray-50 p-4 rounded">
-                    <pre class="whitespace-pre-wrap">{{ formatResult(testResult) }}</pre>
+              <div class="flex">
+                <!-- 左侧工具列表 -->
+                <div class="w-1/3 pr-4 border-r">
+                  <div class="mb-4">
+                    <el-input
+                      v-model="toolSearchQuery"
+                      placeholder="搜索工具名称"
+                      prefix-icon="Search"
+                      clearable
+                    />
+                  </div>
+                  
+                  <div class="tools-list max-h-[600px] overflow-y-auto pr-2">
+                    <div 
+                      v-for="tool in filteredTools" 
+                      :key="tool.function_name"
+                      class="tool-card mb-3 cursor-pointer"
+                      :class="{'tool-card-active': currentTool && currentTool.function_name === tool.function_name}"
+                      @click="selectTool(tool)"
+                    >
+                      <h3 class="text-lg font-bold mb-1">{{ tool.name }}</h3>
+                      <p class="text-gray-500 text-sm whitespace-pre-line line-clamp-2">{{ tool.description }}</p>
+                    </div>
+                    
+                    <el-empty v-if="filteredTools.length === 0" description="没有找到工具" />
                   </div>
                 </div>
+                
+                <!-- 右侧工具详情和测试区域 -->
+                <div class="w-2/3 pl-4">
+                  <div v-if="currentTool" class="tool-test-area">
+                    <div class="mb-6">
+                      <h2 class="text-xl font-bold mb-2 text-primary">{{ currentTool.name }}</h2>
+                      <p class="text-gray-600 mb-4 whitespace-pre-line">{{ currentTool.description }}</p>
+                      
+                      <!-- 参数输入表单 -->
+                      <el-card shadow="hover" class="mb-4">
+                        <template #header>
+                          <div class="flex justify-between items-center">
+                            <span class="font-medium">参数设置</span>
+                          </div>
+                        </template>
+                        
+                        <el-form :model="testParams" label-position="top">
+                          <el-form-item v-for="param in getToolParams()" :key="param.name"
+                            :label="param.name + (param.required ? ' (必填)' : '')">
+                            <div class="text-xs text-gray-500 mb-1">{{ param.type }}</div>
+                            <el-input 
+                              v-model="testParams[param.name]" 
+                              :placeholder="'请输入' + param.name" 
+                            />
+                          </el-form-item>
+                          
+                          <el-form-item>
+                            <el-button type="primary" @click="testTool" :loading="testing" class="w-full">
+                              执行测试
+                            </el-button>
+                          </el-form-item>
+                        </el-form>
+                      </el-card>
+                      
+                      <!-- 测试结果 -->
+                      <el-card v-if="testResult || testError" shadow="hover" class="result-card">
+                        <template #header>
+                          <div class="flex justify-between items-center">
+                            <span class="font-medium">测试结果</span>
+                          </div>
+                        </template>
+                        
+                        <el-alert v-if="testError" :title="testError" type="error" show-icon class="mb-3" />
+                        <div v-else class="bg-gray-50 p-4 rounded">
+                          <pre class="whitespace-pre-wrap result-content">{{ formatResult(testResult) }}</pre>
+                        </div>
+                      </el-card>
+                    </div>
+                  </div>
+                  
+                  <el-empty v-else description="请选择要测试的工具" />
+                </div>
               </div>
-              <el-empty v-else description="请选择要测试的工具" />
             </el-tab-pane>
 
             <el-tab-pane label="代码查看/编辑" name="code-edit">
@@ -143,7 +195,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElNotification } from 'element-plus';
 import {
-  getModule, getModuleTools, testModuleTool, updateModule, testModuleFunction
+  getModule, getModuleTools, testModuleTool, updateModule
 } from '../../api/marketplace';
 import httpClient from '../../utils/http-client';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter } from '../../types/marketplace';
@@ -175,12 +227,39 @@ const hasCodeChanged = computed(() => {
 // CodeMirror 扩展配置
 const extensions = [python(), oneDark];
 
+// 添加常量和方法
+const toolSearchQuery = ref('');
+
+// 过滤工具列表
+const filteredTools = computed(() => {
+  if (!toolSearchQuery.value) return moduleTools.value;
+  
+  const query = toolSearchQuery.value.toLowerCase();
+  return moduleTools.value.filter(tool => 
+    tool.name.toLowerCase().includes(query) || 
+    tool.description.toLowerCase().includes(query)
+  );
+});
+
+// 选择工具
+function selectTool(tool: McpToolInfo) {
+  currentTool.value = tool;
+  testParams.value = {};
+  testResult.value = null;
+  testError.value = null;
+}
+
 // 加载模块详情
 async function loadModuleInfo() {
   loading.value = true;
   try {
     moduleInfo.value = await getModule(moduleId.value);
     moduleTools.value = await getModuleTools(moduleId.value);
+
+    // 默认选中第一个工具
+    if (moduleTools.value.length > 0) {
+      selectTool(moduleTools.value[0]);
+    }
 
     // 如果模块有代码，初始化编辑器内容
     if (moduleInfo.value.code) {
@@ -498,5 +577,56 @@ onMounted(() => {
   margin: 24px 0;
   background-color: #e1e4e8;
   border: 0;
+}
+
+.tool-card {
+  padding: 12px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  border: 1px solid #ebeef5;
+  overflow: hidden;
+  position: relative;
+}
+
+.tool-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(240, 249, 255, 0.9));
+}
+
+.tool-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: linear-gradient(to bottom, #409eff, #79bbff);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.tool-card:hover::before,
+.tool-card-active::before {
+  opacity: 1;
+}
+
+.tool-card-active {
+  background: linear-gradient(135deg, rgba(240, 249, 255, 0.9), rgba(230, 247, 255, 0.9));
+  border-color: #b3d8ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.result-card {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.result-content {
+  max-height: 300px;
+  overflow-y: auto;
 }
 </style>
