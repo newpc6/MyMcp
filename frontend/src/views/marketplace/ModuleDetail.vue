@@ -47,30 +47,40 @@
                 <VueMarkdownRender :source="moduleInfo.markdown_docs" class="markdown-body" />
               </div>
 
-              <!-- <div v-if="moduleTools.length > 0">
+              <div v-if="moduleTools.length > 0">
                 <h3 class="text-lg font-medium mb-4">工具列表</h3>
                 <el-table :data="moduleTools" border>
                   <el-table-column prop="name" label="工具名称" />
-                  <el-table-column prop="description" label="描述" show-overflow-tooltip />
-                  <el-table-column prop="function_name" label="函数名" width="150" />
-                  <el-table-column label="状态" width="100">
+                  <el-table-column label="描述" show-overflow-tooltip>
                     <template #default="scope">
-                      <el-tag :type="scope.row.is_enabled ? 'success' : 'danger'">
-                        {{ scope.row.is_enabled ? '已启用' : '已禁用' }}
-                      </el-tag>
+                      <div class="whitespace-pre-line">{{ scope.row.description }}</div>
                     </template>
                   </el-table-column>
-                  <el-table-column label="操作" width="150">
+                  <el-table-column label="参数" width="200">
+                    <template #default="scope">
+                      <div v-for="param in scope.row.parameters" :key="param.name" class="mb-1">
+                        <strong>{{ param.name }}</strong>
+                        <span class="text-xs ml-1">({{ param.type }})</span>
+                        <span v-if="param.required" class="text-red-600 text-xs ml-1">*</span>
+                      </div>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="返回类型" width="150" show-overflow-tooltip>
+                    <template #default="scope">
+                      {{ formatType(scope.row.return_type) }}
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="120">
                     <template #default="scope">
                       <el-button type="primary" size="small" @click="switchToToolTest(scope.row)">测试</el-button>
                     </template>
                   </el-table-column>
                 </el-table>
               </div>
-              <el-empty v-else description="没有找到工具" /> -->
+              <el-empty v-else description="没有找到工具" />
             </el-tab-pane>
 
-            <el-tab-pane label="工具测试" name=" -->tool-test">
+            <el-tab-pane label="工具测试" name="tool-test">
               <div v-if="currentTool" class="tool-test-panel">
                 <div class="mb-4">
                   <h3 class="text-lg font-medium mb-2">{{ currentTool.name }}</h3>
@@ -133,8 +143,9 @@ import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElNotification } from 'element-plus';
 import {
-  getModule, getModuleTools, testModuleTool, updateModule
+  getModule, getModuleTools, testModuleTool, updateModule, testModuleFunction
 } from '../../api/marketplace';
+import httpClient from '../../utils/http-client';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter } from '../../types/marketplace';
 import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
@@ -201,8 +212,61 @@ async function testTool() {
   testing.value = true;
 
   try {
-    const result = await testModuleTool(currentTool.value!.id, testParams.value);
-    testResult.value = result;
+    // 由于新的工具没有ID，我们需要使用模块ID和函数名来调用
+    const toolName = currentTool.value!.function_name;
+    const moduleId = moduleInfo.value.id;
+    
+    // 构建调用参数对象
+    const params: Record<string, any> = {};
+    for (const param of getToolParams()) {
+      // 如果有参数值，则添加到请求中
+      if (testParams.value[param.name] !== undefined && testParams.value[param.name] !== '') {
+        // 尝试将字符串转换为适当的类型
+        let value = testParams.value[param.name];
+        try {
+          // 如果参数是数组类型且提供的是字符串，尝试解析成数组
+          if ((param.type.includes('List') || param.type.includes('list')) && typeof value === 'string') {
+            // 尝试解析为JSON数组
+            if (value.trim().startsWith('[') && value.trim().endsWith(']')) {
+              value = JSON.parse(value);
+            } 
+            // 否则按逗号分隔处理
+            else {
+              value = value.split(',').map(item => {
+                const trimmed = item.trim();
+                // 尝试将数字字符串转换为数字
+                if (!isNaN(Number(trimmed))) {
+                  return Number(trimmed);
+                }
+                return trimmed;
+              });
+            }
+          }
+          // 如果参数是数字类型且提供的是字符串，尝试解析成数字
+          else if ((param.type.includes('int') || param.type.includes('float')) && typeof value === 'string') {
+            value = Number(value);
+          }
+          // 如果参数是字典类型且提供的是字符串，尝试解析成对象
+          else if ((param.type.includes('Dict') || param.type.includes('dict')) && typeof value === 'string') {
+            if (value.trim().startsWith('{') && value.trim().endsWith('}')) {
+              value = JSON.parse(value);
+            }
+          }
+        } catch (e) {
+          console.warn(`无法解析参数 ${param.name} 的值`, e);
+          // 如果解析失败，使用原始值
+        }
+        
+        params[param.name] = value;
+      }
+    }
+    
+    // 直接使用现有API，通过endpoint修改为调用新的API
+    const response = await httpClient.post(
+      `/api/execute/module/${moduleId}/function/${toolName}`, 
+      params
+    );
+    testResult.value = response.data.result;
   } catch (error: any) {
     console.error("工具测试失败", error);
     testError.value = error.response?.data?.detail || error.message || '执行失败';
@@ -217,6 +281,23 @@ function formatResult(result: any) {
     return JSON.stringify(result, null, 2);
   }
   return result;
+}
+
+// 格式化类型信息
+function formatType(type: string): string {
+  if (!type) return 'unknown';
+  
+  // 简化类型信息，移除<class>前缀
+  if (type.startsWith('<class ')) {
+    return type.replace(/<class '(.+?)'>/, '$1');
+  }
+  
+  // 简化typing类型
+  if (type.startsWith('typing.')) {
+    return type.replace('typing.', '');
+  }
+  
+  return type;
 }
 
 // 切换到工具测试页

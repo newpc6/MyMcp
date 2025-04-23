@@ -117,4 +117,15 @@ export async function updateModule(moduleId: number, data: Partial<McpModuleInfo
 export async function testModuleTool(toolId: number, params: any) {
   const response = await httpClient.post(`/api/execute/tool/${toolId}`, params);
   return response.data;
+}
+
+/**
+ * 测试模块工具(通过模块ID和函数名)
+ * @param moduleId - 模块ID
+ * @param functionName - 函数名称
+ * @param params - 工具参数
+ */
+export async function testModuleFunction(moduleId: number, functionName: string, params: any) {
+  const response = await httpClient.post(`/api/execute/module/${moduleId}/function/${functionName}`, params);
+  return response.data;
 } 

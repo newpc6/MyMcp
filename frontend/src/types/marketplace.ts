@@ -38,15 +38,16 @@ export interface McpToolParameter {
  * MCP工具信息
  */
 export interface McpToolInfo {
-  id: number;
+  id: number | null;
   module_id: number;
   name: string;
   function_name: string;
   description: string;
-  parameters: any;
+  parameters: McpToolParameter[];
+  return_type?: string;
   sample_usage?: string;
-  created_at: string;
-  updated_at: string;
+  created_at?: string;
+  updated_at?: string;
   is_enabled: boolean;
   module_name?: string;
 }

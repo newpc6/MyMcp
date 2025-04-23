@@ -55,10 +55,112 @@ class MarketplaceService:
             if not module:
                 return None
             
-            # 获取该模块下的所有工具
-            query = select(McpTool).where(McpTool.module_id == module_id)
-            tools = db.execute(query).scalars().all()
-            return [t.to_dict() for t in tools]
+            # 如果模块没有代码，则返回空列表
+            if not module.code:
+                return []
+            
+            # 从模块代码中解析工具
+            tools = []
+            try:
+                # 创建临时模块
+                import sys
+                import importlib.util
+                import inspect
+                import tempfile
+                import os
+                
+                # 创建临时文件并写入代码
+                with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as temp:
+                    temp_path = temp.name
+                    temp.write(module.code.encode('utf-8'))
+                
+                try:
+                    # 动态加载模块
+                    module_name = f"temp_module_{module_id}"
+                    spec = importlib.util.spec_from_file_location(module_name, temp_path)
+                    if not spec or not spec.loader:
+                        return []
+                    
+                    temp_module = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = temp_module
+                    spec.loader.exec_module(temp_module)
+                    
+                    # 查找所有函数
+                    for name, obj in inspect.getmembers(temp_module):
+                        if inspect.isfunction(obj):
+                            # 解析函数签名
+                            sig = inspect.signature(obj)
+                            param_info = []
+                            
+                            # 获取函数参数信息
+                            for param_name, param in sig.parameters.items():
+                                param_type_str = str(param.annotation)
+                                if hasattr(param.annotation, '__name__'):
+                                    param_type_str = param.annotation.__name__
+                                elif hasattr(param.annotation, '__origin__'):
+                                    origin_name = getattr(
+                                        param.annotation.__origin__, 
+                                        '__name__', 
+                                        str(param.annotation.__origin__)
+                                    )
+                                    args_str = ", ".join(
+                                        getattr(arg, '__name__', str(arg)) 
+                                        for arg in getattr(
+                                            param.annotation, '__args__', []
+                                        )
+                                    )
+                                    param_type_str = (
+                                        f"{origin_name}[{args_str}]"
+                                    )
+                                
+                                # 判断参数是否必填
+                                required = param.default == inspect.Parameter.empty
+                                
+                                param_info.append({
+                                    "name": param_name,
+                                    "type": (
+                                        param_type_str 
+                                        if param_type_str != '_empty' else 'Any'
+                                    ),
+                                    "required": required,
+                                    "default": (
+                                        repr(param.default) if not required else None
+                                    )
+                                })
+                            
+                            # 构建工具信息
+                            tool_info = {
+                                "id": None,  # 动态生成的工具没有ID
+                                "name": name,
+                                "description": inspect.getdoc(obj) or "",
+                                "function_name": name,
+                                "parameters": param_info,
+                                "return_type": (
+                                    str(sig.return_annotation)
+                                    if str(sig.return_annotation) != '_empty' 
+                                    else 'Any'
+                                ),
+                                "module_id": module_id,
+                                "is_enabled": True
+                            }
+                            tools.append(tool_info)
+                finally:
+                    # 清理临时文件
+                    if os.path.exists(temp_path):
+                        os.unlink(temp_path)
+                    
+                    # 从sys.modules中移除临时模块
+                    if module_name in sys.modules:
+                        del sys.modules[module_name]
+            
+            except Exception as e:
+                import traceback
+                from app.utils.logging import em_logger
+                em_logger.error(f"解析模块代码时出错: {str(e)}")
+                em_logger.error(traceback.format_exc())
+                return []
+            
+            return tools
     
     def get_tool(self, tool_id: int) -> Optional[Dict[str, Any]]:
         """获取指定MCP工具的详情"""
