@@ -129,17 +129,22 @@
                   <el-empty description="该模块暂无代码" />
                 </div>
                 <div v-else>
-                  <div class="mb-4 flex justify-between items-center">
-                    <h3 class="text-lg font-medium">模块代码</h3>
-                    <div>
+                  <div class="code-editor-header">
+                    <h3 class="editor-title">模块代码</h3>
+                    <div class="editor-actions">
+                      <el-button type="primary" size="small" @click="formatPythonCode" :loading="saving">
+                        格式化代码
+                      </el-button>
                       <el-button type="primary" size="small" @click="saveModuleCode" :loading="saving"
                         :disabled="!hasCodeChanged">
                         保存修改
                       </el-button>
                     </div>
                   </div>
-                  <Codemirror v-model="codeContent" :extensions="extensions" :style="{ height: '500px' }"
-                    :indent-with-tab="true" :tab-size="4" class="code-editor" @ready="handleEditorCreated" />
+                  <div class="code-editor-wrapper">
+                    <Codemirror v-model="codeContent" :extensions="extensions" :style="{ height: '500px' }"
+                      :indent-with-tab="true" :tab-size="4" class="code-editor" @ready="handleEditorCreated" />
+                  </div>
                 </div>
               </div>
             </el-tab-pane>
@@ -165,6 +170,9 @@ import { oneDark } from '@codemirror/theme-one-dark';
 import VueMarkdownRender from 'vue-markdown-render';
 import { keymap } from '@codemirror/view';
 import { defaultKeymap } from '@codemirror/commands';
+import { lintGutter, linter } from '@codemirror/lint';
+import { indentUnit } from '@codemirror/language';
+import { indentWithTab } from '@codemirror/commands';
 
 const route = useRoute();
 const router = useRouter();
@@ -191,6 +199,9 @@ const extensions = [
   python(), 
   oneDark,
   keymap.of(defaultKeymap),
+  keymap.of([indentWithTab]),
+  indentUnit.of('    '),
+  lintGutter(),
 ];
 
 // 添加常量和方法
@@ -402,8 +413,12 @@ async function saveModuleCode() {
 
 // 在代码编辑页面中添加编辑器扩展配置
 function handleEditorCreated(editor: any) {
-  // 这里可以添加编辑器创建后的回调处理
+  // 设置编辑器选项
   console.log('编辑器已创建');
+}
+
+// 格式化Python代码
+function formatPythonCode() {
 }
 
 // 页面加载时获取模块详情
@@ -418,22 +433,73 @@ onMounted(() => {
 }
 
 .code-editor {
-  border: 1px solid #eee;
-  border-radius: 4px;
-  font-family: monospace;
+  border-radius: 8px;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
   font-size: 14px;
+  height: 100%;
 }
 
 :deep(.cm-editor) {
   height: 100%;
+  border-radius: 8px;
 }
 
 :deep(.cm-scroller) {
   overflow: auto;
+  border-radius: 8px;
 }
 
 .code-editor-container {
   width: 100%;
+  padding: 16px;
+}
+
+.code-editor-wrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+  margin-top: 12px;
+  background: rgba(30, 30, 30, 0.95);
+}
+
+.code-editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.editor-title {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+:deep(.cm-gutters) {
+  background-color: rgba(45, 45, 45, 0.95);
+  border-right: 1px solid rgba(80, 80, 80, 0.3);
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+}
+
+:deep(.cm-activeLineGutter) {
+  background-color: rgba(70, 70, 70, 0.5);
+}
+
+:deep(.cm-activeLine) {
+  background-color: rgba(60, 60, 60, 0.5);
+}
+
+:deep(.cm-content) {
+  padding: 8px 0;
+}
+
+:deep(.cm-lineNumbers) {
+  color: rgba(150, 150, 150, 0.7);
 }
 
 .markdown-content {
