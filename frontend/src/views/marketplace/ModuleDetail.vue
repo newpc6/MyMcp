@@ -29,10 +29,10 @@
               </div>
 
               <div class="text-sm text-gray-500">
-                <div><strong>模块路径:</strong> {{ moduleInfo.module_path }}</div>
                 <div v-if="moduleInfo.author"><strong>作者:</strong> {{ moduleInfo.author }}</div>
                 <div v-if="moduleInfo.version"><strong>版本:</strong> {{ moduleInfo.version }}</div>
                 <div><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
+                <div><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
               </div>
             </div>
           </div>
