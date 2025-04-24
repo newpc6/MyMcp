@@ -7,39 +7,43 @@
 
       <div v-else>
         <!-- 顶部信息卡片 -->
-        <el-card class="mb-4" shadow="never">
+        <el-card class="mb-4 module-info-card" shadow="never">
           <div class="flex items-start">
             <el-avatar :icon="getModuleIcon(moduleInfo)" :size="64" class="mr-6"></el-avatar>
             <div class="flex-1">
               <div class="flex justify-between">
                 <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
-                <el-button @click="goBack">返回列表</el-button>
+                <el-button @click="goBack" class="return-btn">返回列表</el-button>
               </div>
 
-              <p class="text-gray-600 mb-4">{{ moduleInfo.description }}</p>
+              <div class="flex justify-between">
+                <div class="flex-1 mr-6">
+                  <p class="text-gray-600 mb-4">{{ moduleInfo.description }}</p>
 
-              <div class="flex flex-wrap gap-2 mb-3">
-                <el-tag v-for="tag in moduleInfo.tags" :key="tag" size="small" class="mr-1">{{ tag }}</el-tag>
-                <el-tag size="small" :type="moduleInfo.is_hosted ? 'success' : 'primary'">
-                  {{ moduleInfo.is_hosted ? '托管' : '本地' }}
-                </el-tag>
-                <el-tag size="small" type="info">
-                  {{ moduleInfo.tools_count }} 个工具
-                </el-tag>
-              </div>
-
-              <div class="text-sm text-gray-500">
-                <div v-if="moduleInfo.author"><strong>作者:</strong> {{ moduleInfo.author }}</div>
-                <div v-if="moduleInfo.version"><strong>版本:</strong> {{ moduleInfo.version }}</div>
-                <div><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
-                <div><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
+                  <div class="flex flex-wrap mb-3">
+                    <el-tag v-for="tag in moduleInfo.tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag }}</el-tag>
+                    <el-tag size="small" :type="moduleInfo.is_hosted ? 'success' : 'primary'" class="tag-item">
+                      {{ moduleInfo.is_hosted ? '托管' : '本地' }}
+                    </el-tag>
+                    <el-tag size="small" type="info" class="tag-item">
+                      {{ moduleInfo.tools_count }} 个工具
+                    </el-tag>
+                  </div>
+                </div>
+                
+                <div class="module-info-meta">
+                  <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}</div>
+                  <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version }}</div>
+                  <div class="module-meta-item"><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
+                  <div class="module-meta-item"><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
+                </div>
               </div>
             </div>
           </div>
         </el-card>
 
         <!-- 标签页 -->
-        <el-card shadow="never">
+        <el-card shadow="never" class="tabs-card">
           <el-tabs v-model="activeTab">
             <el-tab-pane label="服务详情" name="service-details">
               <!-- 工具列表 -->
@@ -58,7 +62,7 @@
                     <el-input v-model="toolSearchQuery" placeholder="搜索工具名称" prefix-icon="Search" clearable />
                   </div>
 
-                  <div class="tools-list max-h-[600px] overflow-y-auto pr-2">
+                  <div class="tools-list">
                     <div v-for="tool in filteredTools" :key="tool.function_name" class="tool-card mb-3 cursor-pointer"
                       :class="{ 'tool-card-active': currentTool && currentTool.function_name === tool.function_name }"
                       @click="selectTool(tool)">
@@ -90,7 +94,7 @@
                         <el-form :model="testParams" label-position="top">
                           <el-form-item v-for="param in getToolParams()" :key="param.name"
                             :label="param.name + (param.required ? ' (必填)' : '')">
-                            <div class="text-xs text-gray-500 mb-1">{{ param.type }}</div>
+                            <div class="text-sm text-gray-500 mb-1">{{ param.type }}</div>
                             <el-input v-model="testParams[param.name]" :placeholder="'请输入' + param.name" />
                           </el-form-item>
 
@@ -142,8 +146,8 @@
                     </div>
                   </div>
                   <div class="code-editor-wrapper">
-                    <Codemirror v-model="codeContent" :extensions="extensions" :style="{ height: '500px' }"
-                      :indent-with-tab="true" :tab-size="4" class="code-editor" @ready="handleEditorCreated" />
+                    <Codemirror v-model="codeContent" :extensions="extensions" class="code-editor" 
+                      :indent-with-tab="true" :tab-size="4" @ready="handleEditorCreated" />
                   </div>
                 </div>
               </div>
@@ -428,6 +432,59 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.module-info-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(235, 235, 235, 0.8);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffffff, #f8fcff);
+}
+
+.module-info-card:hover {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+.module-info-meta {
+  background: rgba(245, 250, 255, 0.7);
+  padding: 12px 16px;
+  border-radius: 12px;
+  min-width: 220px;
+  border: 1px solid rgba(220, 240, 255, 0.8);
+}
+
+.module-meta-item {
+  margin-bottom: 8px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.module-meta-item strong {
+  color: #303133;
+  margin-right: 4px;
+}
+
+.return-btn {
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.tag-item {
+  border-radius: 20px;
+  padding: 0 12px;
+  height: 24px;
+  line-height: 22px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+}
+
+.tag-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
 .tool-test-panel {
   max-width: 800px;
 }
@@ -436,7 +493,7 @@ onMounted(() => {
   border-radius: 8px;
   font-family: 'Fira Code', 'JetBrains Mono', monospace;
   font-size: 14px;
-  height: 100%;
+  height: 500px;
 }
 
 :deep(.cm-editor) {
@@ -455,7 +512,7 @@ onMounted(() => {
 }
 
 .code-editor-wrapper {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   margin-top: 12px;
@@ -503,10 +560,17 @@ onMounted(() => {
 }
 
 .markdown-content {
-  padding: 1rem;
+  padding: 1.5rem;
   background-color: #fff;
-  border-radius: 4px;
+  border-radius: 16px;
   border: 1px solid #eee;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.markdown-content:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
 }
 
 .markdown-body {
@@ -619,7 +683,7 @@ onMounted(() => {
 
 .tool-card {
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 16px;
   background: rgba(255, 255, 255, 0.8);
   transition: all 0.3s ease;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
@@ -644,6 +708,7 @@ onMounted(() => {
   background: linear-gradient(to bottom, #409eff, #79bbff);
   opacity: 0;
   transition: opacity 0.3s ease;
+  border-radius: 2px;
 }
 
 .tool-card:hover::before,
@@ -661,7 +726,7 @@ onMounted(() => {
 .result-card {
   max-height: 400px;
   overflow-y: auto;
-  border-radius: 12px;
+  border-radius: 16px;
   backdrop-filter: blur(5px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -675,7 +740,7 @@ onMounted(() => {
 
 .result-content-wrapper {
   background-color: rgba(246, 248, 250, 0.8);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 12px;
 }
 
@@ -690,7 +755,7 @@ onMounted(() => {
 }
 
 .tool-params-card {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
   transition: all 0.3s ease;
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
@@ -703,12 +768,12 @@ onMounted(() => {
 }
 
 :deep(.el-card) {
-  border-radius: 12px;
+  border-radius: 16px;
   overflow: hidden;
 }
 
 :deep(.el-button.test-button) {
-  border-radius: 8px;
+  border-radius: 12px;
   background: linear-gradient(90deg, #409eff, #79bbff);
   border: none;
   height: 40px;
@@ -725,10 +790,77 @@ onMounted(() => {
 }
 
 :deep(.el-input__inner) {
-  border-radius: 8px;
+  border-radius: 10px;
 }
 
 :deep(.el-form-item__label) {
   font-weight: 500;
+}
+
+.tabs-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(235, 235, 235, 0.8);
+  overflow: hidden;
+}
+
+:deep(.el-tabs__nav-wrap::after) {
+  height: 1px;
+  background-color: rgba(235, 235, 235, 0.8);
+}
+
+:deep(.el-tabs__item) {
+  transition: all 0.3s ease;
+  padding: 0 20px;
+  height: 46px;
+  line-height: 46px;
+}
+
+:deep(.el-tabs__item.is-active) {
+  font-weight: 600;
+  color: #409eff;
+  transform: translateY(-2px);
+}
+
+:deep(.el-tabs__active-bar) {
+  height: 3px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #409eff, #79bbff);
+}
+
+:deep(.el-tab-pane) {
+  padding: 16px 8px;
+}
+
+:deep(.el-empty) {
+  padding: 32px 0;
+  border-radius: 16px;
+  background: rgba(250, 250, 250, 0.5);
+  transition: all 0.3s ease;
+}
+
+.tools-list {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: thin;
+}
+
+.tools-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.tools-list::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 3px;
+}
+
+.tools-list::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+}
+
+.tools-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.2);
 }
 </style>
