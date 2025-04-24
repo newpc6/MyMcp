@@ -146,8 +146,15 @@
                     </div>
                   </div>
                   <div class="code-editor-wrapper">
-                    <Codemirror v-model="codeContent" :extensions="extensions" class="code-editor" 
-                      :indent-with-tab="true" :tab-size="4" @ready="handleEditorCreated" />
+                    <Codemirror 
+                      v-model="codeContent" 
+                      :extensions="extensions" 
+                      class="code-editor" 
+                      :indent-with-tab="true" 
+                      :tab-size="4" 
+                      @ready="handleEditorCreated"
+                      style="overflow: auto; height: 100%;"
+                    />
                   </div>
                 </div>
               </div>
@@ -177,6 +184,7 @@ import { defaultKeymap } from '@codemirror/commands';
 import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
+import { EditorView } from '@codemirror/view';
 
 const route = useRoute();
 const router = useRouter();
@@ -206,6 +214,10 @@ const extensions = [
   keymap.of([indentWithTab]),
   indentUnit.of('    '),
   lintGutter(),
+  // 启用滚动条
+  EditorView.theme({
+    ".cm-scroller": { overflow: "auto" }
+  })
 ];
 
 // 添加常量和方法
@@ -419,6 +431,15 @@ async function saveModuleCode() {
 function handleEditorCreated(editor: any) {
   // 设置编辑器选项
   console.log('编辑器已创建');
+  
+  // 确保编辑器显示滚动条
+  if (editor && editor.view) {
+    const scroller = editor.view.scrollDOM;
+    if (scroller) {
+      scroller.style.overflow = 'auto';
+      scroller.style.maxHeight = '100%';
+    }
+  }
 }
 
 // 格式化Python代码
@@ -494,21 +515,26 @@ onMounted(() => {
   font-family: 'Fira Code', 'JetBrains Mono', monospace;
   font-size: 14px;
   height: 500px;
+  overflow: auto;
 }
 
 :deep(.cm-editor) {
   height: 100%;
   border-radius: 8px;
+  overflow: hidden;
 }
 
 :deep(.cm-scroller) {
   overflow: auto;
   border-radius: 8px;
+  max-height: 100%;
 }
 
 .code-editor-container {
   width: 100%;
   padding: 16px;
+  display: flex;
+  flex-direction: column;
 }
 
 .code-editor-wrapper {
@@ -517,6 +543,10 @@ onMounted(() => {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
   margin-top: 12px;
   background: rgba(30, 30, 30, 0.95);
+  height: 500px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .code-editor-header {
@@ -862,5 +892,24 @@ onMounted(() => {
 
 .tools-list::-webkit-scrollbar-thumb:hover {
   background: rgba(0, 0, 0, 0.2);
+}
+
+:deep(.cm-scroller::-webkit-scrollbar) {
+  width: 6px;
+  height: 6px;
+}
+
+:deep(.cm-scroller::-webkit-scrollbar-thumb) {
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+:deep(.cm-scroller::-webkit-scrollbar-thumb:hover) {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.cm-scroller::-webkit-scrollbar-track) {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
 }
 </style>
