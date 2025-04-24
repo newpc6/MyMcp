@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime
+from sqlalchemy import Column, Integer, String, DateTime, Boolean
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
 from sqlalchemy.sql import text
@@ -16,6 +16,7 @@ class McpService(Base):
     sse_url = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
+    enabled = Column(Boolean, default=False)
     
     def get_module_name(self):
         """获取关联的模块名称"""
@@ -37,6 +38,7 @@ class McpService(Base):
             "service_uuid": self.service_uuid,
             "status": self.status,
             "sse_url": self.sse_url,
+            "enabled": self.enabled,
             "created_at": (
                 self.created_at.isoformat() if self.created_at else None
             ),

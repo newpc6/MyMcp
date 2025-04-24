@@ -161,6 +161,24 @@ async def stop_service(request: Request):
     return JSONResponse({"message": "服务已停止"})
 
 
+async def start_service(request: Request):
+    """启动MCP服务"""
+    service_uuid = request.path_params["service_uuid"]
+    success = service_manager.start_service(service_uuid)
+    if not success:
+        return JSONResponse({"error": "启动服务失败"}, status_code=400)
+    return JSONResponse({"message": "服务已启动"})
+
+
+async def uninstall_service(request: Request):
+    """卸载MCP服务（停止并从数据库删除）"""
+    service_uuid = request.path_params["service_uuid"]
+    success = service_manager.delete_service(service_uuid)
+    if not success:
+        return JSONResponse({"error": "卸载服务失败"}, status_code=400)
+    return JSONResponse({"message": "服务已卸载"})
+
+
 async def list_services(request: Request):
     """获取已发布的MCP服务列表"""
     # 支持按模块ID过滤
@@ -208,5 +226,7 @@ def get_router():
         Route("/services", list_services, methods=["GET"]),
         Route("/services/{service_uuid}", get_service, methods=["GET"]),
         Route("/services/{service_uuid}/stop", stop_service, methods=["POST"]),
+        Route("/services/{service_uuid}/start", start_service, methods=["POST"]),
+        Route("/services/{service_uuid}/uninstall", uninstall_service, methods=["POST"]),
     ]
     return routes

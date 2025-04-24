@@ -11,11 +11,11 @@
       </div>
       
       <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item>
-      <el-menu-item index="/tools" @mouseup="handleMouseUp($event, '/tools')">工具管理</el-menu-item>
-      <el-menu-item index="/mcp" @mouseup="handleMouseUp($event, '/mcp')">MCP服务管理</el-menu-item>
+      <!-- <el-menu-item index="/tools" @mouseup="handleMouseUp($event, '/tools')">工具管理</el-menu-item> -->
+      <!-- <el-menu-item index="/mcp" @mouseup="handleMouseUp($event, '/mcp')">MCP服务管理</el-menu-item> -->
       <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">MCP广场</el-menu-item>
-      <el-menu-item index="/resources" @mouseup="handleMouseUp($event, '/resources')">资源管理</el-menu-item>
-      <el-menu-item index="/protocols" @mouseup="handleMouseUp($event, '/protocols')">协议管理</el-menu-item>
+      <!-- <el-menu-item index="/resources" @mouseup="handleMouseUp($event, '/resources')">资源管理</el-menu-item> -->
+      <!-- <el-menu-item index="/protocols" @mouseup="handleMouseUp($event, '/protocols')">协议管理</el-menu-item> -->
       
       <div class="version-info">
         <span class="text-sm">版本: v1.0.0</span>

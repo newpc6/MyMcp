@@ -6,41 +6,135 @@
       </div>
 
       <div v-else>
-        <!-- 顶部信息卡片 -->
-        <el-card class="mb-4 module-info-card" shadow="never">
-          <div class="flex items-start">
-            <el-avatar :icon="getModuleIcon(moduleInfo)" :size="64" class="mr-6"></el-avatar>
-            <div class="flex-1">
-              <div class="flex justify-between">
-                <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
-                <el-button @click="goBack" class="return-btn">返回列表</el-button>
-              </div>
-
-              <div class="flex justify-between">
-                <div class="flex-1 mr-6">
-                  <p class="text-gray-600 mb-4">{{ moduleInfo.description }}</p>
-
-                  <div class="flex flex-wrap mb-3">
-                    <el-tag v-for="tag in moduleInfo.tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag }}</el-tag>
-                    <el-tag size="small" :type="moduleInfo.is_hosted ? 'success' : 'primary'" class="tag-item">
-                      {{ moduleInfo.is_hosted ? '托管' : '本地' }}
-                    </el-tag>
-                    <el-tag size="small" type="info" class="tag-item">
-                      {{ moduleInfo.tools_count }} 个工具
-                    </el-tag>
-                  </div>
+        <!-- 顶部信息区域 - 使用flex布局水平排列两个卡片 -->
+        <div class="flex gap-4 mb-4">
+          <!-- 模块信息卡片 -->
+          <el-card class="module-info-card" style="width: 55%" shadow="never">
+            <div class="flex items-start">
+              <el-avatar :icon="getModuleIcon(moduleInfo)" :size="64" class="mr-6"></el-avatar>
+              <div class="flex-1">
+                <div class="flex justify-between">
+                  <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
+                  <el-button @click="goBack" class="return-btn">返回列表</el-button>
                 </div>
-                
-                <div class="module-info-meta">
-                  <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}</div>
-                  <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version }}</div>
-                  <div class="module-meta-item"><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
-                  <div class="module-meta-item"><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
+
+                <div class="flex justify-between">
+                  <div class="flex-1 mr-6">
+                    <p class="text-gray-600 mb-4">{{ moduleInfo.description }}</p>
+
+                    <div class="flex flex-wrap mb-3">
+                      <el-tag v-for="tag in moduleInfo.tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag }}</el-tag>
+                      <el-tag size="small" :type="moduleInfo.is_hosted ? 'success' : 'primary'" class="tag-item">
+                        {{ moduleInfo.is_hosted ? '托管' : '本地' }}
+                      </el-tag>
+                      <el-tag size="small" type="info" class="tag-item">
+                        {{ moduleInfo.tools_count }} 个工具
+                      </el-tag>
+                    </div>
+                  </div>
+                  
+                  <div class="module-info-meta">
+                    <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}</div>
+                    <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version }}</div>
+                    <div class="module-meta-item"><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
+                    <div class="module-meta-item"><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </el-card>
+          </el-card>
+
+          <!-- 服务发布卡片 -->
+          <el-card shadow="never" class="service-card" style="width: 45%;">
+            <template #header>
+              <div class="card-header">
+                <h3 class="text-lg font-bold">服务发布</h3>
+                <div class="service-actions" v-if="!loadingServices">
+                  <el-button 
+                    v-if="services.length === 0" 
+                    type="primary" 
+                    size="small"
+                    @click="handlePublishService()">
+                    发布服务
+                  </el-button>
+                  <el-button 
+                    v-else
+                    type="danger" 
+                    size="small"
+                    @click="handleUninstallService(services[0].service_uuid)">
+                    卸载服务
+                  </el-button>
+                </div>
+              </div>
+            </template>
+            
+            <div v-if="loadingServices" class="text-center py-2">
+              <el-skeleton :rows="1" animated />
+            </div>
+            <div v-else-if="services.length === 0" class="text-center py-4">
+              <el-empty description="暂无服务" :image-size="60">
+                <template #description>
+                  <p class="text-gray-500">还没有发布服务，点击上方按钮发布</p>
+                </template>
+              </el-empty>
+            </div>
+            <div v-else>
+              <el-table 
+                :data="services" 
+                style="width: 100%" 
+                size="small"
+                class="service-table"
+                :header-cell-style="{backgroundColor: '#f5f7fa', color: '#606266', fontWeight: 'bold'}"
+              >
+                <el-table-column prop="status" label="状态" width="80">
+                  <template #default="scope">
+                    <el-tag :type="getStatusType(scope.row.status)" size="small">
+                      {{ getStatusText(scope.row.status) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="sse_url" label="SSE URL" min-width="220">
+                  <template #default="scope">
+                    <div class="flex items-center">
+                      <el-tooltip :content="scope.row.sse_url" placement="top" :show-after="500">
+                        <el-input v-model="scope.row.sse_url" readonly size="small" class="flex-1 mr-1" :title="scope.row.sse_url" disabled/>
+                      </el-tooltip>
+                      <el-button type="primary" circle size="small" @click="copyUrl(scope.row.sse_url)" title="复制URL">
+                        <el-icon><DocumentCopy /></el-icon>
+                      </el-button>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="created_at" label="创建时间" width="140" />
+                <el-table-column fixed="right" label="操作" width="80">
+                  <template #default="scope">
+                    <el-button 
+                      v-if="scope.row.status === 'running'" 
+                      type="danger" 
+                      size="small" 
+                      @click="handleStopService(scope.row.service_uuid)">
+                      停止
+                    </el-button>
+                    <el-button 
+                      v-else-if="scope.row.status === 'stopped'" 
+                      type="success" 
+                      size="small" 
+                      @click="handleStartService(scope.row.service_uuid)">
+                      启动
+                    </el-button>
+                    <el-button 
+                      v-else-if="scope.row.status === 'error'" 
+                      type="warning" 
+                      size="small" 
+                      @click="handleStartService(scope.row.service_uuid)">
+                      重启
+                    </el-button>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+          </el-card>
+        </div>
 
         <!-- 标签页 -->
         <el-card shadow="never" class="tabs-card">
@@ -161,68 +255,6 @@
             </el-tab-pane>
           </el-tabs>
         </el-card>
-
-        <!-- 添加服务发布卡片 -->
-        <el-card shadow="never" class="mt-4">
-          <template #header>
-            <div class="card-header">
-              <h3 class="text-xl font-bold">服务发布</h3>
-            </div>
-          </template>
-          
-          <div v-if="loadingServices" class="text-center py-4">
-            <el-skeleton :rows="3" animated />
-          </div>
-          <div v-else>
-            <el-table :data="services" style="width: 100%">
-              <el-table-column prop="id" label="ID" width="80" />
-              <el-table-column prop="status" label="状态" width="120">
-                <template #default="scope">
-                  <el-tag :type="getStatusType(scope.row.status)">
-                    {{ getStatusText(scope.row.status) }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="sse_url" label="SSE URL">
-                <template #default="scope">
-                  <div class="flex items-center">
-                    <el-input v-model="scope.row.sse_url" readonly size="small" class="flex-1 mr-2" />
-                    <el-button type="primary" link @click="copyUrl(scope.row.sse_url)">
-                      <el-icon>
-                        <el-icon-document-copy />
-                      </el-icon>
-                    </el-button>
-                  </div>
-                </template>
-              </el-table-column>
-              <el-table-column prop="created_at" label="创建时间" width="180" />
-              <el-table-column fixed="right" label="操作" width="120">
-                <template #default="scope">
-                  <el-button 
-                    v-if="scope.row.status === 'running'" 
-                    type="danger" 
-                    size="small" 
-                    @click="handleStopService(scope.row.service_uuid)">
-                    停止
-                  </el-button>
-                  <el-button 
-                    v-else 
-                    type="primary" 
-                    size="small" 
-                    @click="handlePublishService()">
-                    发布
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-            
-            <div class="mt-4 text-center" v-if="!hasRunningService">
-              <el-button type="primary" @click="handlePublishService()">
-                发布服务
-              </el-button>
-            </div>
-          </div>
-        </el-card>
       </div>
     </el-main>
   </el-container>
@@ -231,10 +263,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElNotification, ElMessage } from 'element-plus';
+import { ElNotification, ElMessage, ElMessageBox } from 'element-plus';
 import {
   getModule, getModuleTools, testModuleTool, updateModule,
-  listServices, publishModule, stopService
+  listServices, publishModule, stopService, startService, uninstallService
 } from '../../api/marketplace';
 import httpClient from '../../utils/http-client';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo } from '../../types/marketplace';
@@ -248,6 +280,7 @@ import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
+import { Document, DocumentCopy } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -560,11 +593,96 @@ const handleStopService = async (serviceUuid: string) => {
   }
 };
 
+// 启动服务
+const handleStartService = async (serviceUuid: string) => {
+  try {
+    ElMessage.info({ message: '正在启动服务...', duration: 0 });
+    await startService(serviceUuid);
+    ElMessage.closeAll();
+    ElMessage.success('服务已启动');
+    await loadServices();
+  } catch (error: any) {
+    ElMessage.closeAll();
+    ElMessage.error(`启动服务失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 卸载服务
+const handleUninstallService = async (serviceUuid: string) => {
+  try {
+    // 弹出确认框
+    await ElMessageBox.confirm(
+      '确定要卸载此服务吗？卸载后将无法恢复。',
+      '确认卸载',
+      {
+        confirmButtonText: '确认卸载',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+    
+    ElMessage.info({ message: '正在卸载服务...', duration: 0 });
+    await uninstallService(serviceUuid);
+    ElMessage.closeAll();
+    ElMessage.success('服务已卸载');
+    // 重新加载服务列表
+    await loadServices();
+  } catch (error: any) {
+    ElMessage.closeAll();
+    if (error !== 'cancel') {
+      ElMessage.error(`卸载服务失败: ${error.message || '未知错误'}`);
+    }
+  }
+};
+
 // 复制URL到剪贴板
 const copyUrl = (url: string) => {
-  navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('URL已复制到剪贴板');
-  });
+  // 首先尝试使用现代的clipboard API
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url)
+      .then(() => {
+        ElMessage.success('URL已复制到剪贴板');
+      })
+      .catch(error => {
+        // 如果clipboard API失败，使用传统方法
+        fallbackCopyTextToClipboard(url);
+      });
+  } else {
+    // 浏览器不支持clipboard API，使用传统方法
+    fallbackCopyTextToClipboard(url);
+  }
+};
+
+// 兼容性处理方法
+const fallbackCopyTextToClipboard = (text: string) => {
+  try {
+    // 创建临时文本区域
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    
+    // 确保文本区域在视图之外
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    
+    // 选择文本
+    textArea.select();
+    textArea.setSelectionRange(0, 99999); // 兼容移动设备
+    
+    // 执行复制
+    const successful = document.execCommand('copy');
+    document.body.removeChild(textArea);
+    
+    if (successful) {
+      ElMessage.success('URL已复制到剪贴板');
+    } else {
+      ElMessage.warning('无法复制URL，请手动复制');
+    }
+  } catch (err) {
+    ElMessage.error('复制失败，请手动复制URL');
+    console.error('复制失败:', err);
+  }
 };
 
 // 获取状态类型
@@ -1067,5 +1185,70 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.service-card {
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(235, 235, 235, 0.8);
+  transition: all 0.3s ease;
+  overflow: hidden;
+  background: linear-gradient(135deg, #ffffff, #f8f9ff);
+}
+
+.service-card:hover {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-2px);
+}
+
+:deep(.el-card__header) {
+  padding: 14px 20px;
+  border-bottom: 1px solid rgba(235, 235, 235, 0.6);
+  background: rgba(250, 252, 255, 0.7);
+}
+
+.service-actions {
+  display: flex;
+  align-items: center;
+}
+
+:deep(.el-table) {
+  --el-table-border-color: rgba(235, 235, 235, 0.6);
+  --el-table-header-bg-color: rgba(246, 248, 250, 0.6);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:deep(.el-table th) {
+  background-color: rgba(246, 248, 250, 0.6);
+  font-weight: 600;
+}
+
+:deep(.el-table--enable-row-hover .el-table__body tr:hover > td) {
+  background-color: rgba(240, 247, 255, 0.6);
+}
+
+:deep(.el-table .cell) {
+  padding: 8px 12px;
+}
+
+.service-table {
+  margin-top: 8px;
+}
+
+:deep(.service-table .el-input__inner) {
+  font-family: monospace;
+  font-size: 12px;
+  color: #606266;
+  background-color: #f8f9fb;
+}
+
+:deep(.service-table .el-input__wrapper) {
+  box-shadow: none;
+  border: 1px solid #e0e3e9;
+}
+
+:deep(.service-table .el-input__wrapper:hover) {
+  border-color: #c0c4cc;
 }
 </style>

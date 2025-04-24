@@ -40,9 +40,9 @@
         <template #extra>
           <el-button 
             type="primary" 
-            @click="scanModules" 
+            @click="loadModules" 
             :loading="scanning"
-          >扫描并更新模块</el-button>
+          >刷新</el-button>
         </template>
       </el-page-header>
       
@@ -65,9 +65,9 @@
             <p class="card-desc">{{ module.description }}</p>
             <div class="card-footer">
               <div class="tag-container">
-                <el-tag size="small" type="info" class="mr-1">
+                <!-- <el-tag size="small" type="info" class="mr-1">
                   {{ module.tools_count }} 个工具
-                </el-tag>
+                </el-tag> -->
                 <el-tag 
                   size="small" 
                   :type="module.is_hosted ? 'success' : 'primary'"
@@ -93,7 +93,7 @@
       
       <div v-if="modules.length === 0 && !loading" class="text-center py-10">
         <el-empty description="暂无MCP模块" />
-        <el-button type="primary" @click="scanModules" class="mt-4">扫描并添加模块</el-button>
+        <el-button type="primary" @click="loadModules" class="mt-4">刷新</el-button>
       </div>
       
       <div v-if="loading" class="loading-container">

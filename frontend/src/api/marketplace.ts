@@ -167,6 +167,28 @@ export async function stopService(serviceUuid: string): Promise<{
 }
 
 /**
+ * 启动服务
+ * @param serviceUuid - 服务UUID
+ */
+export async function startService(serviceUuid: string): Promise<{
+  message: string;
+}> {
+  const response = await httpClient.post(`/api/marketplace/services/${serviceUuid}/start`);
+  return response.data;
+}
+
+/**
+ * 卸载服务（删除数据库记录并停止服务）
+ * @param serviceUuid - 服务UUID
+ */
+export async function uninstallService(serviceUuid: string): Promise<{
+  message: string;
+}> {
+  const response = await httpClient.post(`/api/marketplace/services/${serviceUuid}/uninstall`);
+  return response.data;
+}
+
+/**
  * 获取服务详情
  * @param serviceUuid - 服务UUID
  */

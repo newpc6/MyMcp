@@ -1,6 +1,5 @@
 import os
 import sys
-import importlib
 import time
 import inspect
 from typing import Callable, Dict, Any, Optional, List
@@ -29,9 +28,6 @@ if project_root not in sys.path:
 # MCP服务器实例
 server_instance = None
 uni_server = None
-# 存储已手动添加的工具，用于重启服务时重新加载
-_manually_added_tools: List[Dict[str, Any]] = []
-
 
 def add_tool(
     func: Callable,
@@ -67,13 +63,6 @@ def add_tool(
     # 使用mcp的tool装饰器添加工具
     server_instance.tool(name=tool_name, description=tool_doc)(func)
 
-    # 存储工具信息，用于重启时
-    _manually_added_tools.append({
-        "func": func,
-        "name": tool_name,
-        "doc": tool_doc
-    })
-
     em_logger.info(f"已成功添加工具: {tool_name}")
     return func  # 返回函数便于链式调用
 
@@ -98,12 +87,6 @@ def remove_tool(tool_name: str) -> bool:
                 and tool_name in server_instance._tool_manager._tools):
             del server_instance._tool_manager._tools[tool_name]
             em_logger.info(f"已从工具管理器中移除工具: {tool_name}")
-
-            # 从手动添加列表中移除
-            global _manually_added_tools
-            _manually_added_tools = [
-                t for t in _manually_added_tools if t["name"] != tool_name
-            ]
 
             return True
         else:
@@ -189,108 +172,6 @@ def check_mcp_status() -> Dict[str, Any]:
         status["running"] = False
 
     return status
-
-
-# 用于自动注册仓库中的函数为工具
-def register_repository_functions():
-    """注册仓库中的函数为工具"""
-    from app.models.engine import get_db
-    from app.models.modules.mcp_marketplace import McpModule
-    from sqlalchemy import select
-    import importlib
-    import inspect
-    import os
-    import sys
-    import tempfile
-    from types import ModuleType
-
-    try:
-        # 从数据库获取所有模块
-        with get_db() as db:
-            query = select(McpModule).where(McpModule.is_hosted == True)
-            modules = db.execute(query).scalars().all()
-
-            em_logger.info(f"从数据库加载模块: 找到{len(modules)}个模块")
-
-            # 创建临时目录存放代码文件
-            temp_dir = tempfile.mkdtemp(prefix="mcp_modules_")
-
-            # 添加临时目录到Python路径
-            if temp_dir not in sys.path:
-                sys.path.insert(0, temp_dir)
-
-            for module in modules:
-                if not module.code:
-                    em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
-                    continue
-
-                # 创建临时模块文件
-                module_filename = f"{module.name}.py"
-                module_path = os.path.join(temp_dir, module_filename)
-
-                try:
-                    # 将代码写入临时文件
-                    with open(module_path, "w", encoding="utf-8") as f:
-                        f.write(module.code)
-
-                    # 动态导入模块
-                    module_name = module.name
-                    spec = importlib.util.spec_from_file_location(
-                        module_name, module_path)
-                    if spec and spec.loader:
-                        module_obj = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module_obj)
-                        em_logger.info(f"成功导入模块: {module_name}")
-
-                        # 遍历模块中的所有函数
-                        for name, func in inspect.getmembers(module_obj, inspect.isfunction):
-                            # 过滤出该模块定义的函数(而不是导入的函数)
-                            if func.__module__ == module_name:
-                                # 获取函数文档
-                                doc = inspect.getdoc(func)
-                                # 检查是否已经通过其他方式注册
-                                if not any(t['func'] == func for t in _manually_added_tools):
-                                    # 注册为工具
-                                    add_tool(func, name, doc)
-                except Exception as e:
-                    em_logger.error(f"导入模块 {module.name} 失败: {str(e)}")
-
-    except Exception as e:
-        em_logger.error(f"注册仓库函数失败: {str(e)}")
-
-    # 兼容性保留：加载实体文件中的函数
-    # 获取repository目录
-    repo_dir = os.path.join(current_dir, 'repository')
-    if os.path.exists(repo_dir):
-        # 导入所有模块
-        for file in os.listdir(repo_dir):
-            if (file.endswith('.py') and
-                    file != '_init_.py' and
-                    file != '__init__.py' and
-                    file != 'mcp_base.py'):
-                module_name = file[:-3]  # 去掉.py后缀
-                module_path = f'repository.{module_name}'
-                try:
-                    module = importlib.import_module(module_path)
-                    em_logger.info(f"成功导入实体模块: {module_path}")
-
-                    # 遍历模块中的所有函数
-                    for name, func in inspect.getmembers(
-                        module, inspect.isfunction
-                    ):
-                        # 过滤出该模块定义的函数(而不是导入的函数)
-                        if func.__module__ == module_path:
-                            # 获取函数文档
-                            doc = inspect.getdoc(func)
-                            # 检查是否已经通过其他方式注册
-                            if not any(
-                                t['func'] == func for t in _manually_added_tools
-                            ):
-                                # 注册为工具
-                                add_tool(func, name, doc)
-
-                except Exception as e:
-                    em_logger.error(f"导入实体模块 {module_path} 失败: {str(e)}")
 
 
 def stop_mcp_server():
@@ -391,9 +272,7 @@ def start_mcp_server():
         log_level=settings.LOG_LEVEL.lower(),
     )
     uni_server = uvicorn.Server(config)
-    service_manager.init_app(app, server_instance)
-    # 自动注册仓库中的函数
-    register_repository_functions()
+    service_manager.init_app(app)
 
     # 启动服务器
     if threading.current_thread() is not threading.main_thread():
