@@ -161,6 +161,68 @@
             </el-tab-pane>
           </el-tabs>
         </el-card>
+
+        <!-- 添加服务发布卡片 -->
+        <el-card shadow="never" class="mt-4">
+          <template #header>
+            <div class="card-header">
+              <h3 class="text-xl font-bold">服务发布</h3>
+            </div>
+          </template>
+          
+          <div v-if="loadingServices" class="text-center py-4">
+            <el-skeleton :rows="3" animated />
+          </div>
+          <div v-else>
+            <el-table :data="services" style="width: 100%">
+              <el-table-column prop="id" label="ID" width="80" />
+              <el-table-column prop="status" label="状态" width="120">
+                <template #default="scope">
+                  <el-tag :type="getStatusType(scope.row.status)">
+                    {{ getStatusText(scope.row.status) }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="sse_url" label="SSE URL">
+                <template #default="scope">
+                  <div class="flex items-center">
+                    <el-input v-model="scope.row.sse_url" readonly size="small" class="flex-1 mr-2" />
+                    <el-button type="primary" link @click="copyUrl(scope.row.sse_url)">
+                      <el-icon>
+                        <el-icon-document-copy />
+                      </el-icon>
+                    </el-button>
+                  </div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="created_at" label="创建时间" width="180" />
+              <el-table-column fixed="right" label="操作" width="120">
+                <template #default="scope">
+                  <el-button 
+                    v-if="scope.row.status === 'running'" 
+                    type="danger" 
+                    size="small" 
+                    @click="handleStopService(scope.row.service_uuid)">
+                    停止
+                  </el-button>
+                  <el-button 
+                    v-else 
+                    type="primary" 
+                    size="small" 
+                    @click="handlePublishService()">
+                    发布
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+            
+            <div class="mt-4 text-center" v-if="!hasRunningService">
+              <el-button type="primary" @click="handlePublishService()">
+                发布服务
+              </el-button>
+            </div>
+          </div>
+        </el-card>
       </div>
     </el-main>
   </el-container>
@@ -169,12 +231,13 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { ElNotification } from 'element-plus';
+import { ElNotification, ElMessage } from 'element-plus';
 import {
-  getModule, getModuleTools, testModuleTool, updateModule
+  getModule, getModuleTools, testModuleTool, updateModule,
+  listServices, publishModule, stopService
 } from '../../api/marketplace';
 import httpClient from '../../utils/http-client';
-import type { McpModuleInfo, McpToolInfo, McpToolParameter } from '../../types/marketplace';
+import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo } from '../../types/marketplace';
 import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -446,9 +509,96 @@ function handleEditorCreated(editor: any) {
 function formatPythonCode() {
 }
 
+// 服务相关
+const services = ref<McpServiceInfo[]>([]);
+const loadingServices = ref(false);
+
+// 是否有运行中的服务
+const hasRunningService = computed(() => {
+  return services.value.some(s => s.status === 'running');
+});
+
+// 加载服务列表
+const loadServices = async () => {
+  loadingServices.value = true;
+  try {
+    const data = await listServices(moduleId.value);
+    services.value = data;
+  } catch (error) {
+    console.error('加载服务列表失败', error);
+    ElMessage.error('加载服务列表失败');
+  } finally {
+    loadingServices.value = false;
+  }
+};
+
+// 发布服务
+const handlePublishService = async () => {
+  try {
+    ElMessage.info({ message: '正在发布服务...', duration: 0 });
+    const result = await publishModule(moduleId.value);
+    ElMessage.closeAll();
+    ElMessage.success('服务发布成功');
+    await loadServices();
+  } catch (error: any) {
+    ElMessage.closeAll();
+    ElMessage.error(`发布服务失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 停止服务
+const handleStopService = async (serviceUuid: string) => {
+  try {
+    ElMessage.info({ message: '正在停止服务...', duration: 0 });
+    await stopService(serviceUuid);
+    ElMessage.closeAll();
+    ElMessage.success('服务已停止');
+    await loadServices();
+  } catch (error: any) {
+    ElMessage.closeAll();
+    ElMessage.error(`停止服务失败: ${error.message || '未知错误'}`);
+  }
+};
+
+// 复制URL到剪贴板
+const copyUrl = (url: string) => {
+  navigator.clipboard.writeText(url).then(() => {
+    ElMessage.success('URL已复制到剪贴板');
+  });
+};
+
+// 获取状态类型
+const getStatusType = (status: string) => {
+  switch (status) {
+    case 'running':
+      return 'success';
+    case 'stopped':
+      return 'warning';
+    case 'error':
+      return 'danger';
+    default:
+      return 'info';
+  }
+};
+
+// 获取状态文本
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'running':
+      return '运行中';
+    case 'stopped':
+      return '已停止';
+    case 'error':
+      return '错误';
+    default:
+      return status;
+  }
+};
+
 // 页面加载时获取模块详情
 onMounted(() => {
   loadModuleInfo();
+  loadServices(); // 添加加载服务
 });
 </script>
 
@@ -911,5 +1061,11 @@ onMounted(() => {
 :deep(.cm-scroller::-webkit-scrollbar-track) {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 </style>

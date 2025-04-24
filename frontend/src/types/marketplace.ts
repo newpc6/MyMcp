@@ -53,6 +53,20 @@ export interface McpToolInfo {
 }
 
 /**
+ * MCP服务信息
+ */
+export interface McpServiceInfo {
+  id: number;
+  module_id: number;
+  service_uuid: string;
+  port: number;
+  status: string;
+  sse_url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
  * MCP分组信息
  */
 export interface McpCategoryInfo {

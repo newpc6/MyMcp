@@ -19,15 +19,12 @@ def migrate_database():
             from app.models.engine.migrations import get_all_migrations
         except ImportError as e:
             em_logger.warning(f"迁移模块导入失败，使用内置迁移: {str(e)}")
-            # 使用内置迁移作为后备方案
-            _run_builtin_migrations()
             return
         
         # 获取所有迁移模块
         migrations = get_all_migrations()
         if not migrations:
             em_logger.warning("未找到迁移模块，使用内置迁移")
-            _run_builtin_migrations()
             return
             
         em_logger.info(f"找到 {len(migrations)} 个迁移模块")
@@ -47,71 +44,6 @@ def migrate_database():
     
     except Exception as e:
         em_logger.error(f"数据库迁移失败: {str(e)}")
-
-
-def _run_builtin_migrations():
-    """执行内置的迁移，作为后备方案"""
-    from sqlalchemy import text
-    
-    try:
-        with get_db() as db:
-            # 1. 检查mcp_categories表是否存在
-            check_categories_sql = text(
-                "SELECT name FROM sqlite_master "
-                "WHERE type='table' AND name='mcp_categories'"
-            )
-            result = db.execute(check_categories_sql).fetchone()
-            if not result:
-                # 创建分类表
-                em_logger.info("创建mcp_categories表")
-                db.execute(text("""
-                    CREATE TABLE mcp_categories (
-                        id INTEGER PRIMARY KEY,
-                        name VARCHAR(100) NOT NULL,
-                        description TEXT,
-                        icon VARCHAR(200),
-                        order INTEGER DEFAULT 0,
-                        created_at TIMESTAMP,
-                        updated_at TIMESTAMP
-                    )
-                """))
-            
-            # 2. 检查字段
-            check_column_sql = text(
-                "PRAGMA table_info(mcp_modules)"
-            )
-            columns = db.execute(check_column_sql).fetchall()
-            column_names = [col[1] for col in columns]  # 字段名在结果的第2列
-            
-            # 3. 添加category_id字段
-            if 'category_id' not in column_names:
-                em_logger.info("向mcp_modules表添加category_id字段")
-                db.execute(text(
-                    "ALTER TABLE mcp_modules "
-                    "ADD COLUMN category_id INTEGER"
-                ))
-            
-            # 4. 添加code字段
-            if 'code' not in column_names:
-                em_logger.info("向mcp_modules表添加code字段")
-                db.execute(text(
-                    "ALTER TABLE mcp_modules "
-                    "ADD COLUMN code TEXT"
-                ))
-            
-            # 5. 添加config_schema字段
-            if 'config_schema' not in column_names:
-                em_logger.info("向mcp_modules表添加config_schema字段")
-                db.execute(text(
-                    "ALTER TABLE mcp_modules "
-                    "ADD COLUMN config_schema TEXT"
-                ))
-            
-            db.commit()
-            em_logger.info("内置迁移完成")
-    except Exception as e:
-        em_logger.error(f"执行内置迁移失败: {str(e)}")
-        raise
 
 
 def init_category_data():

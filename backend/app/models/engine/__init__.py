@@ -42,6 +42,7 @@ def init_db():
     from app.models.modules.mcp_marketplace import (  # noqa: F401
         McpModule, McpTool, McpCategory
     )
+    from app.models.modules.mcp_services import McpService  # noqa: F401
     
     # 创建所有表
     Base.metadata.create_all(bind=engine)
@@ -62,4 +63,4 @@ def init_db():
     auto_categorize_modules()
     
     # 初始化演示模块
-    init_demo_modules() 
+    init_demo_modules()

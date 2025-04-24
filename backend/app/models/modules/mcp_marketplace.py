@@ -2,12 +2,12 @@
 MCP广场相关模型
 """
 from sqlalchemy import (
-    Column, Integer, String, Text, Boolean, DateTime, ForeignKey
+    Column, Integer, String, Text, Boolean, DateTime
 )
-from sqlalchemy.orm import relationship
 import json
+from sqlalchemy.sql import text
 
-from app.models.engine import Base
+from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
 
 
@@ -23,11 +23,15 @@ class McpCategory(Base):
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
     
-    # 关联该分组下的模块
-    modules = relationship("McpModule", back_populates="category")
-    
     def to_dict(self):
         """转换为字典格式"""
+        # 获取模块数量通过直接查询
+        with get_db() as db:
+            # 使用原生SQL查询避免循环导入
+            query = "SELECT COUNT(*) FROM mcp_modules WHERE category_id = :id"
+            sql = text(query).bindparams(id=self.id)
+            modules_count = db.execute(sql).scalar()
+            
         return {
             "id": self.id,
             "name": self.name,
@@ -36,7 +40,7 @@ class McpCategory(Base):
             "order": self.order,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "modules_count": len(self.modules)
+            "modules_count": modules_count
         }
 
 
@@ -55,25 +59,39 @@ class McpModule(Base):
     icon = Column(String(200))  # 图标URL
     is_hosted = Column(Boolean, default=False)  # 是否为托管模块
     repository_url = Column(String(200))  # 代码仓库地址
-    category_id = Column(Integer, ForeignKey("mcp_categories.id"), nullable=True)  # 分组ID
+    category_id = Column(Integer, nullable=True, index=True)  # 分组ID
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
     code = Column(Text)  # 模块代码
     config_schema = Column(Text)  # 配置项模式，用于存储key, secret等字段的配置模式，JSON格式
     markdown_docs = Column(Text)  # 模块的Markdown格式文档内容
-    
-    # 关联分组
-    category = relationship("McpCategory", back_populates="modules")
-    
-    # 关联该模块下的工具
-    tools = relationship(
-        "McpTool", 
-        back_populates="module", 
-        cascade="all, delete-orphan"
-    )
 
     def to_dict(self):
         """转换为字典格式"""
+        # 获取分类名称和工具数量通过直接查询
+        category_name = None
+        tools_count = 0
+        
+        with get_db() as db:
+            # 获取分类名称
+            if self.category_id:
+                query = "SELECT name FROM mcp_categories WHERE id = :id"
+                sql = text(query).bindparams(id=self.category_id)
+                result = db.execute(sql).first()
+                category_name = result[0] if result else None
+            
+            # 获取工具数量
+            query = "SELECT COUNT(*) FROM mcp_tools WHERE module_id = :id"
+            sql = text(query).bindparams(id=self.id)
+            tools_count = db.execute(sql).scalar()
+            
+        config_dict = {}
+        if self.config_schema:
+            try:
+                config_dict = json.loads(self.config_schema)
+            except json.JSONDecodeError:
+                pass
+                
         return {
             "id": self.id,
             "name": self.name,
@@ -86,13 +104,12 @@ class McpModule(Base):
             "is_hosted": self.is_hosted,
             "repository_url": self.repository_url,
             "category_id": self.category_id,
-            "category_name": self.category.name if self.category else None,
+            "category_name": category_name,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "tools_count": len(self.tools),
+            "tools_count": tools_count,
             "code": self.code,
-            "config_schema": json.loads(self.config_schema) 
-                if self.config_schema else {},
+            "config_schema": config_dict,
             "markdown_docs": self.markdown_docs
         }
 
@@ -102,7 +119,7 @@ class McpTool(Base):
     __tablename__ = "mcp_tools"
 
     id = Column(Integer, primary_key=True, index=True)
-    module_id = Column(Integer, ForeignKey("mcp_modules.id"))
+    module_id = Column(Integer, index=True)  # 移除外键约束
     name = Column(String(100), index=True)  # 工具名称
     function_name = Column(String(100))  # 对应的函数名
     description = Column(Text)  # 工具描述
@@ -111,13 +128,21 @@ class McpTool(Base):
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
     is_enabled = Column(Boolean, default=True)  # 是否已启用
-    
-    # 关联所属的模块
-    module = relationship("McpModule", back_populates="tools")
 
     def to_dict(self):
         """转换为字典格式"""
         params = json.loads(self.parameters) if self.parameters else {}
+        
+        # 获取模块名称通过直接查询
+        module_name = None
+        with get_db() as db:
+            from app.models.modules.mcp_marketplace import McpModule
+            module = db.query(McpModule).filter(
+                McpModule.id == self.module_id
+            ).first()
+            if module:
+                module_name = module.name
+        
         return {
             "id": self.id,
             "module_id": self.module_id,
@@ -129,5 +154,5 @@ class McpTool(Base):
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
             "is_enabled": self.is_enabled,
-            "module_name": self.module.name if self.module else None
+            "module_name": module_name
         } 

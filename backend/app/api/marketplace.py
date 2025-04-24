@@ -6,6 +6,7 @@ from starlette.responses import JSONResponse
 from starlette.requests import Request
 
 from app.services.marketplace.service import marketplace_service
+from app.services.mcp_service.service_manager import service_manager
 
 
 async def list_modules(request: Request):
@@ -131,6 +132,55 @@ async def update_module_category(request: Request):
     return JSONResponse(result)
 
 
+async def publish_module(request: Request):
+    """发布MCP模块服务"""
+    module_id = int(request.path_params["module_id"])
+    try:
+        # 发布服务
+        service = service_manager.publish_service(module_id)
+        return JSONResponse({
+            "message": "服务已发布",
+            "service": {
+                "id": service.id,
+                "module_id": service.module_id,
+                "service_uuid": service.service_uuid,
+                "sse_url": service.sse_url,
+                "status": service.status
+            }
+        })
+    except Exception as e:
+        return JSONResponse({"error": f"发布失败: {str(e)}"}, status_code=400)
+
+
+async def stop_service(request: Request):
+    """停止MCP服务"""
+    service_uuid = request.path_params["service_uuid"]
+    success = service_manager.stop_service(service_uuid)
+    if not success:
+        return JSONResponse({"error": "停止服务失败"}, status_code=400)
+    return JSONResponse({"message": "服务已停止"})
+
+
+async def list_services(request: Request):
+    """获取已发布的MCP服务列表"""
+    # 支持按模块ID过滤
+    module_id = request.query_params.get("module_id")
+    if module_id:
+        module_id = int(module_id)
+    
+    services = service_manager.list_services(module_id)
+    return JSONResponse(services)
+
+
+async def get_service(request: Request):
+    """获取服务详情"""
+    service_uuid = request.path_params["service_uuid"]
+    service = service_manager.get_service_status(service_uuid)
+    if not service:
+        return JSONResponse({"error": "服务不存在"}, status_code=404)
+    return JSONResponse(service)
+
+
 def get_router():
     """获取MCP广场路由"""
     routes = [
@@ -152,5 +202,11 @@ def get_router():
             update_module_category, 
             methods=["PUT"]
         ),
+        
+        # 新增路由
+        Route("/modules/{module_id:int}/publish", publish_module, methods=["POST"]),
+        Route("/services", list_services, methods=["GET"]),
+        Route("/services/{service_uuid}", get_service, methods=["GET"]),
+        Route("/services/{service_uuid}/stop", stop_service, methods=["POST"]),
     ]
     return routes

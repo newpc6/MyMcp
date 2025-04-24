@@ -37,6 +37,7 @@ class Settings:
         self.HOST: str = config.get("server", {}).get("host", "0.0.0.0")
         self.PORT: int = config.get("server", {}).get("port", 8002)
         self.DEBUG: bool = config.get("server", {}).get("debug", True)
+        self.SSE_SERVER_URL: str = config.get("server", {}).get("sse_server_url", "http://10.4.1.132:8002")
         
         # MCP设置
         self.MCP_PORT: int = config.get("mcp", {}).get("port", 8002)

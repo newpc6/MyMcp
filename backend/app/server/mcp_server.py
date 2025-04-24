@@ -28,7 +28,7 @@ if project_root not in sys.path:
 
 # MCP服务器实例
 server_instance = None
-
+uni_server = None
 # 存储已手动添加的工具，用于重启服务时重新加载
 _manually_added_tools: List[Dict[str, Any]] = []
 
@@ -203,44 +203,45 @@ def register_repository_functions():
     import sys
     import tempfile
     from types import ModuleType
-    
+
     try:
         # 从数据库获取所有模块
         with get_db() as db:
             query = select(McpModule).where(McpModule.is_hosted == True)
             modules = db.execute(query).scalars().all()
-            
+
             em_logger.info(f"从数据库加载模块: 找到{len(modules)}个模块")
-            
+
             # 创建临时目录存放代码文件
             temp_dir = tempfile.mkdtemp(prefix="mcp_modules_")
-            
+
             # 添加临时目录到Python路径
             if temp_dir not in sys.path:
                 sys.path.insert(0, temp_dir)
-            
+
             for module in modules:
                 if not module.code:
                     em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
                     continue
-                
+
                 # 创建临时模块文件
                 module_filename = f"{module.name}.py"
                 module_path = os.path.join(temp_dir, module_filename)
-                
+
                 try:
                     # 将代码写入临时文件
                     with open(module_path, "w", encoding="utf-8") as f:
                         f.write(module.code)
-                        
+
                     # 动态导入模块
                     module_name = module.name
-                    spec = importlib.util.spec_from_file_location(module_name, module_path)
+                    spec = importlib.util.spec_from_file_location(
+                        module_name, module_path)
                     if spec and spec.loader:
                         module_obj = importlib.util.module_from_spec(spec)
                         spec.loader.exec_module(module_obj)
                         em_logger.info(f"成功导入模块: {module_name}")
-                        
+
                         # 遍历模块中的所有函数
                         for name, func in inspect.getmembers(module_obj, inspect.isfunction):
                             # 过滤出该模块定义的函数(而不是导入的函数)
@@ -253,10 +254,10 @@ def register_repository_functions():
                                     add_tool(func, name, doc)
                 except Exception as e:
                     em_logger.error(f"导入模块 {module.name} 失败: {str(e)}")
-                    
+
     except Exception as e:
         em_logger.error(f"注册仓库函数失败: {str(e)}")
-    
+
     # 兼容性保留：加载实体文件中的函数
     # 获取repository目录
     repo_dir = os.path.join(current_dir, 'repository')
@@ -330,16 +331,8 @@ def get_mcp_server():
 
 async def run_sse_async(app) -> None:
     """Run the server using SSE transport."""
-    #  starlette_app = self.sse_app()
-    #  starlette_app.routes.extend(routes)
-    config = uvicorn.Config(
-        app,
-        host=settings.HOST,
-        port=settings.MCP_PORT,
-        log_level=settings.LOG_LEVEL.lower(),
-    )
-    server = uvicorn.Server(config)
-    await server.serve()
+    global uni_server
+    await uni_server.serve()
 
 
 def start_mcp_server():
@@ -359,16 +352,16 @@ def start_mcp_server():
         f"是否主线程: {is_main_thread}, "
         f"线程ID: {current_thread.ident}"
     )
-
+    global server_instance
     # 创建FastMCP实例
-    server = FastMCP(
+    server_instance = FastMCP(
         name="MCP Server",
         host=settings.HOST,
         port=settings.MCP_PORT,
     )
 
     # 创建SSE应用并配置中间件
-    app = server.sse_app()
+    app = server_instance.sse_app()
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -376,7 +369,6 @@ def start_mcp_server():
         allow_methods=settings.CORS_METHODS,
         allow_headers=settings.CORS_HEADERS,
     )
-
     # 添加日志中间件
     app.add_middleware(APILoggingMiddleware)
 
@@ -384,14 +376,22 @@ def start_mcp_server():
     from app.api.urls import get_router
     # 使用Starlette Router对象代替FastAPI应用
     get_router(app)
-    # 将路由器挂载到应用
-    # app.mount("/", router)
-    # app.routes.extend(router.routes)
-
     # 保存服务器实例
-    server_instance = server
+    # server_instance = server
     em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
+    from app.models.engine import init_db
+    from app.services.mcp_service.service_manager import service_manager
 
+    init_db()
+    global uni_server
+    config = uvicorn.Config(
+        app,
+        host=settings.HOST,
+        port=settings.MCP_PORT,
+        log_level=settings.LOG_LEVEL.lower(),
+    )
+    uni_server = uvicorn.Server(config)
+    service_manager.init_app(app, server_instance)
     # 自动注册仓库中的函数
     register_repository_functions()
 
@@ -403,16 +403,6 @@ def start_mcp_server():
     # 这是阻塞调用
     try:
         em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
-        # starlette_app = self.sse_app()
-        # app.routes.extend(routes)
-        # config = uvicorn.Config(
-        #     app,
-        #     host=settings.HOST,
-        #     port=settings.MCP_PORT,
-        #     log_level=settings.LOG_LEVEL.lower(),
-        # )
-        # server = uvicorn.Server(config)
-        # server.serve()
         anyio.run(run_sse_async, app)
         # server_instance.run(transport='sse', routes=app.routes)
     except Exception as e:

@@ -2,7 +2,7 @@
  * MCP广场相关API
  */
 import httpClient from '../utils/http-client';
-import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo } from '../types/marketplace';
+import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo, McpServiceInfo } from '../types/marketplace';
 
 /**
  * 获取所有MCP模块列表
@@ -127,5 +127,50 @@ export async function testModuleTool(toolId: number, params: any) {
  */
 export async function testModuleFunction(moduleId: number, functionName: string, params: any) {
   const response = await httpClient.post(`/api/execute/module/${moduleId}/function/${functionName}`, params);
+  return response.data;
+}
+
+/**
+ * 获取模块的服务列表
+ * @param moduleId - 可选的模块ID
+ */
+export async function listServices(moduleId?: number): Promise<McpServiceInfo[]> {
+  let url = '/api/marketplace/services';
+  if (moduleId) {
+    url += `?module_id=${moduleId}`;
+  }
+  const response = await httpClient.get(url);
+  return response.data;
+}
+
+/**
+ * 发布模块
+ * @param moduleId - 模块ID
+ */
+export async function publishModule(moduleId: number): Promise<{
+  message: string;
+  service: McpServiceInfo;
+}> {
+  const response = await httpClient.post(`/api/marketplace/modules/${moduleId}/publish`);
+  return response.data;
+}
+
+/**
+ * 停止服务
+ * @param serviceUuid - 服务UUID
+ */
+export async function stopService(serviceUuid: string): Promise<{
+  message: string;
+}> {
+  const response = await httpClient.post(`/api/marketplace/services/${serviceUuid}/stop`);
+  return response.data;
+}
+
+/**
+ * 获取服务详情
+ * @param serviceUuid - 服务UUID
+ */
+export async function getService(serviceUuid: string): Promise<McpServiceInfo> {
+  const response = await httpClient.get(`/api/marketplace/services/${serviceUuid}`);
   return response.data;
 } 
