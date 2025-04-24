@@ -292,17 +292,19 @@ class McpServiceManager:
             if not service:
                 return None
 
-            # 获取模块名称
+            # 获取模块名称和描述
             module = db.query(McpModule).filter(
                 McpModule.id == service.module_id
             ).first()
             module_name = module.name if module else None
+            module_description = module.description if module else ""
 
             # 转换为字典
             return {
                 "id": service.id,
                 "module_id": service.module_id,
                 "module_name": module_name,
+                "description": module_description,
                 "service_uuid": service.service_uuid,
                 "status": service.status,
                 "sse_url": service.sse_url,
@@ -333,17 +335,20 @@ class McpServiceManager:
 
             # 批量查询模块信息
             modules_map = {}
+            modules_description_map = {}
             if module_ids:
                 modules = db.query(McpModule).filter(
                     McpModule.id.in_(module_ids)
                 ).all()
                 modules_map = {m.id: m.name for m in modules}
+                modules_description_map = {m.id: m.description for m in modules}
 
             return [
                 {
                     "id": service.id,
                     "module_id": service.module_id,
                     "module_name": modules_map.get(service.module_id),
+                    "description": modules_description_map.get(service.module_id, ""),
                     "service_uuid": service.service_uuid,
                     "status": service.status,
                     "sse_url": service.sse_url,

@@ -1,61 +1,47 @@
 import { createRouter, createWebHistory, RouteRecordRaw, NavigationGuardNext, RouteLocationNormalized } from 'vue-router'
+import Home from '../views/Home.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'home',
-    component: () => import('../views/Home.vue'),
+    component: Home,
     meta: { title: '首页' }
   },
-  {
-    path: '/tools',
-    name: 'tools',
-    component: () => import('../views/tools/index.vue'),
-    meta: { title: 'MCP 工具管理' }
-  },
-  {
-    path: '/mcp',
-    name: 'mcp',
-    component: () => import('../views/mcp/index.vue'),
-    meta: { title: 'MCP 服务状态' }
-  },
-  {
-    path: '/resources',
-    name: 'resources',
-    component: () => import('../views/resources/index.vue'),
-    meta: { title: 'MCP 资源管理' }
-  },
   // {
-  //   path: '/modules',
-  //   name: 'modules',
-  //   component: () => import('../views/modules/index.vue'),
-  //   meta: { title: 'MCP 模块管理' }
+  //   path: '/tools',
+  //   name: 'tools',
+  //   component: () => import('../views/tools/ToolsList.vue'),
+  //   meta: { title: 'MCP 工具管理' }
   // },
   {
-    path: '/protocols',
-    name: 'protocols',
-    component: () => import('../views/protocols/index.vue'),
-    meta: { title: 'MCP 协议管理' }
-  },
-  {
-    path: '/editor/:path*',
-    name: 'Editor',
-    component: () => import('../views/Editor.vue')
+    path: '/modules',
+    name: 'modules',
+    component: () => import('../views/modules/index.vue'),
+    meta: { title: 'MCP 模块管理' }
   },
   {
     path: '/marketplace',
-    name: 'Marketplace',
-    component: () => import('../views/marketplace/index.vue')
+    name: 'marketplace',
+    component: () => import('../views/marketplace/index.vue'),
+    meta: { title: 'MCP 市场管理' }
   },
   {
-    path: '/marketplace/module/:id',
-    name: 'ModuleDetail',
-    component: () => import('../views/marketplace/ModuleDetail.vue')
+    path: '/marketplace/:id',
+    name: 'module-detail',
+    component: () => import('../views/marketplace/ModuleDetail.vue'),
+    meta: { title: 'MCP 模块详情' }
+  },
+  {
+    path: '/mcp-services',
+    name: 'mcp-services',
+    component: () => import('../views/mcp/ServicesList.vue'),
+    meta: { title: 'MCP 服务管理' }
   }
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes
 })
 

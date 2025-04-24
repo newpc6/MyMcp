@@ -179,6 +179,40 @@ async def uninstall_service(request: Request):
     return JSONResponse({"message": "服务已卸载"})
 
 
+async def update_service_description(request: Request):
+    """更新服务描述"""
+    service_uuid = request.path_params["service_uuid"]
+    data = await request.json()
+    description = data.get("description", "")
+    
+    try:
+        from app.models.engine import get_db
+        from app.models.modules.mcp_services import McpService
+        
+        with get_db() as db:
+            service = db.query(McpService).filter(
+                McpService.service_uuid == service_uuid
+            ).first()
+            
+            if not service:
+                return JSONResponse({"error": "服务不存在"}, status_code=404)
+            
+            # 获取关联的模块并更新描述
+            from app.models.modules.mcp_marketplace import McpModule
+            module = db.query(McpModule).filter(
+                McpModule.id == service.module_id
+            ).first()
+            
+            if module:
+                module.description = description
+                db.commit()
+                return JSONResponse({"message": "服务说明已更新"})
+            else:
+                return JSONResponse({"error": "未找到关联模块"}, status_code=404)
+    except Exception as e:
+        return JSONResponse({"error": f"更新服务说明失败: {str(e)}"}, status_code=500)
+
+
 async def list_services(request: Request):
     """获取已发布的MCP服务列表"""
     # 支持按模块ID过滤
@@ -194,9 +228,16 @@ async def get_service(request: Request):
     """获取服务详情"""
     service_uuid = request.path_params["service_uuid"]
     service = service_manager.get_service_status(service_uuid)
-    if not service:
-        return JSONResponse({"error": "服务不存在"}, status_code=404)
-    return JSONResponse(service)
+    if service:
+        return JSONResponse(service)
+    return JSONResponse({"detail": "服务不存在"}, status_code=404)
+
+
+async def get_online_services(request: Request):
+    """获取在线服务列表"""
+    # 获取运行中的服务UUID列表
+    online_services = list(service_manager._running_services.keys())
+    return JSONResponse(online_services)
 
 
 def get_router():
@@ -221,12 +262,14 @@ def get_router():
             methods=["PUT"]
         ),
         
-        # 新增路由
+        # 服务相关路由
         Route("/modules/{module_id:int}/publish", publish_module, methods=["POST"]),
         Route("/services", list_services, methods=["GET"]),
+        Route("/services/online", get_online_services, methods=["GET"]),
         Route("/services/{service_uuid}", get_service, methods=["GET"]),
         Route("/services/{service_uuid}/stop", stop_service, methods=["POST"]),
         Route("/services/{service_uuid}/start", start_service, methods=["POST"]),
         Route("/services/{service_uuid}/uninstall", uninstall_service, methods=["POST"]),
+        Route("/services/{service_uuid}/description", update_service_description, methods=["PUT"]),
     ]
     return routes

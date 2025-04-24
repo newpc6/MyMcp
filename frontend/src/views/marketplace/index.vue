@@ -217,7 +217,7 @@ function getModuleIcon(module: McpModuleInfo) {
 
 // 跳转到模块详情页
 function goToModuleDetail(moduleId: number) {
-  router.push(`/marketplace/module/${moduleId}`);
+  router.push(`/marketplace/${moduleId}`);
 }
 
 // 页面加载时获取模块列表和分组列表
