@@ -249,7 +249,7 @@ const createForm = ref<{
   author: string;
   version: string;
   tags: string[];
-  category_id: number | undefined;
+  category_id: number | null;
   code: string;
   is_public: boolean;
 }>({
@@ -259,7 +259,7 @@ const createForm = ref<{
   author: '',
   version: '1.0.0',
   tags: [] as string[],
-  category_id: undefined,
+  category_id: null,
   code: '',
   is_public: true
 });
@@ -331,8 +331,8 @@ function showCreateDialog() {
     module_path: '',
     author: '',
     version: '1.0.0',
-    tags: [],
-    category_id: undefined,
+    tags: [] as string[],
+    category_id: null,
     code: '',
     is_public: true
   };
@@ -356,7 +356,7 @@ async function submitCreateForm() {
       author: createForm.value.author,
       version: createForm.value.version,
       tags: tagsStr,  // 使用转换后的字符串
-      category_id: createForm.value.category_id,
+      category_id: createForm.value.category_id || undefined,
       code: createForm.value.code,
       is_public: createForm.value.is_public,
       is_hosted: true,

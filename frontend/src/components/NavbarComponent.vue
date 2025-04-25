@@ -1,26 +1,22 @@
 <template>
   <div class="navbar-container">
-    <el-menu
-      mode="horizontal"
-      router
-      :ellipsis="false"
-      class="nav-menu"
-    >
+    <el-menu mode="horizontal" router :ellipsis="false" class="nav-menu">
       <div class="flex-grow logo-container">
         <h1 class="text-xl font-bold text-primary">智能MCP管理平台</h1>
       </div>
-      
-      <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item>
-      <!-- <el-menu-item index="/tools" @mouseup="handleMouseUp($event, '/tools')">工具管理</el-menu-item> -->
+
+      <!-- <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item> -->
       <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">MCP广场</el-menu-item>
       <el-menu-item index="/mcp-services" @mouseup="handleMouseUp($event, '/mcp-services')">MCP服务管理</el-menu-item>
       <el-menu-item v-if="isAdmin" index="/users" @mouseup="handleMouseUp($event, '/users')">用户管理</el-menu-item>
       <el-menu-item v-if="isAdmin" index="/tenants" @mouseup="handleMouseUp($event, '/tenants')">租户管理</el-menu-item>
-      
+
       <div class="user-controls">
         <el-dropdown v-if="isLoggedIn" @command="handleCommand">
           <span class="user-dropdown-link">
-            {{ userInfo.username }} <el-icon><ArrowDown /></el-icon>
+            {{ userInfo.username }} <el-icon>
+              <ArrowDown />
+            </el-icon>
           </span>
           <template #dropdown>
             <el-dropdown-menu>
@@ -31,40 +27,23 @@
         </el-dropdown>
         <el-button v-else type="primary" size="small" @click="handleLogin">登录</el-button>
       </div>
-      
+
       <!-- <div class="version-info">
         <span class="text-sm">版本: v1.0.0</span>
       </div> -->
     </el-menu>
-    
+
     <!-- 修改密码对话框 -->
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
-      <el-form 
-        ref="passwordFormRef" 
-        :model="passwordForm" 
-        :rules="passwordRules" 
-        label-width="100px"
-      >
+      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
         <el-form-item label="旧密码" prop="oldPassword">
-          <el-input 
-            v-model="passwordForm.oldPassword" 
-            type="password" 
-            show-password
-          />
+          <el-input v-model="passwordForm.oldPassword" type="password" show-password />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input 
-            v-model="passwordForm.newPassword" 
-            type="password" 
-            show-password
-          />
+          <el-input v-model="passwordForm.newPassword" type="password" show-password />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input 
-            v-model="passwordForm.confirmPassword" 
-            type="password" 
-            show-password
-          />
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -135,15 +114,15 @@ const passwordRules = {
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
-    { 
+    {
       validator: (rule: any, value: string, callback: Function) => {
         if (value !== passwordForm.newPassword) {
           callback(new Error('两次输入的密码不一致'));
         } else {
           callback();
         }
-      }, 
-      trigger: 'blur' 
+      },
+      trigger: 'blur'
     }
   ]
 };
@@ -186,17 +165,17 @@ const handleLogin = () => {
 // 修改密码
 const changePassword = async () => {
   if (!passwordFormRef.value) return;
-  
+
   try {
     await passwordFormRef.value.validate();
-    
+
     changing.value = true;
-    
+
     const response = await apiChangePassword(
-      passwordForm.oldPassword, 
+      passwordForm.oldPassword,
       passwordForm.newPassword
     );
-    
+
     if (response.data.code === 0) {
       ElMessage.success('密码修改成功');
       passwordDialogVisible.value = false;
@@ -272,4 +251,4 @@ const changePassword = async () => {
 :deep(.el-menu--horizontal) {
   border-bottom: none;
 }
-</style> 
+</style>

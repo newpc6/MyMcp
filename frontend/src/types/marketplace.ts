@@ -72,10 +72,14 @@ export interface McpToolInfo {
 export interface McpServiceInfo {
   id: number;
   module_id: number;
+  module_name?: string;  // 模块名称
+  description?: string;  // 服务描述
   service_uuid: string;
-  port: number;
   status: string;
   sse_url: string;
+  port?: number;
+  user_id?: number | null;
+  user_name?: string | null;
   created_at: string;
   updated_at: string;
 }

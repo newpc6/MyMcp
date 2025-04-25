@@ -11,20 +11,9 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     name: 'home',
-    component: Home,
-    meta: { title: '首页' }
-  },
-  // {
-  //   path: '/tools',
-  //   name: 'tools',
-  //   component: () => import('../views/tools/ToolsList.vue'),
-  //   meta: { title: 'MCP 工具管理' }
-  // },
-  {
-    path: '/modules',
-    name: 'modules',
-    component: () => import('../views/modules/index.vue'),
-    meta: { title: 'MCP 模块管理' }
+    // component: Home,
+    meta: { title: '首页' },
+    redirect: '/marketplace'
   },
   {
     path: '/marketplace',

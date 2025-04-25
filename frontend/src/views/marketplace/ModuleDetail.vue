@@ -399,6 +399,7 @@ import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
 import { Document, DocumentCopy, Search } from '@element-plus/icons-vue';
+import { fallbackCopyTextToClipboard } from '@/utils/copy';
 
 const route = useRoute();
 const router = useRouter();
@@ -790,38 +791,6 @@ const copyUrl = (url: string) => {
   } else {
     // 浏览器不支持clipboard API，使用传统方法
     fallbackCopyTextToClipboard(url);
-  }
-};
-
-// 兼容性处理方法
-const fallbackCopyTextToClipboard = (text: string) => {
-  try {
-    // 创建临时文本区域
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    
-    // 确保文本区域在视图之外
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    
-    // 选择文本
-    textArea.select();
-    textArea.setSelectionRange(0, 99999); // 兼容移动设备
-    
-    // 执行复制
-    const successful = document.execCommand('copy');
-    document.body.removeChild(textArea);
-    
-    if (successful) {
-      ElMessage.success('URL已复制到剪贴板');
-    } else {
-      ElMessage.warning('无法复制URL，请手动复制');
-    }
-  } catch (err) {
-    ElMessage.error('复制失败，请手动复制URL');
-    console.error('复制失败:', err);
   }
 };
 
