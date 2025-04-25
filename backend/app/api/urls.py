@@ -6,7 +6,7 @@ API路由模块
 from app.core.config import settings
 from app.utils.response import success_response
 from . import (
-    auth, tools, resources, modules, 
+    auth, tools, modules, 
     mcp_service, history, execution, log, marketplace
 )
 
@@ -39,15 +39,6 @@ def get_router(app):
     for route in tools.get_router():
         app.add_route(
             f"{settings.API_PREFIX}/tools{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
-            name=route.name
-        )
-    
-    # 添加资源路由
-    for route in resources.get_router():
-        app.add_route(
-            f"{settings.API_PREFIX}/resources{route.path}", 
             route.endpoint, 
             methods=route.methods, 
             name=route.name
