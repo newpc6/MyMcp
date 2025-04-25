@@ -343,9 +343,10 @@ function selectTool(tool: McpToolInfo) {
 async function loadModuleInfo() {
   loading.value = true;
   try {
-    moduleInfo.value = await getModule(moduleId.value);
-    moduleTools.value = await getModuleTools(moduleId.value);
-
+    const data = await getModule(moduleId.value);
+    moduleInfo.value = data.data;
+    const toolsData = await getModuleTools(moduleId.value);
+    moduleTools.value = toolsData.data;
     // 默认选中第一个工具
     if (moduleTools.value.length > 0) {
       selectTool(moduleTools.value[0]);
@@ -567,7 +568,7 @@ const loadServices = async () => {
 const handlePublishService = async () => {
   try {
     ElMessage.info({ message: '正在发布服务...', duration: 0 });
-    const result = await publishModule(moduleId.value);
+    await publishModule(moduleId.value);
     ElMessage.closeAll();
     ElMessage.success('服务发布成功');
     await loadServices();

@@ -112,7 +112,7 @@ import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification } from 'element-plus';
 import { Tools, Menu, Collection } from '@element-plus/icons-vue';
-import { listModules, scanModules as apiScanModules, listCategories } from '../../api/marketplace';
+import { listModules, listCategories } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 
 const router = useRouter();
@@ -134,7 +134,8 @@ async function loadModules() {
   loading.value = true;
   try {
     const categoryId = selectedCategoryId.value === 'all' ? null : selectedCategoryId.value;
-    modules.value = await listModules(categoryId);
+    const data = await listModules(categoryId);
+    modules.value = data.data;
   } catch (error) {
     console.error("加载模块失败", error);
     ElNotification({
@@ -150,7 +151,8 @@ async function loadModules() {
 // 加载分组列表
 async function loadCategories() {
   try {
-    categories.value = await listCategories();
+    const data = await listCategories();
+    categories.value = data.data;
   } catch (error) {
     console.error("加载分组失败", error);
     ElNotification({
@@ -158,30 +160,6 @@ async function loadCategories() {
       message: '加载MCP分组列表失败',
       type: 'error'
     });
-  }
-}
-
-// 扫描并更新模块
-async function scanModules() {
-  scanning.value = true;
-  try {
-    const result = await apiScanModules() as ScanResult;
-    ElNotification({
-      title: '成功',
-      message: `扫描完成: 新增${result.new_modules}个模块, ${result.new_tools}个工具`,
-      type: 'success'
-    });
-    // 重新加载列表
-    await loadModules();
-  } catch (error) {
-    console.error("扫描模块失败", error);
-    ElNotification({
-      title: '错误',
-      message: '扫描MCP模块失败',
-      type: 'error'
-    });
-  } finally {
-    scanning.value = false;
   }
 }
 
