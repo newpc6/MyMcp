@@ -103,12 +103,12 @@ const handleLogin = async () => {
     loading.value = true;
     errorMessage.value = '';
     
-    const response = await login(loginForm.username, loginForm.password);
-    console.log('登录响应:', response.data);
+    const data = await login(loginForm.username, loginForm.password);
+    console.log('登录响应:', data);
     
-    if (response.data.code === 0) {
+    if (data.code === 0) {
       // 确认响应中包含必要数据
-      const userData = response.data.data;
+      const userData = data.data;
       if (!userData || !userData.token) {
         errorMessage.value = '服务器返回的用户数据不完整';
         console.error('登录响应中缺少token', userData);
@@ -131,8 +131,8 @@ const handleLogin = async () => {
       // 重定向到主页
       router.push('/');
     } else {
-      errorMessage.value = response.data.message || '登录失败';
-      console.error('登录失败:', response.data.message);
+      errorMessage.value = data.message || '登录失败';
+      console.error('登录失败:', data.message);
     }
   } catch (error: any) {
     console.error('登录请求错误:', error);

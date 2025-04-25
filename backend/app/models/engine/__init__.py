@@ -52,7 +52,7 @@ def init_db():
     # 初始化基础数据
     from app.models.engine.init_data import (
         migrate_database, init_category_data, 
-        auto_categorize_modules, init_demo_modules
+        auto_categorize_modules, init_demo_modules, init_admin_users
     )
     
     # 先执行数据库迁移，确保表结构正确
@@ -66,3 +66,7 @@ def init_db():
     
     # 初始化演示模块
     init_demo_modules()
+    
+    # 初始化管理员用户
+    init_admin_users()
+

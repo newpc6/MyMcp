@@ -266,7 +266,8 @@ class TenantService:
     def create_tenant(
         name: str,
         code: str,
-        description: Optional[str] = None
+        description: Optional[str] = None,
+        parent_id: Optional[int] = None
     ) -> Optional[Tenant]:
         """创建新租户"""
         try:
@@ -278,12 +279,21 @@ class TenantService:
                     em_logger.warning(f"租户代码 {code} 已存在")
                     return None
                 
+                # 如果指定了父租户，检查父租户是否存在
+                if parent_id:
+                    parent_query = select(Tenant).where(Tenant.id == parent_id)
+                    parent_tenant = db.execute(parent_query).scalar_one_or_none()
+                    if not parent_tenant:
+                        em_logger.warning(f"父租户ID {parent_id} 不存在")
+                        return None
+                
                 # 创建新租户
                 now = datetime.now(timezone('Asia/Shanghai'))
                 new_tenant = Tenant(
                     name=name,
                     code=code,
                     description=description,
+                    parent_id=parent_id,
                     created_at=now,
                     updated_at=now
                 )
@@ -324,7 +334,8 @@ class TenantService:
         tenant_id: int,
         name: Optional[str] = None,
         description: Optional[str] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        parent_id: Optional[int] = None
     ) -> bool:
         """更新租户信息"""
         try:
@@ -338,6 +349,28 @@ class TenantService:
                     em_logger.warning(f"租户ID {tenant_id} 不存在")
                     return False
                 
+                # 检查是否形成循环引用
+                if parent_id and tenant_id == parent_id:
+                    em_logger.warning(f"租户不能将自己设为父租户")
+                    return False
+                
+                # 如果指定了父租户，检查父租户是否存在
+                if parent_id:
+                    parent_query = select(Tenant).where(Tenant.id == parent_id)
+                    parent_tenant = db.execute(parent_query).scalar_one_or_none()
+                    if not parent_tenant:
+                        em_logger.warning(f"父租户ID {parent_id} 不存在")
+                        return False
+                    
+                    # 检查是否会形成循环引用
+                    current_parent = parent_tenant
+                    while current_parent and current_parent.parent_id:
+                        if current_parent.parent_id == tenant_id:
+                            em_logger.warning(f"检测到循环依赖，无法设置父租户")
+                            return False
+                        parent_query = select(Tenant).where(Tenant.id == current_parent.parent_id)
+                        current_parent = db.execute(parent_query).scalar_one_or_none()
+                
                 # 准备更新值
                 update_values = {}
                 if name is not None:
@@ -346,6 +379,8 @@ class TenantService:
                     update_values["description"] = description
                 if status is not None:
                     update_values["status"] = status
+                if parent_id is not None:
+                    update_values["parent_id"] = parent_id
                 
                 # 如果有字段需要更新
                 if update_values:
@@ -405,6 +440,43 @@ class TenantService:
                 return db.execute(query).scalars().all()
         except Exception as e:
             em_logger.error(f"获取所有租户失败: {str(e)}")
+            return []
+    
+    @staticmethod
+    def get_tenant_tree() -> List[Dict]:
+        """一次性获取所有租户并组装成树状结构"""
+        try:
+            # 获取所有租户
+            all_tenants = TenantService.get_all_tenants()
+            
+            # 创建ID到租户对象的映射
+            tenant_map = {tenant.id: {
+                "id": tenant.id,
+                "name": tenant.name,
+                "code": tenant.code,
+                "description": tenant.description,
+                "status": tenant.status,
+                "parent_id": tenant.parent_id,
+                "created_at": tenant.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                "children": []
+            } for tenant in all_tenants}
+            
+            # 构建树结构
+            root_nodes = []
+            for tenant_id, tenant_data in tenant_map.items():
+                if tenant_data["parent_id"] is None:
+                    # 根节点
+                    root_nodes.append(tenant_data)
+                elif tenant_data["parent_id"] in tenant_map:
+                    # 子节点，添加到父节点的children列表
+                    parent = tenant_map[tenant_data["parent_id"]]
+                    parent["children"].append(tenant_data)
+            
+            em_logger.info(f"获取租户树成功，共{len(all_tenants)}个租户")
+            return root_nodes
+            
+        except Exception as e:
+            em_logger.error(f"获取租户树失败: {str(e)}")
             return []
     
     @staticmethod

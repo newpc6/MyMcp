@@ -79,11 +79,18 @@ export async function getAllTenants() {
   return response.data;
 }
 
+// 获取租户树结构 (仅管理员)
+export async function getTenantTree() {
+  const response =  await api.get('/api/auth/tenant-tree');
+  return response.data;
+}
+
 // 创建租户 (仅管理员)
 export async function createTenant(tenantData: {
   name: string;
   code: string;
   description?: string;
+  parent_id?: number;
 }) {
   const response =  await api.post('/api/auth/tenants', tenantData);
   return response.data;
@@ -96,6 +103,7 @@ export async function updateTenant(
     name?: string;
     description?: string;
     status?: string;
+    parent_id?: number;
   }
 ) {
   const response =  await api.put(`/api/auth/tenants/${tenantId}`, tenantData);

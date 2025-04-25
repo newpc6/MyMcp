@@ -409,11 +409,28 @@ async def get_tenants(request: Request):
             "code": tenant.code,
             "description": tenant.description,
             "status": tenant.status,
+            "parent_id": tenant.parent_id,
             "created_at": (tenant.created_at.strftime("%Y-%m-%d %H:%M:%S") 
                           if tenant.created_at else None)
         })
     
     return success_response(tenant_list)
+
+
+async def get_tenant_tree(request: Request):
+    """获取租户树结构（仅管理员）"""
+    # 检查管理员权限
+    if not hasattr(request.state, 'user'):
+        return error_response("未登录", code=401, http_status_code=401)
+    
+    is_admin = request.state.user.get("is_admin", False)
+    if not is_admin:
+        return error_response("需要管理员权限", code=403, http_status_code=403)
+    
+    # 获取租户树
+    tenant_tree = TenantService.get_tenant_tree()
+    
+    return success_response(tenant_tree)
 
 
 async def create_tenant(request: Request):
@@ -435,6 +452,7 @@ async def create_tenant(request: Request):
         name = data.get('name')
         code = data.get('code')
         description = data.get('description')
+        parent_id = data.get('parent_id')
         
         if not name or not code:
             return error_response("租户名称和代码不能为空")
@@ -443,7 +461,8 @@ async def create_tenant(request: Request):
         tenant = TenantService.create_tenant(
             name=name,
             code=code,
-            description=description
+            description=description,
+            parent_id=parent_id
         )
         
         if not tenant:
@@ -454,7 +473,8 @@ async def create_tenant(request: Request):
             "name": tenant.name,
             "code": tenant.code,
             "description": tenant.description,
-            "status": tenant.status
+            "status": tenant.status,
+            "parent_id": tenant.parent_id
         }, "创建租户成功")
         
     except Exception as e:
@@ -483,13 +503,15 @@ async def update_tenant(request: Request):
         name = data.get('name')
         description = data.get('description')
         status = data.get('status')
+        parent_id = data.get('parent_id')
         
         # 更新租户信息
         result = TenantService.update_tenant(
             tenant_id=tenant_id,
             name=name,
             description=description,
-            status=status
+            status=status,
+            parent_id=parent_id
         )
         
         if not result:
@@ -505,7 +527,8 @@ async def update_tenant(request: Request):
             "name": tenant.name,
             "code": tenant.code,
             "description": tenant.description,
-            "status": tenant.status
+            "status": tenant.status,
+            "parent_id": tenant.parent_id
         }, "更新租户成功")
         
     except ValueError:
@@ -561,6 +584,7 @@ def get_router():
         Route("/users/{user_id:int}", delete_user, methods=["DELETE"]),
         Route("/change-password", change_password, methods=["POST"]),
         Route("/tenants", get_tenants, methods=["GET"]),
+        Route("/tenant-tree", get_tenant_tree, methods=["GET"]),
         Route("/tenants", create_tenant, methods=["POST"]),
         Route("/tenants/{tenant_id:int}", update_tenant, methods=["PUT"]),
         Route("/tenants/{tenant_id:int}", delete_tenant, methods=["DELETE"]),

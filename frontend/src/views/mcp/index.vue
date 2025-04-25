@@ -211,7 +211,8 @@ async function refreshMcpStatus() {
   error.value = null;
   
   try {
-    mcpStatus.value = await getMcpStatus();
+    const data = await getMcpStatus();
+    mcpStatus.value = data.data;
     // 如果SSE URL存在，更新表单
     if (mcpStatus.value.sse_url) {
       sseUrlForm.value.url = mcpStatus.value.sse_url;
@@ -252,12 +253,12 @@ async function testSseConnection() {
       return;
     }
     
-    const result = await testMcpSseConnection(url);
-    sseConnected.value = result.success;
-    if (result.success) {
+    const data = await testMcpSseConnection(url);
+    sseConnected.value = data.code === 0;
+    if (data.code === 0) {
       ElMessage.success('连接测试成功');
     } else {
-      ElMessage.error(`连接测试失败: ${result.message}`);
+      ElMessage.error(`连接测试失败: ${data.message}`);
     }
   } catch (err: any) {
     sseConnected.value = false;
@@ -277,11 +278,12 @@ async function testSseConnectionWithUrl() {
       return;
     }
     
-    const result = await testMcpSseConnection(url);
-    if (result.success) {
+    const data = await testMcpSseConnection(url);
+    sseConnected.value = data.code === 0;
+    if (data.code === 0) {
       ElMessage.success('连接测试成功');
     } else {
-      ElMessage.error(`连接测试失败: ${result.message}`);
+      ElMessage.error(`连接测试失败: ${data.message}`);
     }
   } catch (err: any) {
     ElMessage.error(`测试连接失败: ${err.message}`);

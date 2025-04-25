@@ -431,8 +431,8 @@ async function testTool() {
     }
 
     // 直接使用marketplace API中提供的testModuleFunction方法
-    const result = await testModuleFunction(moduleId, toolName, params);
-    testResult.value = result;
+    const data = await testModuleFunction(moduleId, toolName, params);
+    testResult.value = data.data;
   } catch (error: any) {
     console.error("工具测试失败", error);
     testError.value = error.response?.data?.detail || error.message || '执行失败';
@@ -554,7 +554,7 @@ const loadServices = async () => {
   loadingServices.value = true;
   try {
     const data = await listServices(moduleId.value);
-    services.value = data;
+    services.value = data.data;
   } catch (error) {
     console.error('加载服务列表失败', error);
     ElMessage.error('加载服务列表失败');

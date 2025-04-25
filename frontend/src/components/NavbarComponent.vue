@@ -34,9 +34,9 @@
         <el-button v-else type="primary" size="small" @click="handleLogin">登录</el-button>
       </div>
       
-      <div class="version-info">
+      <!-- <div class="version-info">
         <span class="text-sm">版本: v1.0.0</span>
-      </div>
+      </div> -->
     </el-menu>
     
     <!-- 修改密码对话框 -->

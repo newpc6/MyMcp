@@ -2,7 +2,7 @@
 用户和租户模型模块
 """
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime, ForeignKey
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, backref
 from datetime import datetime
 from app.models.engine import Base
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,12 +18,18 @@ class Tenant(Base):
     description = Column(Text)
     code = Column(String(50), nullable=False, unique=True)
     status = Column(String(20), default="active")
+    parent_id = Column(Integer, ForeignKey("tenants.id"), nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone('Asia/Shanghai')))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone('Asia/Shanghai')), 
                         onupdate=lambda: datetime.now(timezone('Asia/Shanghai')))
     
     # 关系
     users = relationship("User", secondary="user_tenants", back_populates="tenants")
+    children = relationship(
+        "Tenant", 
+        backref=backref("parent", remote_side=[id]),
+        cascade="all, delete-orphan"
+    )
 
 
 class User(Base):

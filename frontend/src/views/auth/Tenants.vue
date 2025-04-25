@@ -7,56 +7,73 @@
       </el-button>
     </div>
     
-    <el-table 
-      :data="tenants" 
+    <el-tree
       v-loading="loading"
-      border 
-      style="width: 100%"
+      :data="tenantTree"
+      node-key="id"
+      default-expand-all
+      :props="defaultProps"
+      class="tenant-tree"
     >
-      <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="租户名称" width="180" />
-      <el-table-column prop="code" label="租户代码" width="180" />
-      <el-table-column prop="description" label="描述" min-width="200" />
-      <el-table-column label="状态" width="100">
-        <template #default="scope">
-          <el-tag :type="scope.row.status === 'active' ? 'success' : 'warning'">
-            {{ scope.row.status === 'active' ? '启用' : '禁用' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="created_at" label="创建时间" width="180" />
-      <el-table-column label="操作" width="150" fixed="right">
-        <template #default="scope">
-          <el-button 
-            size="small" 
-            @click="handleEditTenant(scope.row)"
-            :disabled="scope.row.code === 'default'"
-          >
-            编辑
-          </el-button>
-          <el-button 
-            size="small" 
-            type="danger" 
-            @click="handleDeleteTenant(scope.row)"
-            :disabled="scope.row.code === 'default'"
-          >
-            删除
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+      <template #default="{ data }">
+        <div class="tenant-node">
+          <div class="tenant-info">
+            <div class="tenant-basic">
+              <span class="tenant-name">{{ data.name }}</span>
+              <span class="tenant-code">({{ data.code }})</span>
+              <el-tag size="small" :type="data.status === 'active' ? 'success' : 'warning'" class="tenant-status">
+                {{ data.status === 'active' ? '启用' : '禁用' }}
+              </el-tag>
+            </div>
+            <div class="tenant-detail">
+              <el-text v-if="data.description" type="info" size="small" class="tenant-description">
+                {{ data.description }}
+              </el-text>
+            </div>
+          </div>
+          <div class="tenant-actions">
+            <el-button 
+              size="small" 
+              @click.stop="handleAddSubTenant(data)"
+              type="success"
+              plain
+            >
+              <el-icon><Plus /></el-icon> 添加子租户
+            </el-button>
+            <el-button 
+              size="small" 
+              @click.stop="handleEditTenant(data)"
+              :disabled="data.code === 'default'"
+              type="primary"
+              plain
+            >
+              <el-icon><Edit /></el-icon> 编辑
+            </el-button>
+            <el-button 
+              size="small" 
+              type="danger" 
+              @click.stop="handleDeleteTenant(data)"
+              :disabled="data.code === 'default'"
+              plain
+            >
+              <el-icon><Delete /></el-icon> 删除
+            </el-button>
+          </div>
+        </div>
+      </template>
+    </el-tree>
     
     <!-- 租户表单对话框 -->
     <el-dialog 
       v-model="dialogVisible" 
-      :title="isEdit ? '编辑租户' : '新增租户'"
+      :title="isEdit ? '编辑租户' : (isSubTenant ? '新增子租户' : '新增租户')"
       width="500px"
     >
       <el-form 
         ref="tenantFormRef" 
         :model="tenantForm" 
         :rules="tenantRules" 
-        label-width="80px"
+        label-width="100px"
       >
         <el-form-item label="租户名称" prop="name">
           <el-input v-model="tenantForm.name" />
@@ -66,6 +83,28 @@
         </el-form-item>
         <el-form-item label="租户代码" v-else>
           <el-input v-model="tenantForm.code" disabled />
+        </el-form-item>
+        <el-form-item label="上级租户" v-if="!isEdit">
+          <el-select v-model="tenantForm.parent_id" clearable style="width: 100%">
+            <el-option label="无上级租户" :value="null" />
+            <el-option 
+              v-for="tenant in flattenedTenants" 
+              :key="tenant.id" 
+              :label="tenant.name" 
+              :value="tenant.id" 
+            />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="上级租户" v-else>
+          <el-select v-model="tenantForm.parent_id" clearable style="width: 100%" :disabled="tenantForm.code === 'default'">
+            <el-option label="无上级租户" :value="null" />
+            <el-option 
+              v-for="tenant in flattenedTenants.filter(t => t.id !== tenantForm.id)" 
+              :key="tenant.id" 
+              :label="tenant.name" 
+              :value="tenant.id" 
+            />
+          </el-select>
         </el-form-item>
         <el-form-item label="描述" prop="description">
           <el-input 
@@ -92,11 +131,12 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, reactive, onMounted } from 'vue';
+import { ref, reactive, onMounted, computed } from 'vue';
 import { ElMessage, ElMessageBox, FormInstance } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, Edit, Delete } from '@element-plus/icons-vue';
 import { 
   getAllTenants, 
+  getTenantTree,
   createTenant, 
   updateTenant, 
   deleteTenant
@@ -105,8 +145,10 @@ import {
 // 状态
 const loading = ref(false);
 const tenants = ref<any[]>([]);
+const tenantTree = ref<any[]>([]);
 const dialogVisible = ref(false);
 const isEdit = ref(false);
+const isSubTenant = ref(false);
 const saveLoading = ref(false);
 
 // 租户表单
@@ -116,7 +158,8 @@ const tenantForm = reactive({
   name: '',
   code: '',
   description: '',
-  status: 'active'
+  status: 'active',
+  parent_id: null as number | null
 });
 
 // 验证规则
@@ -139,6 +182,33 @@ const tenantRules = {
   ]
 };
 
+// Tree配置
+const defaultProps = {
+  children: 'children',
+  label: 'name',
+};
+
+// 将树形结构扁平化为列表，用于选择上级租户
+const flattenedTenants = computed(() => {
+  const flattened: any[] = [];
+  
+  const flatten = (nodes: any[]) => {
+    for (const node of nodes) {
+      flattened.push({
+        id: node.id,
+        name: node.name
+      });
+      
+      if (node.children && node.children.length > 0) {
+        flatten(node.children);
+      }
+    }
+  };
+  
+  flatten(tenantTree.value);
+  return flattened;
+});
+
 // 初始化
 onMounted(async () => {
   await fetchTenants();
@@ -148,8 +218,13 @@ onMounted(async () => {
 const fetchTenants = async () => {
   loading.value = true;
   try {
-    const data = await getAllTenants();
-    tenants.value = data.data;
+    // 获取平铺的租户列表（用于表单下拉选择）
+    const tenantsResponse = await getAllTenants();
+    tenants.value = tenantsResponse.data;
+    
+    // 获取租户树
+    const treeResponse = await getTenantTree();
+    tenantTree.value = treeResponse.data;
   } catch (error: any) {
     ElMessage.error('获取租户列表失败: ' + (error.message || '未知错误'));
   } finally {
@@ -160,22 +235,40 @@ const fetchTenants = async () => {
 // 新增租户
 const handleAddTenant = () => {
   isEdit.value = false;
+  isSubTenant.value = false;
+  resetTenantForm();
+  dialogVisible.value = true;
+};
+
+// 新增子租户
+const handleAddSubTenant = (parentTenant: any) => {
+  isEdit.value = false;
+  isSubTenant.value = true;
+  resetTenantForm();
+  tenantForm.parent_id = parentTenant.id;
+  dialogVisible.value = true;
+};
+
+// 重置表单
+const resetTenantForm = () => {
   tenantForm.id = null;
   tenantForm.name = '';
   tenantForm.code = '';
   tenantForm.description = '';
   tenantForm.status = 'active';
-  dialogVisible.value = true;
+  tenantForm.parent_id = null;
 };
 
 // 编辑租户
 const handleEditTenant = (row: any) => {
   isEdit.value = true;
+  isSubTenant.value = false;
   tenantForm.id = row.id;
   tenantForm.name = row.name;
   tenantForm.code = row.code;
   tenantForm.description = row.description || '';
   tenantForm.status = row.status;
+  tenantForm.parent_id = row.parent_id;
   dialogVisible.value = true;
 };
 
@@ -216,7 +309,8 @@ const saveTenant = async () => {
     // 准备提交的数据
     const tenantData: any = {
       name: tenantForm.name,
-      description: tenantForm.description
+      description: tenantForm.description,
+      parent_id: tenantForm.parent_id
     };
     
     // 如果是新增模式，则加入代码字段
@@ -271,5 +365,103 @@ const saveTenant = async () => {
   margin: 0;
   font-size: 20px;
   color: #333;
+}
+
+.tenant-tree {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+}
+
+.tenant-tree :deep(.el-tree-node__content) {
+  height: auto;
+  padding: 8px 0;
+}
+
+.tenant-tree :deep(.el-tree-node:hover .tenant-node) {
+  background-color: #f0f9ff;
+  transition: background-color 0.3s;
+  border-radius: 6px;
+}
+
+.tenant-node {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-radius: 6px;
+  transition: all 0.3s;
+  position: relative;
+  border-left: 3px solid transparent;
+}
+
+.tenant-node:hover {
+  border-left-color: var(--el-color-primary);
+}
+
+.tenant-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 70%;
+}
+
+.tenant-basic {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tenant-name {
+  font-weight: bold;
+  color: #303133;
+  font-size: 16px;
+}
+
+.tenant-code {
+  color: #606266;
+  font-size: 14px;
+}
+
+.tenant-detail {
+  margin-top: 3px;
+}
+
+.tenant-description {
+  display: inline-block;
+  color: #909399;
+  font-size: 13px;
+  line-height: 1.4;
+  margin-top: 2px;
+  word-break: break-word;
+}
+
+.tenant-status {
+  margin-left: 6px;
+}
+
+.tenant-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 768px) {
+  .tenant-node {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .tenant-info {
+    max-width: 100%;
+  }
+  
+  .tenant-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }
 </style> 

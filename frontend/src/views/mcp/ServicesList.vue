@@ -6,7 +6,9 @@
           <div class="flex justify-between items-center">
             <h2 class="text-xl font-bold">MCP服务管理</h2>
             <el-button type="primary" @click="refreshServices">
-              <el-icon class="mr-1"><Refresh /></el-icon>刷新
+              <el-icon class="mr-1">
+                <Refresh />
+              </el-icon>刷新
             </el-button>
           </div>
         </template>
@@ -29,25 +31,17 @@
             <el-table-column label="服务说明" min-width="180">
               <template #default="scope">
                 <div class="flex items-center justify-between">
-                  <el-tooltip 
-                    :content="scope.row.description || '暂无说明'" 
-                    placement="top" 
-                    :show-after="500"
-                    :disabled="!scope.row.description"
-                  >
+                  <el-tooltip :content="scope.row.description || '暂无说明'" placement="top" :show-after="500"
+                    :disabled="!scope.row.description">
                     <div class="description-text truncate">
                       <span v-if="scope.row.description">{{ scope.row.description }}</span>
                       <span v-else class="text-gray-400 italic">暂无说明</span>
                     </div>
                   </el-tooltip>
-                  <el-button 
-                    type="primary" 
-                    link 
-                    size="small" 
-                    @click="editServiceDescription(scope.row)"
-                    title="编辑说明"
-                  >
-                    <el-icon><Edit /></el-icon>
+                  <el-button type="primary" link size="small" @click="editServiceDescription(scope.row)" title="编辑说明">
+                    <el-icon>
+                      <Edit />
+                    </el-icon>
                   </el-button>
                 </div>
               </template>
@@ -70,7 +64,9 @@
                     <el-input v-model="scope.row.sse_url" readonly size="small" class="flex-1 mr-1" disabled />
                   </el-tooltip>
                   <el-button type="primary" circle size="small" @click="copyUrl(scope.row.sse_url)" title="复制URL">
-                    <el-icon><DocumentCopy /></el-icon>
+                    <el-icon>
+                      <DocumentCopy />
+                    </el-icon>
                   </el-button>
                 </div>
               </template>
@@ -79,39 +75,23 @@
             <el-table-column label="操作" width="230" fixed="right">
               <template #default="scope">
                 <div class="flex space-x-1">
-                  <el-button
-                    v-if="scope.row.status !== 'running'"
-                    type="success"
-                    size="small"
+                  <el-button v-if="scope.row.status !== 'running'" type="success" size="small"
                     :loading="loadingStates[scope.row.service_uuid]?.starting"
-                    @click="startMcpService(scope.row.service_uuid)"
-                  >
+                    @click="startMcpService(scope.row.service_uuid)">
                     启动
                   </el-button>
-                  <el-button
-                    v-else
-                    type="warning"
-                    size="small"
+                  <el-button v-else type="warning" size="small"
                     :loading="loadingStates[scope.row.service_uuid]?.stopping"
-                    @click="stopMcpService(scope.row.service_uuid)"
-                  >
+                    @click="stopMcpService(scope.row.service_uuid)">
                     停止
                   </el-button>
-                  
-                  <el-button
-                    type="primary"
-                    size="small"
-                    @click="viewServiceDetail(scope.row)"
-                  >
+
+                  <el-button type="primary" size="small" @click="viewServiceDetail(scope.row)">
                     查看详情
                   </el-button>
-                  
-                  <el-button
-                    type="danger"
-                    size="small"
-                    :loading="loadingStates[scope.row.service_uuid]?.deleting"
-                    @click="confirmDeleteService(scope.row.service_uuid)"
-                  >
+
+                  <el-button type="danger" size="small" :loading="loadingStates[scope.row.service_uuid]?.deleting"
+                    @click="confirmDeleteService(scope.row.service_uuid)">
                     删除
                   </el-button>
                 </div>
@@ -121,24 +101,13 @@
         </div>
       </el-card>
     </el-main>
-    
+
     <!-- 编辑服务说明对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      title="编辑服务说明" 
-      width="500px"
-      :close-on-click-modal="false"
-    >
+    <el-dialog v-model="dialogVisible" title="编辑服务说明" width="500px" :close-on-click-modal="false">
       <el-form :model="newDescription" label-position="top">
         <el-form-item label="服务说明">
-          <el-input 
-            v-model="newDescription" 
-            type="textarea" 
-            :rows="4" 
-            placeholder="请输入服务说明" 
-            maxlength="500"
-            show-word-limit
-          />
+          <el-input v-model="newDescription" type="textarea" :rows="4" placeholder="请输入服务说明" maxlength="500"
+            show-word-limit />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -157,7 +126,7 @@ import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { DocumentCopy, Refresh, Edit } from '@element-plus/icons-vue';
 import api from '../../api/index';
-import { listServices, startService, stopService } from '@/api/marketplace';
+import { listServices, startService, stopService, getOnlineServices } from '@/api/marketplace';
 
 // 定义服务类型接口
 interface Service {
@@ -234,10 +203,10 @@ const statusConfig: StatusConfig = {
 const fetchServices = async () => {
   loading.value = true;
   try {
-    const data  = await listServices();
+    const data = await listServices();
     console.log(data);
-    services.value = data || [];
-    
+    services.value = data.data || [];
+
     // 获取在线服务状态
     await checkOnlineServices();
   } catch (error) {
@@ -251,8 +220,8 @@ const fetchServices = async () => {
 // 检查哪些服务在线
 const checkOnlineServices = async () => {
   try {
-    const response = await api.get('/api/marketplace/services/online');
-    onlineServices.value = new Set(response.data);
+    const data = await getOnlineServices();
+    onlineServices.value = new Set(data.data);
   } catch (error) {
     console.error('获取在线服务状态失败', error);
   }
@@ -275,7 +244,7 @@ const getStatusType = (service: Service) => {
   if (isServiceOnline(service)) {
     return 'success';
   }
-  
+
   switch (service.status) {
     case 'running': return 'success';
     case 'stopped': return 'warning';
@@ -300,7 +269,7 @@ const startMcpService = async (serviceUuid: string) => {
     loadingStates[serviceUuid] = {};
   }
   loadingStates[serviceUuid].starting = true;
-  
+
   try {
     await startService(serviceUuid);
     ElMessage.success('服务已启动');
@@ -319,7 +288,7 @@ const stopMcpService = async (serviceUuid: string) => {
     loadingStates[serviceUuid] = {};
   }
   loadingStates[serviceUuid].stopping = true;
-  
+
   try {
     await stopService(serviceUuid);
     ElMessage.success('服务已停止');
@@ -357,7 +326,7 @@ const deleteService = async (serviceUuid: string) => {
     loadingStates[serviceUuid] = {};
   }
   loadingStates[serviceUuid].deleting = true;
-  
+
   try {
     await api.post(`/api/services/${serviceUuid}/uninstall`);
     ElMessage.success('服务已删除');
@@ -399,21 +368,21 @@ const fallbackCopyTextToClipboard = (text: string) => {
     // 创建临时文本区域
     const textArea = document.createElement('textarea');
     textArea.value = text;
-    
+
     // 确保文本区域在视图之外
     textArea.style.position = 'fixed';
     textArea.style.left = '-999999px';
     textArea.style.top = '-999999px';
     document.body.appendChild(textArea);
-    
+
     // 选择文本
     textArea.select();
     textArea.setSelectionRange(0, 99999); // 兼容移动设备
-    
+
     // 执行复制
     const successful = document.execCommand('copy');
     document.body.removeChild(textArea);
-    
+
     if (successful) {
       ElMessage.success('URL已复制到剪贴板');
     } else {
@@ -445,12 +414,12 @@ const editServiceDescription = (service: Service) => {
 // 保存服务说明
 const saveServiceDescription = async () => {
   if (!editingService.value) return;
-  
+
   try {
     await api.put(`/api/services/${editingService.value.service_uuid}/description`, {
       description: newDescription.value
     });
-    
+
     // 更新本地数据
     editingService.value.description = newDescription.value;
     ElMessage.success('服务说明已更新');
@@ -488,7 +457,7 @@ const showLogs = async (service: Service): Promise<void> => {
   currentServiceName.value = service.name || '';
   logsDialogVisible.value = true;
   logsLoading.value = true;
-  
+
   try {
     const response = await api.get(`/mcp/service/${service.service_uuid}/logs`);
     currentServiceLogs.value = response.data?.data || [];
@@ -515,9 +484,11 @@ const showLogs = async (service: Service): Promise<void> => {
   0% {
     box-shadow: 0 0 0 0 rgba(103, 194, 58, 0.5);
   }
+
   70% {
     box-shadow: 0 0 0 5px rgba(103, 194, 58, 0);
   }
+
   100% {
     box-shadow: 0 0 0 0 rgba(103, 194, 58, 0);
   }
@@ -547,4 +518,4 @@ const showLogs = async (service: Service): Promise<void> => {
   justify-content: flex-end;
   gap: 10px;
 }
-</style> 
+</style>

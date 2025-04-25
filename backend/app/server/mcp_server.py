@@ -222,17 +222,9 @@ def start_mcp_server():
 
     # 导入中间件和路由配置 - 在函数内部导入，避免循环导入
     from app.middleware.logging_middleware import APILoggingMiddleware
+    from app.models.engine import init_db
+    init_db()
 
-    # 打印当前环境信息以便调试
-    main_thread = threading.main_thread()
-    current_thread = threading.current_thread()
-    is_main_thread = main_thread == current_thread
-
-    em_logger.info(
-        f"启动MCP服务器 - 进程ID: {os.getpid()}, "
-        f"是否主线程: {is_main_thread}, "
-        f"线程ID: {current_thread.ident}"
-    )
     global server_instance
     # 创建FastMCP实例
     server_instance = FastMCP(
@@ -264,10 +256,8 @@ def start_mcp_server():
     # 保存服务器实例
     # server_instance = server
     em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
-    from app.models.engine import init_db
-    from app.services.mcp_service.service_manager import service_manager
+        
 
-    init_db()
     global uni_server
     config = uvicorn.Config(
         app,
@@ -276,6 +266,7 @@ def start_mcp_server():
         log_level=settings.LOG_LEVEL.lower(),
     )
     uni_server = uvicorn.Server(config)
+    from app.services.mcp_service.service_manager import service_manager
     service_manager.init_app(app)
 
     # 启动服务器

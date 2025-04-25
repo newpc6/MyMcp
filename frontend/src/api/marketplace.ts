@@ -196,3 +196,11 @@ export async function getService(serviceUuid: string): Promise<McpServiceInfo> {
   const response = await api.get(`/api/marketplace/services/${serviceUuid}`);
   return response.data;
 } 
+
+/**
+ * 获取MCP服务状态
+ */
+export async function getOnlineServices() {
+  const response = await api.get(`/api/marketplace/services/online`);
+  return response.data;
+}

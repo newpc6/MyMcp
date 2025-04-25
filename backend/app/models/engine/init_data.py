@@ -9,6 +9,8 @@ from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpCategory, McpModule
 from app.utils.logging import em_logger
 from pytz import timezone
+from app.models.modules.users import Tenant, User
+from app.services.users import UserService, TenantService
 
 
 def migrate_database():
@@ -20,15 +22,15 @@ def migrate_database():
         except ImportError as e:
             em_logger.warning(f"迁移模块导入失败，使用内置迁移: {str(e)}")
             return
-        
+
         # 获取所有迁移模块
         migrations = get_all_migrations()
         if not migrations:
             em_logger.warning("未找到迁移模块，使用内置迁移")
             return
-            
+
         em_logger.info(f"找到 {len(migrations)} 个迁移模块")
-        
+
         # 执行所有迁移
         with get_db() as db:
             for migration in migrations:
@@ -39,9 +41,9 @@ def migrate_database():
                 except Exception as e:
                     em_logger.error(f"迁移 {migration_name} 执行失败: {str(e)}")
                     raise
-                
+
             em_logger.info("所有迁移执行完成")
-    
+
     except Exception as e:
         em_logger.error(f"数据库迁移失败: {str(e)}")
 
@@ -64,7 +66,7 @@ def init_category_data():
         {"name": "学术研究", "icon": "DocumentCopy", "order": 110},
         {"name": "日程管理", "icon": "Calendar", "order": 120},
     ]
-    
+
     with get_db() as db:
         try:
             # 检查是否已有分类数据
@@ -72,7 +74,7 @@ def init_category_data():
             if existing:
                 em_logger.info(f"已存在 {len(existing)} 个MCP分类，跳过初始化")
                 return
-            
+
             # 添加分类数据
             now = datetime.now(timezone('Asia/Shanghai'))  # 使用原生datetime对象
             for category_data in categories:
@@ -84,7 +86,7 @@ def init_category_data():
                     updated_at=now
                 )
                 db.add(category)
-            
+
             db.commit()
             em_logger.info(f"成功初始化 {len(categories)} 个MCP分类")
         except Exception as e:
@@ -103,17 +105,17 @@ def auto_categorize_modules():
             uncategorized_modules = db.execute(
                 select(McpModule).where(McpModule.category_id.is_(None))
             ).scalars().all()
-            
+
             if not uncategorized_modules:
                 em_logger.info("没有需要分类的模块")
                 return
-            
+
             # 获取所有分类
             categories = db.execute(select(McpCategory)).scalars().all()
             if not categories:
                 em_logger.info("没有可用的分类")
                 return
-            
+
             # 分类关键词映射
             category_keywords = {
                 "浏览器自动化": ["浏览器", "browser", "自动化", "网页"],
@@ -129,34 +131,34 @@ def auto_categorize_modules():
                 "学术研究": ["学术", "研究", "academic", "论文"],
                 "日程管理": ["日程", "schedule", "日历", "任务"],
             }
-            
+
             # 创建分类ID映射
             category_id_map = {cat.name: cat.id for cat in categories}
-            
+
             # 自动分类计数
             categorized_count = 0
-            
+
             now = datetime.now()  # 使用原生datetime对象
             for module in uncategorized_modules:
                 module_text = (
-                    (module.name or "") + " " + 
-                    (module.description or "") + " " + 
+                    (module.name or "") + " " +
+                    (module.description or "") + " " +
                     (module.module_path or "")
                 ).lower()
-                
+
                 matched_category = None
                 max_matches = 0
-                
+
                 # 查找最匹配的分类
                 for cat_name, keywords in category_keywords.items():
                     matches = sum(
-                        1 for keyword in keywords 
+                        1 for keyword in keywords
                         if keyword.lower() in module_text
                     )
                     if matches > max_matches:
                         max_matches = matches
                         matched_category = cat_name
-                
+
                 # 如果找到匹配的分类，更新模块
                 if matched_category and max_matches > 0:
                     category_id = category_id_map.get(matched_category)
@@ -164,7 +166,7 @@ def auto_categorize_modules():
                         module.category_id = category_id
                         module.updated_at = now
                         categorized_count += 1
-            
+
             if categorized_count > 0:
                 db.commit()
                 em_logger.info(f"成功自动分类 {categorized_count} 个模块")
@@ -175,7 +177,7 @@ def auto_categorize_modules():
         try:
             db.rollback()
         except Exception:  # 不使用裸except
-            pass 
+            pass
 
 
 def init_demo_modules():
@@ -185,7 +187,7 @@ def init_demo_modules():
             # 检查是否已有模块
             count_query = select(McpModule)
             modules_count = len(db.execute(count_query).all())
-            
+
             # 如果没有模块，添加演示模块
             if modules_count == 0:
                 # 获取分类ID
@@ -194,13 +196,13 @@ def init_demo_modules():
                 )
                 dev_cat = db.execute(cat_query).scalar_one_or_none()
                 dev_cat_id = dev_cat.id if dev_cat else None
-                
+
                 cat_query = select(McpCategory).where(
                     McpCategory.name == "搜索工具"
                 )
                 search_cat = db.execute(cat_query).scalar_one_or_none()
                 search_cat_id = search_cat.id if search_cat else None
-                
+
                 # 添加演示模块1：计算工具
                 calc_module = McpModule(
                     name="calculator",
@@ -276,7 +278,7 @@ def calculate_expression(expression: str) -> Dict[str, Any]:
             "error": str(e),
             "success": False
         }
-""",               
+""",
                     markdown_docs="""
 # 计算工具模块
 
@@ -313,7 +315,7 @@ expr_result = calculate_expression("2 + 3 * 4")
 """
                 )
                 db.add(calc_module)
-                
+
                 # 添加演示模块2：Web搜索工具
                 search_module = McpModule(
                     name="web_search",
@@ -507,9 +509,48 @@ topics = get_trending_topics()
 """
                 )
                 db.add(search_module)
-                
+
                 db.commit()
                 em_logger.info("初始化了演示模块数据")
-    
+
     except Exception as e:
-        em_logger.error(f"初始化演示模块失败: {str(e)}") 
+        em_logger.error(f"初始化演示模块失败: {str(e)}")
+
+
+def init_admin_users():
+    """初始化管理员用户数据"""
+    # 创建初始管理员用户
+    from werkzeug.security import generate_password_hash
+    from datetime import datetime
+
+    try:
+        with get_db() as db:
+            # 检查是否已有管理员用户
+            count_query = select(User).where(User.username == "admin")
+            admin_count = len(db.execute(count_query).all())
+
+            if not admin_count:
+                em_logger.info("创建默认管理员用户")
+
+                # 检查是否已有默认租户
+                default_tenant_query = select(Tenant).where(Tenant.code == "default")
+                default_tenant_count = len(db.execute(default_tenant_query).all())
+
+                if not default_tenant_count:
+                    # 创建默认租户
+                    default_tenant = TenantService.create_tenant(
+                        name="默认租户",
+                        description="系统默认租户",
+                        code="default"
+                    )
+
+                # 修改默认密码为 eGova@2025
+                admin_user = UserService.create_user(
+                    username="admin",
+                    password="eGova@2025",  # 直接使用明文密码，由create_user内部进行哈希
+                    fullname="系统管理员",
+                    is_admin=True,
+                    tenant_ids=[default_tenant.id]
+                )
+    except Exception as e:
+        em_logger.error(f"初始化管理员用户失败: {str(e)}")

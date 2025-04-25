@@ -8,7 +8,7 @@ const API_BASE_URL = '/api';
  */
 export async function getMcpStatus() {
   const response = await api.get(`${API_BASE_URL}/mcp/service/status`);
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -16,7 +16,7 @@ export async function getMcpStatus() {
  */
 export async function getEnabledTools() {
   const response = await api.get(`${API_BASE_URL}/mcp/service/enabled_tools`);
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -24,7 +24,7 @@ export async function getEnabledTools() {
  */
 export async function restartMcpService() {
   const response = await api.post(`${API_BASE_URL}/mcp/service/restart`);
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -46,7 +46,7 @@ export async function loadTool(
     tool_name: toolName,
     description: description
   });
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -57,7 +57,7 @@ export async function unloadTool(toolName: string) {
   const response = await api.post(`${API_BASE_URL}/mcp/service/unload_tool`, {
     tool_name: toolName
   });
-  return response.data.data;
+  return response.data;
 }
 
 /**
@@ -68,7 +68,7 @@ export async function updateSseUrl(sseUrl: string) {
   const response = await api.put(`${API_BASE_URL}/mcp/service/sse_url`, {
     sse_url: sseUrl
   });
-  return response.data.data;
+  return response.data;
 }
 
 /**
