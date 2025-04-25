@@ -30,7 +30,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/mcp-services',
     name: 'mcp-services',
-    component: () => import('../views/mcp/ServicesList.vue'),
+    component: () => import('../views/mcp/index.vue'),
     meta: { title: 'MCP 服务管理' }
   },
   {
@@ -44,6 +44,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'tenants',
     component: () => import('../views/auth/Tenants.vue'),
     meta: { title: '租户管理', adminOnly: true }
+  },
+  {
+    path: '/statistics',
+    name: 'Statistics',
+    component: () => import('../views/statictics/index.vue'),
+    meta: { requiresAdmin: true, title: 'MCP统计' }
   }
 ]
 

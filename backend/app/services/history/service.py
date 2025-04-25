@@ -1,9 +1,8 @@
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 import json
 from sqlalchemy import desc, func
 
 from app.models.engine import engine
-from app.models.activities.activity import Activity
 from app.models.tools.tool_execution import ToolExecution
 from sqlalchemy.orm import sessionmaker
 
@@ -29,11 +28,15 @@ class HistoryService:
         parameters: Dict[str, Any], 
         result: Any, 
         status: str, 
-        execution_time: int
+        execution_time: int,
+        service_id: Optional[str] = None,
+        module_id: Optional[int] = None
     ) -> ToolExecution:
         """记录工具执行"""
         db_record = ToolExecution(
             tool_name=tool_name,
+            service_id=service_id,
+            module_id=module_id,
             description=description,
             parameters=json.dumps(parameters),
             result=json.dumps(result) if result is not None else None,
@@ -43,11 +46,6 @@ class HistoryService:
         self.db.add(db_record)
         self.db.commit()
         self.db.refresh(db_record)
-
-        # 添加活动记录
-        # activity_content = f"执行工具：{tool_name}"
-        # self.add_activity(activity_content, "tool_execution", db_record.id)
-
         return db_record
 
     def get_executions(
@@ -101,32 +99,6 @@ class HistoryService:
         if last_execution:
             return last_execution.created_at.strftime("%Y-%m-%d %H:%M:%S")
         return None
-
-    def add_activity(
-        self, 
-        content: str, 
-        activity_type: str, 
-        related_id: Optional[int] = None
-    ) -> Activity:
-        """添加活动记录"""
-        db_activity = Activity(
-            content=content,
-            activity_type=activity_type,
-            related_id=related_id
-        )
-        self.db.add(db_activity)
-        self.db.commit()
-        self.db.refresh(db_activity)
-        return db_activity
-
-    def get_recent_activities(self, limit: int = 10) -> List[Dict[str, Any]]:
-        """获取最近的活动记录"""
-        activities = self.db.query(Activity)\
-            .order_by(desc(Activity.created_at))\
-            .limit(limit)\
-            .all()
-        return [activity.to_dict() for activity in activities]
-
 
 # 单例模式
 history_service = HistoryService() 

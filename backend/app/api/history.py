@@ -18,15 +18,6 @@ async def get_executions(request: Request):
     return JSONResponse(result)
 
 
-async def get_recent_activities(request: Request):
-    """获取最近的活动记录"""
-    params = request.query_params
-    limit = int(params.get("limit", "10"))
-    
-    result = history_service.get_recent_activities(limit)
-    return JSONResponse(result)
-
-
 async def get_execution_stats(request: Request):
     """获取执行统计数据"""
     result = {
@@ -40,7 +31,6 @@ def get_router():
     """获取历史记录路由"""
     routes = [
         Route("/executions", endpoint=get_executions, methods=["GET"]),
-        Route("/activities", endpoint=get_recent_activities, methods=["GET"]),
         Route("/stats", endpoint=get_execution_stats, methods=["GET"])
     ]
     

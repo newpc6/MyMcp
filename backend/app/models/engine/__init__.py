@@ -37,7 +37,6 @@ def init_db():
     """初始化数据库，创建所有表"""
     # 导入所有模型以确保它们被注册到Base中
     from app.models.tools.tool_execution import ToolExecution  # noqa: F401
-    from app.models.activities.activity import Activity  # noqa: F401
     # 导入MCP广场相关模型
     from app.models.modules.mcp_marketplace import (  # noqa: F401
         McpModule, McpTool, McpCategory
@@ -45,6 +44,10 @@ def init_db():
     from app.models.modules.mcp_services import McpService  # noqa: F401
     # 导入用户和租户模型
     from app.models.modules.users import User, Tenant, UserTenant  # noqa: F401
+    # 导入统计相关模型
+    from app.models.statistics import (
+        ServiceStatistics, ModuleStatistics, ToolStatistics
+    )
     
     # 创建所有表
     Base.metadata.create_all(bind=engine)

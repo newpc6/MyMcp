@@ -33,15 +33,15 @@ class ExecutionService:
         try:
             # start_time = time.time()
             ret = tool_func(**parameters)
-            # execution_time = time.time() - start_time
-            # self.history_service.record_tool_execution(
-            #     tool_name=tool_name,
-            #     description=tool_info["doc"],
-            #     parameters=parameters,
-            #     result=ret,
-            #     status="success",
-            #     execution_time=execution_time
-            # )
+            execution_time = time.time() - start_time
+            self.history_service.record_tool_execution(
+                tool_name=tool_name,
+                description=tool_info["doc"],
+                parameters=parameters,
+                result=ret,
+                status="success",
+                execution_time=execution_time
+            )
             return ret
         except Exception as e:
             raise RuntimeError(f"执行错误: {str(e)}")

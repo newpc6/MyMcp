@@ -1,0 +1,128 @@
+/**
+ * 统计相关API
+ */
+import api from './index';
+import type { ApiResponse } from '../types/marketplace';
+
+/**
+ * 服务统计数据接口
+ */
+export interface ServiceStats {
+  total_services: number;
+  running_services: number;
+  stopped_services: number;
+  error_services: number;
+  updated_at: string;
+}
+
+/**
+ * 模块排名接口
+ */
+export interface ModuleRanking {
+  module_id: number;
+  module_name: string;
+  service_count: number;
+  user_id: number;
+  user_name: string;
+  updated_at: string;
+}
+
+/**
+ * 工具排名接口
+ */
+export interface ToolRanking {
+  tool_name: string;
+  call_count: number;
+  success_count: number;
+  error_count: number;
+  avg_execution_time: number;
+  last_called_at: string | null;
+  updated_at: string;
+}
+
+/**
+ * 工具执行记录接口
+ */
+export interface ToolExecution {
+  id: number;
+  tool_name: string;
+  description: string;
+  parameters: any;
+  result: any;
+  status: string;
+  execution_time: number;
+  created_at: string;
+}
+
+/**
+ * 分页工具执行记录接口
+ */
+export interface ToolExecutionsResponse {
+  items: ToolExecution[];
+  total: number;
+  page: number;
+  per_page: number;
+  pages: number;
+}
+
+/**
+ * 获取服务统计数据
+ */
+export async function getServiceStats(): Promise<ApiResponse<ServiceStats>> {
+  const response = await api.get('/api/statistics/services');
+  return response.data;
+}
+
+/**
+ * 获取模块发布排名
+ * @param limit - 返回结果数量限制
+ */
+export async function getModuleRankings(limit: number = 10): Promise<ApiResponse<ModuleRanking[]>> {
+  const response = await api.get('/api/statistics/modules/rankings', {
+    params: { limit }
+  });
+  return response.data;
+}
+
+/**
+ * 获取工具调用排名
+ * @param limit - 返回结果数量限制
+ */
+export async function getToolRankings(limit: number = 10): Promise<ApiResponse<ToolRanking[]>> {
+  const response = await api.get('/api/statistics/tools/rankings', {
+    params: { limit }
+  });
+  return response.data;
+}
+
+/**
+ * 获取工具执行记录
+ * @param page - 页码
+ * @param perPage - 每页记录数
+ * @param toolName - 工具名称过滤
+ */
+export async function getToolExecutions(
+  page: number = 1,
+  perPage: number = 20,
+  toolName?: string
+): Promise<ApiResponse<ToolExecutionsResponse>> {
+  const params: any = {
+    page,
+    per_page: perPage
+  };
+  
+  if (toolName) {
+    params.tool_name = toolName;
+  }
+  
+  const response = await api.get('/api/statistics/tools/executions', { params });
+  return response.data;
+}
+
+/**
+ * 刷新统计数据
+ */
+export async function refreshStatistics(): Promise<ApiResponse<{ message: string }>> {
+  const response = await api.post('/api/statistics/refresh');
+  return response.data;
+} 

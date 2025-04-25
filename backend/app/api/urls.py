@@ -7,9 +7,8 @@ from app.core.config import settings
 from app.utils.response import success_response
 from . import (
     auth, tools, mcp_service, history,
-    execution, log, marketplace
+    execution, log, marketplace, statistics
 )
-
 
 async def root(request):
     """API根路由"""
@@ -19,8 +18,13 @@ async def root(request):
     }, message=f"欢迎使用 {settings.API_TITLE} v{settings.API_VERSION}")
 
 
-def get_router(app):
-    """获取所有API路由"""
+def get_router(app) -> None:
+    """
+    注册所有API路由
+    
+    Args:
+        app: 应用实例
+    """
     # 添加根路由
     app.add_route("/", root)
     # 添加认证中间件
@@ -88,5 +92,13 @@ def get_router(app):
             methods=route.methods, 
             name=route.name
         )
-    
+        
+    for route in statistics.get_router():
+        app.add_route(
+            f"{settings.API_PREFIX}/statistics{route.path}", 
+            route.endpoint, 
+            methods=route.methods, 
+            name=route.name
+        )
+
     return app
