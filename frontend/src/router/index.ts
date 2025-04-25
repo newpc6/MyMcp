@@ -3,6 +3,12 @@ import Home from '../views/Home.vue'
 
 const routes: Array<RouteRecordRaw> = [
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/auth/Login.vue'),
+    meta: { title: '登录', public: true }
+  },
+  {
     path: '/',
     name: 'home',
     component: Home,
@@ -37,6 +43,18 @@ const routes: Array<RouteRecordRaw> = [
     name: 'mcp-services',
     component: () => import('../views/mcp/ServicesList.vue'),
     meta: { title: 'MCP 服务管理' }
+  },
+  {
+    path: '/users',
+    name: 'users',
+    component: () => import('../views/auth/Users.vue'),
+    meta: { title: '用户管理', adminOnly: true }
+  },
+  {
+    path: '/tenants',
+    name: 'tenants',
+    component: () => import('../views/auth/Tenants.vue'),
+    meta: { title: '租户管理', adminOnly: true }
   }
 ]
 
@@ -51,8 +69,44 @@ router.beforeEach((
   from: RouteLocationNormalized, 
   next: NavigationGuardNext
 ) => {
-  const toMeta = to.meta as { title?: string };
+  const toMeta = to.meta as { title?: string; public?: boolean; adminOnly?: boolean };
   document.title = toMeta.title ? `${toMeta.title} - 智能MCP管理平台` : '智能MCP管理平台';
+  
+  // 检查用户认证状态
+  const userInfoStr = localStorage.getItem('userInfo');
+  const isAuthenticated = !!userInfoStr;
+  
+  // 如果是公开页面，直接通过
+  if (toMeta.public) {
+    // 如果已经登录，并且请求的是登录页，重定向到首页
+    if (isAuthenticated && to.name === 'login') {
+      next({ name: 'home' });
+    } else {
+      next();
+    }
+    return;
+  }
+  
+  // 如果未登录，重定向到登录页
+  if (!isAuthenticated) {
+    next({ name: 'login' });
+    return;
+  }
+  
+  // 检查管理员权限
+  if (toMeta.adminOnly) {
+    try {
+      const userInfo = JSON.parse(userInfoStr);
+      if (!userInfo.is_admin) {
+        next({ name: 'home' });
+        return;
+      }
+    } catch (e) {
+      next({ name: 'login' });
+      return;
+    }
+  }
+  
   next();
 });
 

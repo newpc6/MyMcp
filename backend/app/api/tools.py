@@ -1,6 +1,6 @@
 from starlette.routing import Route
-from starlette.responses import JSONResponse
 from starlette.requests import Request
+from app.utils.response import success_response, error_response
 
 from ..models.tools.schemas import (
     ToolCreate, ToolUpdate
@@ -14,13 +14,13 @@ tool_service = ToolService()
 async def get_tools(request: Request):
     """获取所有工具信息"""
     result = tool_service.get_all_tools()
-    return JSONResponse(result)
+    return success_response(result)
 
 
 async def list_tools(request: Request):
     """获取所有工具信息列表"""
     result = tool_service.list_tools()
-    return JSONResponse(result)
+    return success_response(result)
 
 
 async def get_tool_info(request: Request):
@@ -28,9 +28,9 @@ async def get_tool_info(request: Request):
     tool_name = request.path_params["tool_name"]
     try:
         result = tool_service.get_tool_info(tool_name)
-        return JSONResponse(result)
+        return success_response(result)
     except ValueError as e:
-        return JSONResponse({"detail": str(e)}, status_code=404)
+        return error_response(str(e), code=404, http_status_code=404)
 
 
 async def get_tool(request: Request):
@@ -38,14 +38,14 @@ async def get_tool(request: Request):
     tool_path = request.path_params["tool_path"]
     try:
         result = tool_service.get_tool_content(tool_path)
-        return JSONResponse(result)
+        return success_response(result)
     except FileNotFoundError:
-        return JSONResponse({"detail": "工具未找到"}, status_code=404)
+        return error_response("工具未找到", code=404, http_status_code=404)
     except PermissionError:
-        return JSONResponse({"detail": "没有权限访问该工具"}, status_code=403)
+        return error_response("没有权限访问该工具", code=403, http_status_code=403)
     except Exception as e:
         error_msg = f"获取工具内容失败: {str(e)}"
-        return JSONResponse({"detail": error_msg}, status_code=500)
+        return error_response(error_msg, code=500, http_status_code=500)
 
 
 async def update_tool(request: Request):
@@ -56,9 +56,9 @@ async def update_tool(request: Request):
         tool_update = ToolUpdate(**data)
         
         tool_service.update_tool(tool_path, tool_update.content)
-        return JSONResponse({"message": "Tool updated successfully"})
+        return success_response(message="工具更新成功")
     except FileNotFoundError:
-        return JSONResponse({"detail": "Tool not found"}, status_code=404)
+        return error_response("工具未找到", code=404, http_status_code=404)
 
 
 async def create_tool(request: Request):
@@ -68,9 +68,9 @@ async def create_tool(request: Request):
         tool_create = ToolCreate(**data)
         
         tool_service.create_tool(tool_create.path, tool_create.content)
-        return JSONResponse({"message": "Tool created successfully"})
+        return success_response(message="工具创建成功")
     except FileExistsError:
-        return JSONResponse({"detail": "Tool already exists"}, status_code=409)
+        return error_response("工具已存在", code=409, http_status_code=409)
 
 
 async def delete_tool(request: Request):
@@ -78,9 +78,9 @@ async def delete_tool(request: Request):
     tool_path = request.path_params["tool_path"]
     try:
         tool_service.delete_tool(tool_path)
-        return JSONResponse({"message": "Tool deleted successfully"})
+        return success_response(message="工具删除成功")
     except FileNotFoundError:
-        return JSONResponse({"detail": "Tool not found"}, status_code=404)
+        return error_response("工具未找到", code=404, http_status_code=404)
 
 
 def get_router():

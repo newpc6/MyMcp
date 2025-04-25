@@ -266,9 +266,10 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus';
 import {
   getModule, getModuleTools, testModuleTool, updateModule,
-  listServices, publishModule, stopService, startService, uninstallService
+  listServices, publishModule, stopService, startService, uninstallService,
+  testModuleFunction
 } from '../../api/marketplace';
-import httpClient from '../../utils/http-client';
+import api from '../../api/index';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo } from '../../types/marketplace';
 import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
@@ -429,12 +430,9 @@ async function testTool() {
       }
     }
 
-    // 直接使用现有API，通过endpoint修改为调用新的API
-    const response = await httpClient.post(
-      `/api/execute/module/${moduleId}/function/${toolName}`,
-      params
-    );
-    testResult.value = response.data.result;
+    // 直接使用marketplace API中提供的testModuleFunction方法
+    const result = await testModuleFunction(moduleId, toolName, params);
+    testResult.value = result;
   } catch (error: any) {
     console.error("工具测试失败", error);
     testError.value = error.response?.data?.detail || error.message || '执行失败';

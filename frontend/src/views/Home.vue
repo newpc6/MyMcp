@@ -205,7 +205,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import api from '../api/index'
 import {
     Tools, Suitcase, DataAnalysis, Timer,
     ArrowRight, Connection, Plus, Refresh, Search
@@ -311,8 +311,8 @@ const formatTimeAgo = (dateString: string) => {
 // 获取模块数量
 const fetchModuleCount = async () => {
     try {
-        const response = await axios.get('/api/modules/count')
-        moduleCount.value = response.data.count
+        const response = await api.get('/api/modules/count')
+        moduleCount.value = response.data.data.count
     } catch (error) {
         console.error('获取模块数量失败:', error)
     }
@@ -321,8 +321,8 @@ const fetchModuleCount = async () => {
 // 获取工具数量
 const fetchToolCount = async () => {
     try {
-        const response = await axios.get('/api/tools')
-        toolCount.value = response.data.length
+        const response = await api.get('/api/tools')
+        toolCount.value = response.data.data.length
     } catch (error) {
         console.error('获取工具数量失败:', error)
     }
@@ -332,15 +332,15 @@ const fetchToolCount = async () => {
 const fetchRecentExecutions = async () => {
     loading.value.executions = true
     try {
-        const response = await axios.get('/api/history/executions', {
+        const response = await api.get('/api/history/executions', {
             params: {
                 page: currentPage.value,
                 page_size: pageSize.value,
                 tool_name: searchQuery.value || undefined
             }
         })
-        recentTools.value = response.data.data
-        total.value = response.data.total
+        recentTools.value = response.data.data.data
+        total.value = response.data.data.total
     } catch (error) {
         console.error('获取执行记录失败:', error)
     } finally {
@@ -352,11 +352,11 @@ const fetchRecentExecutions = async () => {
 const fetchStats = async () => {
     loading.value.stats = true
     try {
-        const response = await axios.get('/api/history/stats')
-        executionCount.value = response.data.execution_count || 0
+        const response = await api.get('/api/history/stats')
+        executionCount.value = response.data.data.execution_count || 0
 
-        if (response.data.last_execution_time) {
-            lastUpdateTime.value = formatTimeAgo(response.data.last_execution_time)
+        if (response.data.data.last_execution_time) {
+            lastUpdateTime.value = formatTimeAgo(response.data.data.last_execution_time)
         } else {
             lastUpdateTime.value = '无记录'
         }
@@ -370,8 +370,8 @@ const fetchStats = async () => {
 // 获取常用工具
 const fetchFavoriteTools = async () => {
     try {
-        const response = await axios.get('/api/tools')
-        favoriteTools.value = response.data.slice(0, 6)
+        const response = await api.get('/api/tools')
+        favoriteTools.value = response.data.data.slice(0, 6)
     } catch (error) {
         console.error('获取常用工具失败:', error)
     }

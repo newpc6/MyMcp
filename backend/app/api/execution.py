@@ -6,9 +6,9 @@ import sys
 import tempfile
 import os
 from starlette.routing import Route
-from starlette.responses import JSONResponse
 from starlette.requests import Request
 
+from app.utils.response import success_response, error_response
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpTool, McpModule
 from app.services.execution.executor import execute_tool_by_name
@@ -28,10 +28,10 @@ async def execute_tool(request: Request):
     try:
         result = await execute_tool_by_name(tool_name, params)
         if "error" in result:
-            return JSONResponse({"detail": result["error"]}, status_code=400)
-        return JSONResponse({"result": result})
+            return error_response(result["error"], code=400, http_status_code=400)
+        return success_response({"result": result})
     except Exception as e:
-        return JSONResponse({"detail": f"执行失败: {str(e)}"}, status_code=500)
+        return error_response(f"执行失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def execute_tool_by_id(request: Request):
@@ -50,7 +50,7 @@ async def execute_tool_by_id(request: Request):
             # 从数据库获取工具信息
             tool = db.query(McpTool).filter(McpTool.id == tool_id).first()
             if not tool:
-                return JSONResponse({"detail": "工具不存在"}, status_code=404)
+                return error_response("工具不存在", code=404, http_status_code=404)
             
             # 获取模块和函数名
             module_path = tool.module.module_path
@@ -65,9 +65,9 @@ async def execute_tool_by_id(request: Request):
             result = func(**params)
             
             # 返回结果
-            return JSONResponse({"result": result})
+            return success_response({"result": result})
     except Exception as e:
-        return JSONResponse({"detail": f"执行失败: {str(e)}"}, status_code=500)
+        return error_response(f"执行失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def execute_module_function(request: Request):
@@ -88,10 +88,10 @@ async def execute_module_function(request: Request):
             # 从数据库获取模块信息
             module = db.query(McpModule).filter(McpModule.id == module_id).first()
             if not module:
-                return JSONResponse({"detail": "模块不存在"}, status_code=404)
+                return error_response("模块不存在", code=404, http_status_code=404)
             
             if not module.code:
-                return JSONResponse({"detail": "模块代码为空"}, status_code=400)
+                return error_response("模块代码为空", code=400, http_status_code=400)
             
             # 创建临时目录和文件
             temp_dir = tempfile.mkdtemp(prefix="mcp_exec_")
@@ -110,13 +110,17 @@ async def execute_module_function(request: Request):
                 module_name = module.name
                 spec = importlib.util.find_spec(module_name)
                 if not spec:
-                    return JSONResponse({"detail": "无法加载模块"}, status_code=500)
+                    return error_response("无法加载模块", code=500, http_status_code=500)
                 
                 imported_module = importlib.import_module(module_name)
                 
                 # 检查函数是否存在
                 if not hasattr(imported_module, function_name):
-                    return JSONResponse({"detail": f"函数 {function_name} 不存在"}, status_code=404)
+                    return error_response(
+                        f"函数 {function_name} 不存在", 
+                        code=404, 
+                        http_status_code=404
+                    )
                 
                 # 获取函数对象
                 func = getattr(imported_module, function_name)
@@ -125,7 +129,7 @@ async def execute_module_function(request: Request):
                 result = func(**params)
                 
                 # 返回结果
-                return JSONResponse({"result": result})
+                return success_response({"result": result})
             
             finally:
                 # 清理临时文件和目录
@@ -144,10 +148,12 @@ async def execute_module_function(request: Request):
                 
     except Exception as e:
         import traceback
-        return JSONResponse({
-            "detail": f"执行失败: {str(e)}",
-            "traceback": traceback.format_exc()
-        }, status_code=500)
+        return error_response(
+            f"执行失败: {str(e)}", 
+            data={"traceback": traceback.format_exc()},
+            code=500, 
+            http_status_code=500
+        )
 
 
 def get_router():

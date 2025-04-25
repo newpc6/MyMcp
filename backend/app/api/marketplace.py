@@ -2,8 +2,8 @@
 MCP广场相关API
 """
 from starlette.routing import Route
-from starlette.responses import JSONResponse
 from starlette.requests import Request
+from app.utils.response import success_response, error_response
 
 from app.services.marketplace.service import marketplace_service
 from app.services.mcp_service.service_manager import service_manager
@@ -17,7 +17,7 @@ async def list_modules(request: Request):
         category_id = int(category_id)
     
     result = marketplace_service.list_modules(category_id=category_id)
-    return JSONResponse(result)
+    return success_response(result)
 
 
 async def get_module(request: Request):
@@ -25,8 +25,8 @@ async def get_module(request: Request):
     module_id = int(request.path_params["module_id"])
     result = marketplace_service.get_module(module_id)
     if not result:
-        return JSONResponse({"error": "模块不存在"}, status_code=404)
-    return JSONResponse(result)
+        return error_response("模块不存在", code=404, http_status_code=404)
+    return success_response(result)
 
 
 async def get_module_tools(request: Request):
@@ -34,8 +34,8 @@ async def get_module_tools(request: Request):
     module_id = int(request.path_params["module_id"])
     result = marketplace_service.get_module_tools(module_id)
     if result is None:
-        return JSONResponse({"error": "模块不存在"}, status_code=404)
-    return JSONResponse(result)
+        return error_response("模块不存在", code=404, http_status_code=404)
+    return success_response(result)
 
 
 async def get_tool(request: Request):
@@ -43,21 +43,21 @@ async def get_tool(request: Request):
     tool_id = int(request.path_params["tool_id"])
     result = marketplace_service.get_tool(tool_id)
     if not result:
-        return JSONResponse({"error": "工具不存在"}, status_code=404)
-    return JSONResponse(result)
+        return error_response("工具不存在", code=404, http_status_code=404)
+    return success_response(result)
 
 
 async def scan_repository_modules(request: Request):
     """扫描仓库中的MCP模块并更新数据库"""
     result = marketplace_service.scan_repository_modules()
-    return JSONResponse(result)
+    return success_response(result)
 
 
 async def create_module(request: Request):
     """创建新的MCP模块"""
     data = await request.json()
     result = marketplace_service.create_module(data)
-    return JSONResponse(result, status_code=201)
+    return success_response(result, code=0, http_status_code=201)
 
 
 async def update_module(request: Request):
@@ -66,8 +66,8 @@ async def update_module(request: Request):
     data = await request.json()
     result = marketplace_service.update_module(module_id, data)
     if not result:
-        return JSONResponse({"error": "模块不存在"}, status_code=404)
-    return JSONResponse(result)
+        return error_response("模块不存在", code=404, http_status_code=404)
+    return success_response(result)
 
 
 async def delete_module(request: Request):
@@ -75,14 +75,14 @@ async def delete_module(request: Request):
     module_id = int(request.path_params["module_id"])
     success = marketplace_service.delete_module(module_id)
     if not success:
-        return JSONResponse({"error": "删除失败"}, status_code=400)
-    return JSONResponse({"message": "删除成功"})
+        return error_response("删除失败", code=400, http_status_code=400)
+    return success_response(message="删除成功")
 
 
 async def list_categories(request: Request):
     """获取所有MCP分组列表"""
     result = marketplace_service.list_categories()
-    return JSONResponse(result)
+    return success_response(result)
 
 
 async def get_category(request: Request):
@@ -90,15 +90,15 @@ async def get_category(request: Request):
     category_id = int(request.path_params["category_id"])
     result = marketplace_service.get_category(category_id)
     if not result:
-        return JSONResponse({"error": "分组不存在"}, status_code=404)
-    return JSONResponse(result)
+        return error_response("分组不存在", code=404, http_status_code=404)
+    return success_response(result)
 
 
 async def create_category(request: Request):
     """创建新的MCP分组"""
     data = await request.json()
     result = marketplace_service.create_category(data)
-    return JSONResponse(result, status_code=201)
+    return success_response(result, code=0, http_status_code=201)
 
 
 async def update_category(request: Request):
@@ -107,8 +107,8 @@ async def update_category(request: Request):
     data = await request.json()
     result = marketplace_service.update_category(category_id, data)
     if not result:
-        return JSONResponse({"error": "分组不存在"}, status_code=404)
-    return JSONResponse(result)
+        return error_response("分组不存在", code=404, http_status_code=404)
+    return success_response(result)
 
 
 async def delete_category(request: Request):
@@ -116,8 +116,8 @@ async def delete_category(request: Request):
     category_id = int(request.path_params["category_id"])
     success = marketplace_service.delete_category(category_id)
     if not success:
-        return JSONResponse({"error": "删除失败"}, status_code=400)
-    return JSONResponse({"message": "删除成功"})
+        return error_response("删除失败", code=400, http_status_code=400)
+    return success_response(message="删除成功")
 
 
 async def update_module_category(request: Request):
@@ -128,8 +128,8 @@ async def update_module_category(request: Request):
     
     result = marketplace_service.update_module_category(module_id, category_id)
     if not result:
-        return JSONResponse({"error": "更新失败"}, status_code=400)
-    return JSONResponse(result)
+        return error_response("更新失败", code=400, http_status_code=400)
+    return success_response(result)
 
 
 async def publish_module(request: Request):
@@ -138,8 +138,7 @@ async def publish_module(request: Request):
     try:
         # 发布服务
         service = service_manager.publish_service(module_id)
-        return JSONResponse({
-            "message": "服务已发布",
+        return success_response({
             "service": {
                 "id": service.id,
                 "module_id": service.module_id,
@@ -147,9 +146,9 @@ async def publish_module(request: Request):
                 "sse_url": service.sse_url,
                 "status": service.status
             }
-        })
+        }, message="服务已发布")
     except Exception as e:
-        return JSONResponse({"error": f"发布失败: {str(e)}"}, status_code=400)
+        return error_response(f"发布失败: {str(e)}", code=400, http_status_code=400)
 
 
 async def stop_service(request: Request):
@@ -157,8 +156,8 @@ async def stop_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
     success = service_manager.stop_service(service_uuid)
     if not success:
-        return JSONResponse({"error": "停止服务失败"}, status_code=400)
-    return JSONResponse({"message": "服务已停止"})
+        return error_response("停止服务失败", code=400, http_status_code=400)
+    return success_response(message="服务已停止")
 
 
 async def start_service(request: Request):
@@ -166,8 +165,8 @@ async def start_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
     success = service_manager.start_service(service_uuid)
     if not success:
-        return JSONResponse({"error": "启动服务失败"}, status_code=400)
-    return JSONResponse({"message": "服务已启动"})
+        return error_response("启动服务失败", code=400, http_status_code=400)
+    return success_response(message="服务已启动")
 
 
 async def uninstall_service(request: Request):
@@ -175,8 +174,8 @@ async def uninstall_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
     success = service_manager.delete_service(service_uuid)
     if not success:
-        return JSONResponse({"error": "卸载服务失败"}, status_code=400)
-    return JSONResponse({"message": "服务已卸载"})
+        return error_response("卸载服务失败", code=400, http_status_code=400)
+    return success_response(message="服务已卸载")
 
 
 async def update_service_description(request: Request):
@@ -195,7 +194,7 @@ async def update_service_description(request: Request):
             ).first()
             
             if not service:
-                return JSONResponse({"error": "服务不存在"}, status_code=404)
+                return error_response("服务不存在", code=404, http_status_code=404)
             
             # 获取关联的模块并更新描述
             from app.models.modules.mcp_marketplace import McpModule
@@ -206,11 +205,11 @@ async def update_service_description(request: Request):
             if module:
                 module.description = description
                 db.commit()
-                return JSONResponse({"message": "服务说明已更新"})
+                return success_response(message="服务说明已更新")
             else:
-                return JSONResponse({"error": "未找到关联模块"}, status_code=404)
+                return error_response("未找到关联模块", code=404, http_status_code=404)
     except Exception as e:
-        return JSONResponse({"error": f"更新服务说明失败: {str(e)}"}, status_code=500)
+        return error_response(f"更新服务说明失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def list_services(request: Request):
@@ -221,7 +220,7 @@ async def list_services(request: Request):
         module_id = int(module_id)
     
     services = service_manager.list_services(module_id)
-    return JSONResponse(services)
+    return success_response(services)
 
 
 async def get_service(request: Request):
@@ -229,15 +228,15 @@ async def get_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
     service = service_manager.get_service_status(service_uuid)
     if service:
-        return JSONResponse(service)
-    return JSONResponse({"detail": "服务不存在"}, status_code=404)
+        return success_response(service)
+    return error_response("服务不存在", code=404, http_status_code=404)
 
 
 async def get_online_services(request: Request):
     """获取在线服务列表"""
     # 获取运行中的服务UUID列表
     online_services = list(service_manager._running_services.keys())
-    return JSONResponse(online_services)
+    return success_response(online_services)
 
 
 def get_router():

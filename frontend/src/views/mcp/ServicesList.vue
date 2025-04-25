@@ -84,7 +84,7 @@
                     type="success"
                     size="small"
                     :loading="loadingStates[scope.row.service_uuid]?.starting"
-                    @click="startService(scope.row.service_uuid)"
+                    @click="startMcpService(scope.row.service_uuid)"
                   >
                     启动
                   </el-button>
@@ -93,7 +93,7 @@
                     type="warning"
                     size="small"
                     :loading="loadingStates[scope.row.service_uuid]?.stopping"
-                    @click="stopService(scope.row.service_uuid)"
+                    @click="stopMcpService(scope.row.service_uuid)"
                   >
                     停止
                   </el-button>
@@ -156,27 +156,92 @@ import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { DocumentCopy, Refresh, Edit } from '@element-plus/icons-vue';
-import httpClient from '../../utils/http-client';
+import api from '../../api/index';
+import { listServices, startService, stopService } from '@/api/marketplace';
+
+// 定义服务类型接口
+interface Service {
+  service_uuid: string;
+  name: string;
+  description: string;
+  status: string;
+  version: string;
+  created_at: string;
+  updated_at: string;
+  [key: string]: any; // 允许其他属性
+}
+
+// 定义日志类型接口
+interface LogEntry {
+  timestamp: string;
+  level: string;
+  message: string;
+  [key: string]: any; // 允许其他属性
+}
+
+// 定义状态类型
+interface StatusConfig {
+  [key: string]: {
+    label: string;
+    type: string;
+  }
+}
+
+// 定义加载状态接口
+interface LoadingStates {
+  [serviceUuid: string]: {
+    [action: string]: boolean;
+  };
+}
 
 const router = useRouter();
-const services = ref([]);
+const services = ref<Service[]>([]);
 const loading = ref(true);
-const onlineServices = ref(new Set());
+const onlineServices = ref(new Set<string>());
+const currentServiceLogs = ref<LogEntry[]>([]);
+const logsLoading = ref(false);
+const logsDialogVisible = ref(false);
+const currentServiceName = ref('');
 
 // 记录每个服务ID的加载状态
-const loadingStates = reactive({});
+const loadingStates = reactive<LoadingStates>({});
+
+// 状态映射配置
+const statusConfig: StatusConfig = {
+  'running': {
+    label: '运行中',
+    type: 'success'
+  },
+  'stopped': {
+    label: '已停止',
+    type: 'danger'
+  },
+  'error': {
+    label: '错误',
+    type: 'danger'
+  },
+  'starting': {
+    label: '启动中',
+    type: 'warning'
+  },
+  'stopping': {
+    label: '停止中',
+    type: 'warning'
+  }
+};
 
 // 获取所有服务列表
 const fetchServices = async () => {
   loading.value = true;
   try {
-    const response = await httpClient.get('/api/marketplace/services');
-    services.value = response.data;
+    const data  = await listServices();
+    console.log(data);
+    services.value = data || [];
     
     // 获取在线服务状态
     await checkOnlineServices();
   } catch (error) {
-    console.error('获取服务列表失败', error);
+    console.error('获取服务列表失败:', error);
     ElMessage.error('获取服务列表失败');
   } finally {
     loading.value = false;
@@ -186,7 +251,7 @@ const fetchServices = async () => {
 // 检查哪些服务在线
 const checkOnlineServices = async () => {
   try {
-    const response = await httpClient.get('/api/marketplace/services/online');
+    const response = await api.get('/api/marketplace/services/online');
     onlineServices.value = new Set(response.data);
   } catch (error) {
     console.error('获取在线服务状态失败', error);
@@ -194,7 +259,7 @@ const checkOnlineServices = async () => {
 };
 
 // 判断服务是否在线
-const isServiceOnline = (service) => {
+const isServiceOnline = (service: Service) => {
   return onlineServices.value.has(service.service_uuid);
 };
 
@@ -205,7 +270,7 @@ const refreshServices = async () => {
 };
 
 // 获取服务状态类型
-const getStatusType = (service) => {
+const getStatusType = (service: Service) => {
   // 如果服务在线但状态不是running，优先显示在线状态
   if (isServiceOnline(service)) {
     return 'success';
@@ -220,7 +285,7 @@ const getStatusType = (service) => {
 };
 
 // 获取状态文本
-const getStatusText = (status) => {
+const getStatusText = (status: string) => {
   switch (status) {
     case 'running': return '运行中';
     case 'stopped': return '已停止';
@@ -230,14 +295,14 @@ const getStatusText = (status) => {
 };
 
 // 启动服务
-const startService = async (serviceUuid) => {
+const startMcpService = async (serviceUuid: string) => {
   if (!loadingStates[serviceUuid]) {
     loadingStates[serviceUuid] = {};
   }
   loadingStates[serviceUuid].starting = true;
   
   try {
-    await httpClient.post(`/api/marketplace/services/${serviceUuid}/start`);
+    await startService(serviceUuid);
     ElMessage.success('服务已启动');
     await fetchServices();
   } catch (error) {
@@ -249,14 +314,14 @@ const startService = async (serviceUuid) => {
 };
 
 // 停止服务
-const stopService = async (serviceUuid) => {
+const stopMcpService = async (serviceUuid: string) => {
   if (!loadingStates[serviceUuid]) {
     loadingStates[serviceUuid] = {};
   }
   loadingStates[serviceUuid].stopping = true;
   
   try {
-    await httpClient.post(`/api/marketplace/services/${serviceUuid}/stop`);
+    await stopService(serviceUuid);
     ElMessage.success('服务已停止');
     await fetchServices();
   } catch (error) {
@@ -268,7 +333,7 @@ const stopService = async (serviceUuid) => {
 };
 
 // 确认删除服务
-const confirmDeleteService = (serviceUuid) => {
+const confirmDeleteService = (serviceUuid: string) => {
   ElMessageBox.confirm(
     '确定要删除此服务吗？删除后将无法恢复。',
     '确认删除',
@@ -287,14 +352,14 @@ const confirmDeleteService = (serviceUuid) => {
 };
 
 // 删除服务
-const deleteService = async (serviceUuid) => {
+const deleteService = async (serviceUuid: string) => {
   if (!loadingStates[serviceUuid]) {
     loadingStates[serviceUuid] = {};
   }
   loadingStates[serviceUuid].deleting = true;
   
   try {
-    await httpClient.post(`/api/marketplace/services/${serviceUuid}/uninstall`);
+    await api.post(`/api/services/${serviceUuid}/uninstall`);
     ElMessage.success('服务已删除');
     await fetchServices();
   } catch (error) {
@@ -306,12 +371,12 @@ const deleteService = async (serviceUuid) => {
 };
 
 // 查看服务详情
-const viewServiceDetail = (service) => {
+const viewServiceDetail = (service: Service) => {
   router.push(`/marketplace/${service.module_id}`);
 };
 
 // 复制URL到剪贴板
-const copyUrl = (url) => {
+const copyUrl = (url: string) => {
   // 首先尝试使用现代的clipboard API
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url)
@@ -329,7 +394,7 @@ const copyUrl = (url) => {
 };
 
 // 兼容性处理方法
-const fallbackCopyTextToClipboard = (text) => {
+const fallbackCopyTextToClipboard = (text: string) => {
   try {
     // 创建临时文本区域
     const textArea = document.createElement('textarea');
@@ -367,11 +432,11 @@ onMounted(() => {
 
 // 编辑服务说明对话框
 const dialogVisible = ref(false);
-const editingService = ref<any>(null);
+const editingService = ref<Service | null>(null);
 const newDescription = ref('');
 
 // 打开编辑服务说明对话框
-const editServiceDescription = (service: any) => {
+const editServiceDescription = (service: Service) => {
   editingService.value = service;
   newDescription.value = service.description || '';
   dialogVisible.value = true;
@@ -382,7 +447,7 @@ const saveServiceDescription = async () => {
   if (!editingService.value) return;
   
   try {
-    await httpClient.put(`/api/marketplace/services/${editingService.value.service_uuid}/description`, {
+    await api.put(`/api/services/${editingService.value.service_uuid}/description`, {
       description: newDescription.value
     });
     
@@ -393,6 +458,45 @@ const saveServiceDescription = async () => {
   } catch (error) {
     console.error('更新服务说明失败', error);
     ElMessage.error('更新服务说明失败');
+  }
+};
+
+const copyServiceId = (service: Service) => {
+  // ... existing code ...
+};
+
+const getStatusInfo = (service: Service) => {
+  // ... existing code ...
+};
+
+const getStatusClass = (status: string) => {
+  // ... existing code ...
+};
+
+const confirmUninstall = (serviceUuid: string) => {
+  // ... existing code ...
+};
+
+const editService = (serviceUuid: string) => {
+  // ... existing code ...
+};
+
+/**
+ * 显示服务日志
+ */
+const showLogs = async (service: Service): Promise<void> => {
+  currentServiceName.value = service.name || '';
+  logsDialogVisible.value = true;
+  logsLoading.value = true;
+  
+  try {
+    const response = await api.get(`/mcp/service/${service.service_uuid}/logs`);
+    currentServiceLogs.value = response.data?.data || [];
+  } catch (error) {
+    ElMessage.error('获取日志失败');
+    console.error('获取日志错误:', error);
+  } finally {
+    logsLoading.value = false;
   }
 };
 </script>

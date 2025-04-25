@@ -1,5 +1,6 @@
 import os
 import json
+import secrets
 from typing import Dict, Any, List
 from pathlib import Path
 
@@ -39,6 +40,10 @@ class Settings:
         self.DEBUG: bool = config.get("server", {}).get("debug", True)
         self.SSE_SERVER_URL: str = config.get("server", {}).get("sse_server_url", "http://10.4.1.132:8002")
         
+        # Flask设置
+        self.FLASK_PORT: int = config.get("flask", {}).get("port", 8003)
+        self.ENVIRONMENT: str = config.get("flask", {}).get("environment", "development")
+        
         # MCP设置
         self.MCP_PORT: int = config.get("mcp", {}).get("port", 8002)
         self.MCP_SSE_URL: str = config.get("mcp", {}).get("sse_url", f"http://localhost:{self.MCP_PORT}/sse")
@@ -50,6 +55,11 @@ class Settings:
         # 日志设置
         self.LOG_LEVEL: str = config.get("logging", {}).get("level", "info")
         self.LOG_BACKUP_COUNT: int = config.get("logging", {}).get("backup_count", 7)
+        
+        # JWT设置
+        self.JWT_SECRET_KEY: str = config.get("jwt", {}).get(
+            "secret_key", secrets.token_hex(32)
+        )
 
 
 settings = Settings() 

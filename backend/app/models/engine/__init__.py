@@ -43,6 +43,8 @@ def init_db():
         McpModule, McpTool, McpCategory
     )
     from app.models.modules.mcp_services import McpService  # noqa: F401
+    # 导入用户和租户模型
+    from app.models.modules.users import User, Tenant, UserTenant  # noqa: F401
     
     # 创建所有表
     Base.metadata.create_all(bind=engine)

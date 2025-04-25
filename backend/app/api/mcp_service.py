@@ -1,9 +1,9 @@
 from starlette.routing import Route
-from starlette.responses import JSONResponse
 from starlette.requests import Request
 from pydantic import BaseModel, ValidationError
 import importlib
 
+from app.utils.response import success_response, error_response
 from app.server.mcp_server import (
     add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools
 )
@@ -40,13 +40,13 @@ async def load_tool(request: Request):
             module = importlib.import_module(request_data.module_path)
         except ImportError as e:
             error_msg = f"模块 {request_data.module_path} 导入失败: {str(e)}"
-            return JSONResponse({"detail": error_msg}, status_code=404)
+            return error_response(error_msg, code=404, http_status_code=404)
         
         # 获取函数
         if not hasattr(module, request_data.function_name):
             error_msg = (f"函数 {request_data.function_name} 在模块 "
                         f"{request_data.module_path} 中不存在")
-            return JSONResponse({"detail": error_msg}, status_code=404)
+            return error_response(error_msg, code=404, http_status_code=404)
         
         func = getattr(module, request_data.function_name)
         
@@ -58,14 +58,13 @@ async def load_tool(request: Request):
         )
         
         tool_name = request_data.tool_name or request_data.function_name
-        return JSONResponse({
-            "message": f"工具 {tool_name} 已成功加载",
+        return success_response({
             "tool_name": tool_name
-        })
+        }, message=f"工具 {tool_name} 已成功加载")
     except ValidationError as e:
-        return JSONResponse({"detail": str(e)}, status_code=422)
+        return error_response(str(e), code=422, http_status_code=422)
     except Exception as e:
-        return JSONResponse({"detail": f"加载工具失败: {str(e)}"}, status_code=500)
+        return error_response(f"加载工具失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def unload_tool(request: Request):
@@ -76,14 +75,14 @@ async def unload_tool(request: Request):
         
         success = remove_tool(request_data.tool_name)
         if success:
-            return JSONResponse({"message": f"工具 {request_data.tool_name} 已成功卸载"})
+            return success_response(message=f"工具 {request_data.tool_name} 已成功卸载")
         else:
             error_msg = f"工具 {request_data.tool_name} 不存在或卸载失败"
-            return JSONResponse({"detail": error_msg}, status_code=404)
+            return error_response(error_msg, code=404, http_status_code=404)
     except ValidationError as e:
-        return JSONResponse({"detail": str(e)}, status_code=422)
+        return error_response(str(e), code=422, http_status_code=422)
     except Exception as e:
-        return JSONResponse({"detail": f"卸载工具失败: {str(e)}"}, status_code=500)
+        return error_response(f"卸载工具失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def restart_service(request: Request):
@@ -91,30 +90,33 @@ async def restart_service(request: Request):
     try:
         success = restart_mcp_server()
         if success:
-            return JSONResponse({"message": "MCP服务已成功重启"})
+            return success_response(message="MCP服务已成功重启")
         else:
-            return JSONResponse({"detail": "MCP服务重启失败"}, status_code=500)
+            return error_response("MCP服务重启失败", code=500, http_status_code=500)
     except Exception as e:
-        return JSONResponse({"detail": f"重启服务失败: {str(e)}"}, status_code=500)
+        return error_response(f"重启服务失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def get_status(request: Request):
     """获取MCP服务状态"""
     try:
         status = check_mcp_status()
-        return JSONResponse(status)
+        return success_response(status)
     except Exception as e:
-        return JSONResponse({"detail": f"获取服务状态失败: {str(e)}"}, status_code=500)
+        return error_response(f"获取服务状态失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def enabled_tools(request: Request):
     """获取当前启用的工具列表"""
     try:
         tools_list = get_enabled_tools()
-        return JSONResponse({"enabled_tools": tools_list, "count": len(tools_list)})
+        return success_response({
+            "enabled_tools": tools_list, 
+            "count": len(tools_list)
+        })
     except Exception as e:
         error_msg = f"获取启用工具列表失败: {str(e)}"
-        return JSONResponse({"detail": error_msg}, status_code=500)
+        return error_response(error_msg, code=500, http_status_code=500)
 
 
 async def update_sse_url(request: Request):
@@ -127,14 +129,13 @@ async def update_sse_url(request: Request):
         settings.MCP_SSE_URL = request_data.sse_url
         
         # 返回更新后的状态
-        return JSONResponse({
-            "message": "MCP SSE URL已更新",
+        return success_response({
             "new_sse_url": settings.MCP_SSE_URL
-        })
+        }, message="MCP SSE URL已更新")
     except ValidationError as e:
-        return JSONResponse({"detail": str(e)}, status_code=422)
+        return error_response(str(e), code=422, http_status_code=422)
     except Exception as e:
-        return JSONResponse({"detail": f"更新SSE URL失败: {str(e)}"}, status_code=500)
+        return error_response(f"更新SSE URL失败: {str(e)}", code=500, http_status_code=500)
 
 
 def get_router():

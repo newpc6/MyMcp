@@ -1,20 +1,39 @@
-from starlette.responses import JSONResponse
+"""
+API路由模块
+
+提供所有API的路由配置
+"""
 from app.core.config import settings
+from app.utils.response import success_response
 from . import (
-    tools, resources, modules, protocols, mcp_service, 
-    history, execution, log, marketplace
+    auth, tools, resources, modules, protocols, 
+    mcp_service, history, execution, log, marketplace
 )
 
 
 async def root(request):
-    """API根路径处理函数"""
-    return JSONResponse({"message": "欢迎使用 Egova AI MCP Server API"})
+    """API根路由"""
+    return success_response({
+        "title": settings.API_TITLE,
+        "version": settings.API_VERSION
+    }, message=f"欢迎使用 {settings.API_TITLE} v{settings.API_VERSION}")
 
 
 def get_router(app):
     """获取所有API路由"""
     # 添加根路由
     app.add_route("/", root)
+    # 添加认证中间件
+    from app.middleware.auth import AuthMiddleware
+    app.add_middleware(AuthMiddleware)
+    # 添加认证路由
+    for route in auth.get_router():
+        app.add_route(
+            f"{settings.API_PREFIX}/auth{route.path}", 
+            route.endpoint, 
+            methods=route.methods, 
+            name=route.name
+        )
     
     # 添加工具路由
     for route in tools.get_router():

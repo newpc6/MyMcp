@@ -243,6 +243,10 @@ def start_mcp_server():
 
     # 创建SSE应用并配置中间件
     app = server_instance.sse_app()
+    
+    # 输出CORS配置信息
+    em_logger.info(f"CORS配置: allow_origins={settings.CORS_ORIGINS}, allow_credentials={settings.CORS_CREDENTIALS}")
+    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
