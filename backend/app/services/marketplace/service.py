@@ -22,27 +22,51 @@ class MarketplaceService:
     """MCP广场服务"""
     
     def list_modules(
-        self, category_id: Optional[int] = None
+        self, category_id: Optional[int] = None, 
+        user_id: Optional[int] = None, 
+        is_admin: bool = False
     ) -> List[Dict[str, Any]]:
-        """获取MCP模块列表"""
+        """获取MCP模块列表
+        
+        参数:
+            category_id: 分类ID，可选
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+            
+        返回:
+            MCP模块列表
+        """
         with get_db() as db:
             query = select(McpModule)
             
             # 如果指定了分组ID，按分组过滤
             if category_id:
                 query = query.where(McpModule.category_id == category_id)
+            
+            # 非管理员用户只能看到自己创建的和公开的模块
+            if not is_admin and user_id is not None:
+                query = query.where(
+                    (McpModule.is_public == True) | (McpModule.creator_id == user_id)
+                )
                 
             modules = db.execute(query).scalars().all()
             return [m.to_dict() for m in modules]
     
-    def get_module(self, module_id: int) -> Optional[Dict[str, Any]]:
+    def get_module(self, module_id: int, user_id: Optional[int] = None, is_admin: bool = False) -> Optional[Dict[str, Any]]:
         """获取指定的MCP模块信息"""
         with get_db() as db:
             query = select(McpModule).where(McpModule.id == module_id)
             module = db.execute(query).scalar_one_or_none()
-            if module:
-                return module.to_dict()
-            return None
+            
+            if not module:
+                return None
+                
+            # 检查权限：非管理员只能查看公开模块或自己创建的模块
+            if not is_admin and user_id is not None:
+                if not module.is_public and module.creator_id != user_id:
+                    return None
+                    
+            return module.to_dict()
     
     def get_module_tools(
         self, module_id: int
@@ -477,22 +501,23 @@ class MarketplaceService:
     def create_module(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """创建MCP模块"""
         with get_db() as db:
-            # 创建模块记录
+            # 构建模块对象
             module = McpModule(
-                name=data.get("name"),
+                name=data.get("name", ""),
                 description=data.get("description", ""),
-                module_path=f"repository.{data.get('name')}",
-                author=data.get("author", "系统创建"),
+                module_path=data.get("module_path", ""),
+                author=data.get("author", ""),
                 version=data.get("version", "1.0.0"),
-                tags=",".join(data.get("tags", [])),
+                tags=data.get("tags", ""),
                 icon=data.get("icon", ""),
-                is_hosted=True,  # 使用数据库存储的模块默认为托管模块
+                is_hosted=data.get("is_hosted", False),
                 repository_url=data.get("repository_url", ""),
                 category_id=data.get("category_id"),
                 code=data.get("code", ""),
-                config_schema=data.get("config_schema", "{}"),
-                created_at=now_beijing(),
-                updated_at=now_beijing()
+                config_schema=data.get("config_schema"),
+                markdown_docs=data.get("markdown_docs", ""),
+                creator_id=data.get("creator_id"),
+                is_public=data.get("is_public", True)
             )
             
             db.add(module)
@@ -502,90 +527,84 @@ class MarketplaceService:
             return module.to_dict()
     
     def update_module(
-        self, module_id: int, data: Dict[str, Any]
+        self, module_id: int, data: Dict[str, Any], 
+        user_id: Optional[int] = None, is_admin: bool = False
     ) -> Optional[Dict[str, Any]]:
-        """更新MCP模块"""
+        """更新MCP模块
+        
+        参数:
+            module_id: 模块ID
+            data: 更新的数据
+            user_id: 当前用户ID
+            is_admin: 是否为管理员
+            
+        返回:
+            更新后的模块信息，如果没有权限则返回None
+        """
         with get_db() as db:
-            try:
-                # 查询模块是否存在
-                query = select(McpModule).where(McpModule.id == module_id)
-                module = db.execute(query).scalar_one_or_none()
-                
-                if not module:
-                    return None
-                
-                # 更新字段
-                update_data = {
-                    "updated_at": now_beijing()
-                }
-                
-                if "name" in data:
-                    update_data["name"] = data["name"]
-                if "description" in data:
-                    update_data["description"] = data["description"]
-                if "module_path" in data:
-                    update_data["module_path"] = data["module_path"]
-                if "author" in data:
-                    update_data["author"] = data["author"]
-                if "version" in data:
-                    update_data["version"] = data["version"]
-                if "tags" in data:
-                    # 如果是列表，则转换为逗号分隔的字符串
-                    if isinstance(data["tags"], list):
-                        update_data["tags"] = ",".join(data["tags"])
-                    else:
-                        update_data["tags"] = data["tags"]
-                if "icon" in data:
-                    update_data["icon"] = data["icon"]
-                if "is_hosted" in data:
-                    update_data["is_hosted"] = data["is_hosted"]
-                if "repository_url" in data:
-                    update_data["repository_url"] = data["repository_url"]
-                if "code" in data:
-                    update_data["code"] = data["code"]
-                if "config_schema" in data:
-                    update_data["config_schema"] = data["config_schema"]
-                if "markdown_docs" in data:
-                    update_data["markdown_docs"] = data["markdown_docs"]
-                
-                # 更新数据库
-                stmt = (
-                    update(McpModule)
-                    .where(McpModule.id == module_id)
-                    .values(**update_data)
-                )
-                db.execute(stmt)
-                db.commit()
-                
-                # 返回更新后的模块信息
-                return self.get_module(module_id)
-                
-            except SQLAlchemyError as e:
-                em_logger.error(f"更新模块失败: {str(e)}")
-                db.rollback()
+            # 先获取模块
+            module = db.query(McpModule).filter(McpModule.id == module_id).first()
+            if not module:
                 return None
+                
+            # 检查权限：非管理员只能更新自己创建的模块
+            if not is_admin and user_id is not None and module.creator_id != user_id:
+                return None
+            
+            # 更新字段
+            for key, value in data.items():
+                if hasattr(module, key) and key != "id":
+                    setattr(module, key, value)
+            
+            # 更新时间
+            module.updated_at = now_beijing()
+            
+            db.commit()
+            db.refresh(module)
+            
+            return module.to_dict()
     
-    def delete_module(self, module_id: int) -> bool:
-        """删除MCP模块"""
-        with get_db() as db:
-            try:
-                # 检查模块是否存在
-                module_query = select(McpModule).where(
-                    McpModule.id == module_id
-                )
-                module = db.execute(module_query).scalar_one_or_none()
+    def delete_module(
+        self, module_id: int, 
+        user_id: Optional[int] = None, 
+        is_admin: bool = False
+    ) -> bool:
+        """删除MCP模块
+        
+        参数:
+            module_id: 模块ID
+            user_id: 当前用户ID
+            is_admin: 是否为管理员
+            
+        返回:
+            是否删除成功
+        """
+        try:
+            with get_db() as db:
+                # 先获取模块
+                module = db.query(McpModule).filter(McpModule.id == module_id).first()
                 if not module:
                     return False
+                    
+                # 检查权限：非管理员只能删除自己创建的模块
+                if not is_admin and user_id is not None and module.creator_id != user_id:
+                    return False
                 
-                # 删除模块记录（关联的工具会通过级联关系自动删除）
-                stmt = delete(McpModule).where(McpModule.id == module_id)
-                db.execute(stmt)
+                # 删除相关工具
+                db.execute(
+                    delete(McpTool).where(McpTool.module_id == module_id)
+                )
+                
+                # 删除模块
+                db.execute(
+                    delete(McpModule).where(McpModule.id == module_id)
+                )
+                
                 db.commit()
                 return True
-            except SQLAlchemyError as e:
-                em_logger.error(f"删除模块失败: {str(e)}")
-                db.rollback()
-                return False
+        except SQLAlchemyError as e:
+            em_logger.error(f"删除模块错误: {str(e)}")
+            return False
 
 
 # 创建服务实例

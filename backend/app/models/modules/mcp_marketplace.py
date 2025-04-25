@@ -65,12 +65,15 @@ class McpModule(Base):
     code = Column(Text)  # 模块代码
     config_schema = Column(Text)  # 配置项模式，用于存储key, secret等字段的配置模式，JSON格式
     markdown_docs = Column(Text)  # 模块的Markdown格式文档内容
+    creator_id = Column(Integer, nullable=True, index=True)  # 创建者ID
+    is_public = Column(Boolean, default=True)  # 是否公开，True为公开，False为私有
 
     def to_dict(self):
         """转换为字典格式"""
         # 获取分类名称和工具数量通过直接查询
         category_name = None
         tools_count = 0
+        creator_name = None
         
         with get_db() as db:
             # 获取分类名称
@@ -85,6 +88,13 @@ class McpModule(Base):
             sql = text(query).bindparams(id=self.id)
             tools_count = db.execute(sql).scalar()
             
+            # 获取创建者名称
+            if self.creator_id:
+                query = "SELECT username FROM users WHERE id = :id"
+                sql = text(query).bindparams(id=self.creator_id)
+                result = db.execute(sql).first()
+                creator_name = result[0] if result else None
+                
         config_dict = {}
         if self.config_schema:
             try:
@@ -110,7 +120,10 @@ class McpModule(Base):
             "tools_count": tools_count,
             "code": self.code,
             "config_schema": config_dict,
-            "markdown_docs": self.markdown_docs
+            "markdown_docs": self.markdown_docs,
+            "creator_id": self.creator_id,
+            "creator_name": creator_name,
+            "is_public": self.is_public
         }
 
 

@@ -15,17 +15,36 @@ async def list_modules(request: Request):
     category_id = request.query_params.get("category_id")
     if category_id:
         category_id = int(category_id)
-    
-    result = marketplace_service.list_modules(category_id=category_id)
+
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+
+    result = marketplace_service.list_modules(
+        category_id=category_id,
+        user_id=user_id,
+        is_admin=is_admin
+    )
     return success_response(result)
 
 
 async def get_module(request: Request):
     """获取指定MCP模块的详情"""
     module_id = int(request.path_params["module_id"])
-    result = marketplace_service.get_module(module_id)
+
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+
+    result = marketplace_service.get_module(
+        module_id=module_id,
+        user_id=user_id,
+        is_admin=is_admin
+    )
     if not result:
-        return error_response("模块不存在", code=404, http_status_code=404)
+        return error_response("模块不存在或无权限访问", code=404, http_status_code=404)
     return success_response(result)
 
 
@@ -56,6 +75,12 @@ async def scan_repository_modules(request: Request):
 async def create_module(request: Request):
     """创建新的MCP模块"""
     data = await request.json()
+
+    # 获取用户信息并添加到数据中
+    user = request.state.user
+    if user:
+        data["creator_id"] = user.get("user_id")
+
     result = marketplace_service.create_module(data)
     return success_response(result, code=0, http_status_code=201)
 
@@ -64,18 +89,39 @@ async def update_module(request: Request):
     """更新MCP模块"""
     module_id = int(request.path_params["module_id"])
     data = await request.json()
-    result = marketplace_service.update_module(module_id, data)
+
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+
+    result = marketplace_service.update_module(
+        module_id=module_id,
+        data=data,
+        user_id=user_id,
+        is_admin=is_admin
+    )
     if not result:
-        return error_response("模块不存在", code=404, http_status_code=404)
+        return error_response("模块不存在或无权限修改", code=404, http_status_code=404)
     return success_response(result)
 
 
 async def delete_module(request: Request):
     """删除MCP模块"""
     module_id = int(request.path_params["module_id"])
-    success = marketplace_service.delete_module(module_id)
+
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+
+    success = marketplace_service.delete_module(
+        module_id=module_id,
+        user_id=user_id,
+        is_admin=is_admin
+    )
     if not success:
-        return error_response("删除失败", code=400, http_status_code=400)
+        return error_response("删除失败或无权限删除", code=400, http_status_code=400)
     return success_response(message="删除成功")
 
 
@@ -125,7 +171,7 @@ async def update_module_category(request: Request):
     module_id = int(request.path_params["module_id"])
     data = await request.json()
     category_id = data.get("category_id")
-    
+
     result = marketplace_service.update_module_category(module_id, category_id)
     if not result:
         return error_response("更新失败", code=400, http_status_code=400)
@@ -183,25 +229,25 @@ async def update_service_description(request: Request):
     service_uuid = request.path_params["service_uuid"]
     data = await request.json()
     description = data.get("description", "")
-    
+
     try:
         from app.models.engine import get_db
         from app.models.modules.mcp_services import McpService
-        
+
         with get_db() as db:
             service = db.query(McpService).filter(
                 McpService.service_uuid == service_uuid
             ).first()
-            
+
             if not service:
                 return error_response("服务不存在", code=404, http_status_code=404)
-            
+
             # 获取关联的模块并更新描述
             from app.models.modules.mcp_marketplace import McpModule
             module = db.query(McpModule).filter(
                 McpModule.id == service.module_id
             ).first()
-            
+
             if module:
                 module.description = description
                 db.commit()
@@ -218,7 +264,7 @@ async def list_services(request: Request):
     module_id = request.query_params.get("module_id")
     if module_id:
         module_id = int(module_id)
-    
+
     services = service_manager.list_services(module_id)
     return success_response(services)
 
@@ -244,7 +290,8 @@ def get_router():
     routes = [
         Route("/modules", list_modules, methods=["GET"]),
         Route("/modules/{module_id:int}", get_module, methods=["GET"]),
-        Route("/modules/{module_id:int}/tools", get_module_tools, methods=["GET"]),
+        Route("/modules/{module_id:int}/tools",
+              get_module_tools, methods=["GET"]),
         Route("/tools/{tool_id:int}", get_tool, methods=["GET"]),
         Route("/modules/scan", scan_repository_modules, methods=["POST"]),
         Route("/modules", create_module, methods=["POST"]),
@@ -253,22 +300,28 @@ def get_router():
         Route("/categories", list_categories, methods=["GET"]),
         Route("/categories/{category_id:int}", get_category, methods=["GET"]),
         Route("/categories", create_category, methods=["POST"]),
-        Route("/categories/{category_id:int}", update_category, methods=["PUT"]),
-        Route("/categories/{category_id:int}", delete_category, methods=["DELETE"]),
+        Route("/categories/{category_id:int}",
+              update_category, methods=["PUT"]),
+        Route("/categories/{category_id:int}",
+              delete_category, methods=["DELETE"]),
         Route(
-            "/modules/{module_id:int}/category", 
-            update_module_category, 
+            "/modules/{module_id:int}/category",
+            update_module_category,
             methods=["PUT"]
         ),
-        
+
         # 服务相关路由
-        Route("/modules/{module_id:int}/publish", publish_module, methods=["POST"]),
+        Route("/modules/{module_id:int}/publish",
+              publish_module, methods=["POST"]),
         Route("/services", list_services, methods=["GET"]),
         Route("/services/online", get_online_services, methods=["GET"]),
         Route("/services/{service_uuid}", get_service, methods=["GET"]),
         Route("/services/{service_uuid}/stop", stop_service, methods=["POST"]),
-        Route("/services/{service_uuid}/start", start_service, methods=["POST"]),
-        Route("/services/{service_uuid}/uninstall", uninstall_service, methods=["POST"]),
-        Route("/services/{service_uuid}/description", update_service_description, methods=["PUT"]),
+        Route("/services/{service_uuid}/start",
+              start_service, methods=["POST"]),
+        Route("/services/{service_uuid}/uninstall",
+              uninstall_service, methods=["POST"]),
+        Route("/services/{service_uuid}/description",
+              update_service_description, methods=["PUT"]),
     ]
     return routes

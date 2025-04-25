@@ -12,7 +12,7 @@ export interface McpModuleInfo {
   module_path: string;
   author?: string;
   version?: string;
-  tags: string[];
+  tags: string[] | string;
   icon?: string;
   is_hosted: boolean;
   repository_url?: string;
@@ -22,6 +22,20 @@ export interface McpModuleInfo {
   category_id?: number;
   category_name?: string;
   code?: string;
+  creator_id?: number;
+  creator_name?: string;
+  is_public?: boolean;
+  markdown_docs?: string;
+}
+
+/**
+ * API响应类型
+ */
+export interface ApiResponse<T> {
+  code: number;
+  data: T;
+  message?: string;
+  success?: boolean;
 }
 
 /**

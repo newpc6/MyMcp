@@ -39,6 +39,11 @@
       <el-page-header class="mb-4" :title="activeCategory && activeCategory.id !== 'all' ? activeCategory.name : 'MCP 广场'">
         <template #extra>
           <el-button 
+            type="success" 
+            @click="showCreateDialog" 
+            class="mr-2"
+          >新建MCP服务</el-button>
+          <el-button 
             type="primary" 
             @click="loadModules" 
             :loading="scanning"
@@ -82,10 +87,37 @@
                 >
                   {{ module.category_name }}
                 </el-tag>
+                <el-tag 
+                  v-if="!module.is_public" 
+                  size="small" 
+                  type="danger"
+                  class="ml-1"
+                >
+                  私有
+                </el-tag>
+                <el-tag 
+                  v-else
+                  size="small" 
+                  type="success"
+                  class="ml-1"
+                >
+                  公开
+                </el-tag>
+                <el-tag 
+                  v-if="module.creator_name" 
+                  size="small" 
+                  type="info"
+                  class="ml-1"
+                >
+                  创建者: {{ module.creator_name }}
+                </el-tag>
               </div>
-              <el-button type="primary" link @click.stop="goToModuleDetail(module.id)">
-                查看详情
-              </el-button>
+              <div class="flex flex-col items-end">
+                <div class="text-gray-500 text-xs mb-1">更新时间: {{ formatDate(module.updated_at) }}</div>
+                <el-button type="primary" link @click.stop="goToModuleDetail(module.id)">
+                  查看详情
+                </el-button>
+              </div>
             </div>
           </el-card>
         </div>
@@ -104,15 +136,99 @@
         </div>
       </div>
     </el-main>
+    
+    <!-- 创建MCP服务对话框 -->
+    <el-dialog
+      v-model="createDialogVisible"
+      title="创建MCP服务"
+      width="60%"
+      :destroy-on-close="true"
+    >
+      <el-form 
+        ref="createFormRef" 
+        :model="createForm" 
+        :rules="createRules" 
+        label-width="100px"
+        label-position="top"
+      >
+        <el-form-item label="服务名称" prop="name">
+          <el-input v-model.trim="createForm.name" placeholder="请输入服务名称" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="服务描述" prop="description">
+          <textarea 
+            v-model="createForm.description" 
+            rows="3" 
+            placeholder="请输入服务描述"
+            class="el-textarea__inner" 
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;"
+            clearable
+          ></textarea>
+        </el-form-item>
+        
+        <el-form-item label="版本" prop="version">
+          <el-input v-model.trim="createForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="标签" prop="tags">
+          <el-select
+            v-model="createForm.tags"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="请输入标签"
+            style="width: 100%"
+          >
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="分类" prop="category_id">
+          <el-select v-model="createForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="代码" prop="code">
+          <textarea 
+            v-model="createForm.code" 
+            rows="8" 
+            placeholder="请输入Python代码"
+            class="el-textarea__inner" 
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
+            clearable
+          ></textarea>
+        </el-form-item>
+        
+        <el-form-item label="访问权限">
+          <el-radio-group v-model="createForm.is_public">
+            <el-radio :label="true">公开</el-radio>
+            <el-radio :label="false">私有</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="createDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitCreateForm" :loading="submitting">创建</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification } from 'element-plus';
 import { Tools, Menu, Collection } from '@element-plus/icons-vue';
-import { listModules, listCategories } from '../../api/marketplace';
+import { listModules, listCategories, createModule } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 
 const router = useRouter();
@@ -122,6 +238,45 @@ const loading = ref(true);
 const scanning = ref(false);
 const selectedCategoryId = ref<string | null>('all');
 
+// 创建服务相关
+const createDialogVisible = ref(false);
+const submitting = ref(false);
+const createFormRef = ref<any>();
+const createForm = ref<{
+  name: string;
+  description: string;
+  module_path: string;
+  author: string;
+  version: string;
+  tags: string[];
+  category_id: number | undefined;
+  code: string;
+  is_public: boolean;
+}>({
+  name: '',
+  description: '',
+  module_path: '',
+  author: '',
+  version: '1.0.0',
+  tags: [] as string[],
+  category_id: undefined,
+  code: '',
+  is_public: true
+});
+
+const createRules = {
+  name: [
+    { required: true, message: '请输入服务名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: '请输入服务描述', trigger: 'blur' }
+  ],
+  code: [
+    { required: true, message: '请输入代码', trigger: 'blur' }
+  ]
+};
+
 const activeCategory = computed(() => {
   if (selectedCategoryId.value === 'all') {
     return { id: 'all', name: '全部' };
@@ -129,13 +284,88 @@ const activeCategory = computed(() => {
   return categories.value.find(c => c.id.toString() === selectedCategoryId.value) || null;
 });
 
+// 显示创建对话框
+function showCreateDialog() {
+  // 重置表单数据
+  createForm.value = {
+    name: '',
+    description: '',
+    module_path: '',
+    author: '',
+    version: '1.0.0',
+    tags: [],
+    category_id: undefined,
+    code: '',
+    is_public: true
+  };
+  nextTick(() => {
+    createDialogVisible.value = true;
+  });
+}
+
+// 提交创建表单
+async function submitCreateForm() {
+  submitting.value = true;
+  try {
+    // 处理tags，转换为字符串
+    const tagsStr = Array.isArray(createForm.value.tags) ? createForm.value.tags.join(',') : '';
+    
+    // 构建模块数据
+    const moduleData: Partial<McpModuleInfo> = {
+      name: createForm.value.name,
+      description: createForm.value.description,
+      module_path: createForm.value.module_path,
+      author: createForm.value.author,
+      version: createForm.value.version,
+      tags: tagsStr,  // 使用转换后的字符串
+      category_id: createForm.value.category_id,
+      code: createForm.value.code,
+      is_public: createForm.value.is_public,
+      is_hosted: true
+    };
+    
+    const response = await createModule(moduleData);
+    
+    if (response && response.code === 0) {
+      ElNotification({
+        title: '成功',
+        message: 'MCP服务创建成功',
+        type: 'success'
+      });
+      createDialogVisible.value = false;
+      // 重新加载模块列表
+      loadModules();
+    } else {
+      ElNotification({
+        title: '错误',
+        message: response?.message || '创建MCP服务失败',
+        type: 'error'
+      });
+    }
+  } catch (error) {
+    console.error('创建MCP服务失败:', error);
+    ElNotification({
+      title: '错误',
+      message: '创建MCP服务失败',
+      type: 'error'
+    });
+  } finally {
+    submitting.value = false;
+  }
+}
+
 // 加载模块列表
 async function loadModules() {
   loading.value = true;
   try {
     const categoryId = selectedCategoryId.value === 'all' ? null : selectedCategoryId.value;
-    const data = await listModules(categoryId);
-    modules.value = data.data;
+    const response = await listModules(categoryId);
+    // 处理API响应格式
+    if (response && response.data) {
+      modules.value = response.data;
+    } else {
+      modules.value = [];
+    }
   } catch (error) {
     console.error("加载模块失败", error);
     ElNotification({
@@ -151,8 +381,13 @@ async function loadModules() {
 // 加载分组列表
 async function loadCategories() {
   try {
-    const data = await listCategories();
-    categories.value = data.data;
+    const response = await listCategories();
+    // 处理API响应格式
+    if (response && response.data) {
+      categories.value = response.data;
+    } else {
+      categories.value = [];
+    }
   } catch (error) {
     console.error("加载分组失败", error);
     ElNotification({
@@ -196,6 +431,13 @@ function getModuleIcon(module: McpModuleInfo) {
 // 跳转到模块详情页
 function goToModuleDetail(moduleId: number) {
   router.push(`/marketplace/${moduleId}`);
+}
+
+// 格式化日期
+function formatDate(dateStr: string | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  return date.toLocaleString();
 }
 
 // 页面加载时获取模块列表和分组列表
@@ -248,85 +490,55 @@ onMounted(async () => {
 
 .module-card {
   border-radius: 8px;
-  border: 1px solid #ebeef5;
-  background-color: #fff;
-  overflow: hidden;
-  color: #303133;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   height: 100%;
-  box-sizing: border-box;
-  padding: 20px;
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s;
 }
 
 .module-card:hover {
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
   transform: translateY(-5px);
-  border-color: transparent;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 8px;
 }
 
 .card-title {
-  font-weight: 600;
+  margin: 0;
   font-size: 16px;
-  color: #303133;
-  margin-bottom: 10px;
-  word-break: break-all;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-weight: 600;
 }
 
 .card-desc {
-  font-size: 14px;
-  color: #606266;
-  min-height: 42px;
-  margin-bottom: 10px;
-  line-height: 1.5;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: #666;
+  flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 16px;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  padding-top: 4px;
+  margin-top: auto;
 }
 
 .tag-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 5px;
 }
 
 .loading-container {
   padding: 20px 0;
-}
-
-.card-icon {
-  width: 42px;
-  height: 42px;
-  margin-right: 12px;
-  border-radius: 8px;
-  object-fit: cover;
-}
-
-.divider {
-  height: 1px;
-  background-color: #f0f2f5;
-  margin: 14px 0;
 }
 </style> 

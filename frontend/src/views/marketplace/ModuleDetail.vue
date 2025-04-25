@@ -15,7 +15,10 @@
               <div class="flex-1">
                 <div class="flex justify-between">
                   <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
-                  <el-button @click="goBack" class="return-btn">返回列表</el-button>
+                  <div>
+                    <el-button type="primary" @click="showEditDialog" class="mr-2">编辑</el-button>
+                    <el-button @click="goBack" class="return-btn">返回列表</el-button>
+                  </div>
                 </div>
 
                 <div class="flex justify-between">
@@ -36,6 +39,13 @@
                   <div class="module-info-meta">
                     <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}</div>
                     <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version }}</div>
+                    <div v-if="moduleInfo.creator_name" class="module-meta-item"><strong>创建者:</strong> {{ moduleInfo.creator_name }}</div>
+                    <div class="module-meta-item">
+                      <strong>状态:</strong> 
+                      <el-tag size="small" :type="moduleInfo.is_public ? 'success' : 'danger'" class="ml-1">
+                        {{ moduleInfo.is_public ? '公开' : '私有' }}
+                      </el-tag>
+                    </div>
                     <div class="module-meta-item"><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
                     <div class="module-meta-item"><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
                   </div>
@@ -257,20 +267,106 @@
         </el-card>
       </div>
     </el-main>
+    
+    <!-- 编辑模块对话框 -->
+    <el-dialog
+      v-model="editDialogVisible"
+      title="编辑MCP服务"
+      width="60%"
+      :destroy-on-close="true"
+    >
+      <el-form 
+        ref="editFormRef" 
+        :model="editForm" 
+        :rules="editRules" 
+        label-width="100px"
+        label-position="top"
+      >
+        <el-form-item label="服务名称" prop="name">
+          <el-input v-model.trim="editForm.name" placeholder="请输入服务名称" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="服务描述" prop="description">
+          <textarea 
+            v-model="editForm.description" 
+            rows="3" 
+            placeholder="请输入服务描述"
+            class="el-textarea__inner" 
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;"
+            clearable
+          ></textarea>
+        </el-form-item>
+        
+        <el-form-item label="版本" prop="version">
+          <el-input v-model.trim="editForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
+        </el-form-item>
+        
+        <el-form-item label="标签" prop="tags">
+          <el-select
+            v-model="editForm.tags"
+            multiple
+            filterable
+            allow-create
+            default-first-option
+            placeholder="请输入标签"
+            style="width: 100%"
+            clearable
+          >
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="分类" prop="category_id">
+          <el-select v-model="editForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
+            <el-option
+              v-for="category in categories"
+              :key="category.id"
+              :label="category.name"
+              :value="category.id"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        
+        <el-form-item label="代码" prop="code">
+          <textarea 
+            v-model="editForm.code" 
+            rows="8" 
+            placeholder="请输入Python代码"
+            class="el-textarea__inner" 
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
+            clearable
+          ></textarea>
+        </el-form-item>
+        
+        <el-form-item label="访问权限">
+          <el-radio-group v-model="editForm.is_public">
+            <el-radio :label="true">公开</el-radio>
+            <el-radio :label="false">私有</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="editDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitEditForm" :loading="updating">更新</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus';
 import {
   getModule, getModuleTools, testModuleTool, updateModule,
   listServices, publishModule, stopService, startService, uninstallService,
-  testModuleFunction
+  testModuleFunction,
+  listCategories
 } from '../../api/marketplace';
 import api from '../../api/index';
-import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo } from '../../types/marketplace';
+import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo, McpCategoryInfo } from '../../types/marketplace';
 import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -281,7 +377,7 @@ import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
-import { Document, DocumentCopy } from '@element-plus/icons-vue';
+import { Document, DocumentCopy, Search } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -343,10 +439,20 @@ function selectTool(tool: McpToolInfo) {
 async function loadModuleInfo() {
   loading.value = true;
   try {
-    const data = await getModule(moduleId.value);
-    moduleInfo.value = data.data;
-    const toolsData = await getModuleTools(moduleId.value);
-    moduleTools.value = toolsData.data;
+    const response = await getModule(moduleId.value);
+    if (response && response.data) {
+      moduleInfo.value = response.data;
+    } else {
+      moduleInfo.value = {} as McpModuleInfo;
+    }
+    
+    const toolsResponse = await getModuleTools(moduleId.value);
+    if (toolsResponse && toolsResponse.data) {
+      moduleTools.value = toolsResponse.data;
+    } else {
+      moduleTools.value = [];
+    }
+    
     // 默认选中第一个工具
     if (moduleTools.value.length > 0) {
       selectTool(moduleTools.value[0]);
@@ -554,8 +660,12 @@ const hasRunningService = computed(() => {
 const loadServices = async () => {
   loadingServices.value = true;
   try {
-    const data = await listServices(moduleId.value);
-    services.value = data.data;
+    const response = await listServices(moduleId.value);
+    if (response && response.data) {
+      services.value = response.data;
+    } else {
+      services.value = [];
+    }
   } catch (error) {
     console.error('加载服务列表失败', error);
     ElMessage.error('加载服务列表失败');
@@ -711,6 +821,151 @@ const getStatusText = (status: string) => {
       return status;
   }
 };
+
+// 添加编辑相关的变量
+const editDialogVisible = ref(false);
+const updating = ref(false);
+const categories = ref<McpCategoryInfo[]>([]);
+const editFormRef = ref<any>();
+const editForm = ref<{
+  name: string;
+  description: string;
+  module_path: string;
+  author: string;
+  version: string;
+  tags: string[];
+  category_id: number | undefined;
+  code: string;
+  is_public: boolean;
+  markdown_docs: string;
+}>({
+  name: '',
+  description: '',
+  module_path: '',
+  author: '',
+  version: '',
+  tags: [],
+  category_id: undefined,
+  code: '',
+  is_public: true,
+  markdown_docs: ''
+});
+
+const editRules = {
+  name: [
+    { required: true, message: '请输入服务名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: '请输入服务描述', trigger: 'blur' }
+  ],
+  code: [
+    { required: true, message: '请输入代码', trigger: 'blur' }
+  ]
+};
+
+// 显示编辑对话框
+function showEditDialog() {
+  // 加载分类数据
+  loadCategories();
+  
+  // 处理tags，确保是数组
+  let tagsArray: string[] = [];
+  if (typeof moduleInfo.value.tags === 'string') {
+    tagsArray = moduleInfo.value.tags.split(',').filter(t => t.trim());
+  } else if (Array.isArray(moduleInfo.value.tags)) {
+    tagsArray = moduleInfo.value.tags;
+  }
+  
+  // 填充表单数据，确保每个字段都有默认值
+  editForm.value = {
+    name: moduleInfo.value.name || '',
+    description: moduleInfo.value.description || '',
+    module_path: moduleInfo.value.module_path || '',
+    author: moduleInfo.value.author || '',
+    version: moduleInfo.value.version || '',
+    tags: tagsArray,
+    category_id: moduleInfo.value.category_id || undefined,
+    code: moduleInfo.value.code || '',
+    is_public: moduleInfo.value.is_public === false ? false : true,
+    markdown_docs: moduleInfo.value.markdown_docs || ''
+  };
+  
+  nextTick(() => {
+    editDialogVisible.value = true;
+  });
+}
+
+// 加载分类列表
+async function loadCategories() {
+  try {
+    const response = await listCategories();
+    if (response && response.data) {
+      categories.value = response.data;
+    } else {
+      categories.value = [];
+    }
+  } catch (error) {
+    console.error("加载分类失败", error);
+    ElNotification({
+      title: '错误',
+      message: '加载MCP分类列表失败',
+      type: 'error'
+    });
+  }
+}
+
+// 提交编辑表单
+async function submitEditForm() {
+  updating.value = true;
+  try {
+    // 处理tags，转换为字符串
+    const tagsStr = Array.isArray(editForm.value.tags) ? editForm.value.tags.join(',') : '';
+    
+    // 构建要更新的数据
+    const moduleData: Partial<McpModuleInfo> = {
+      name: editForm.value.name,
+      description: editForm.value.description,
+      module_path: editForm.value.module_path,
+      author: editForm.value.author,
+      version: editForm.value.version,
+      tags: tagsStr,
+      category_id: editForm.value.category_id,
+      code: editForm.value.code,
+      is_public: editForm.value.is_public,
+      markdown_docs: editForm.value.markdown_docs
+    };
+    
+    const response = await updateModule(moduleInfo.value.id, moduleData);
+    
+    if (response && response.code === 0) {
+      ElNotification({
+        title: '成功',
+        message: 'MCP服务更新成功',
+        type: 'success'
+      });
+      editDialogVisible.value = false;
+      
+      // 重新加载模块详情
+      loadModuleInfo();
+    } else {
+      ElNotification({
+        title: '错误',
+        message: response?.message || '更新MCP服务失败',
+        type: 'error'
+      });
+    }
+  } catch (error) {
+    console.error('更新MCP服务失败:', error);
+    ElNotification({
+      title: '错误',
+      message: '更新MCP服务失败',
+      type: 'error'
+    });
+  } finally {
+    updating.value = false;
+  }
+}
 
 // 页面加载时获取模块详情
 onMounted(() => {
