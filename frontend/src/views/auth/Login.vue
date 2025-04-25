@@ -2,7 +2,7 @@
   <div class="login-container">
     <div class="login-box">
       <div class="login-header">
-        <h2>智能MCP管理平台</h2>
+        <h2>MCP管理平台</h2>
         <p>请登录您的账号</p>
       </div>
       

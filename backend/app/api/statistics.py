@@ -26,7 +26,7 @@ class PaginationRequest(BaseModel):
 
 
 async def get_service_statistics(request: Request):
-    """获取MCP服务统计数据"""
+    """获取服务统计数据"""
     try:
         # 检查管理员权限
         user = request.state.user
@@ -41,7 +41,7 @@ async def get_service_statistics(request: Request):
         return success_response(stats)
     except Exception as e:
         return error_response(
-            f"获取服务统计数据失败: {str(e)}",
+            f"获取服务统计失败: {str(e)}",
             code=500, 
             http_status_code=500
         )
@@ -113,6 +113,39 @@ async def get_tool_rankings(request: Request):
         )
 
 
+async def get_service_rankings(request: Request):
+    """获取服务调用排名"""
+    try:
+        # 检查管理员权限
+        user = request.state.user
+        if not user.get("is_admin", False):
+            return error_response(
+                "需要管理员权限", 
+                code=403, 
+                http_status_code=403
+            )
+        
+        # 获取查询参数
+        limit = request.query_params.get("limit", "10")
+        try:
+            limit = int(limit)
+            if limit < 1:
+                limit = 10
+            elif limit > 50:
+                limit = 50
+        except ValueError:
+            limit = 10
+        
+        rankings = statistics_service.get_service_rankings(limit=limit)
+        return success_response(rankings)
+    except Exception as e:
+        return error_response(
+            f"获取服务调用排名失败: {str(e)}",
+            code=500, 
+            http_status_code=500
+        )
+
+
 async def get_tool_executions(request: Request):
     """获取工具执行记录"""
     try:
@@ -148,22 +181,19 @@ async def get_tool_executions(request: Request):
         except ValueError:
             per_page = 20
         
-        executions = statistics_service.get_tool_executions(
+        data = statistics_service.get_tool_executions(
             page=page,
             per_page=per_page,
             tool_name=tool_name
         )
-        return success_response(executions)
+        return success_response(data)
     except Exception as e:
-        return error_response(
-            f"获取工具执行记录失败: {str(e)}",
-            code=500, 
-            http_status_code=500
-        )
+        em_logger.error(f"获取工具执行记录时出错: {str(e)}")
+        return error_response(str(e))
 
 
 async def refresh_statistics(request: Request):
-    """手动刷新所有统计数据"""
+    """刷新统计数据"""
     try:
         # 检查管理员权限
         user = request.state.user
@@ -174,19 +204,14 @@ async def refresh_statistics(request: Request):
                 http_status_code=403
             )
         
-        # 更新所有统计数据
-        statistics_service.update_service_statistics()
-        statistics_service.update_module_statistics()
-        statistics_service.update_tool_statistics()
-        
-        return success_response({"message": "统计数据已刷新"})
+        result = statistics_service.refresh_all_statistics()
+        return success_response({
+            "message": "统计数据已刷新",
+            "details": result
+        })
     except Exception as e:
-        err_msg = f"刷新统计数据失败: {str(e)}"
-        return error_response(
-            err_msg,
-            code=500, 
-            http_status_code=500
-        )
+        em_logger.error(f"刷新统计数据时出错: {str(e)}")
+        return error_response(str(e))
 
 
 async def get_tool_executions_by_module(request: Request):
@@ -223,7 +248,7 @@ async def get_tool_executions_by_module(request: Request):
                 per_page = 100
         except ValueError:
             per_page = 20
-            
+        
         try:
             module_id = int(module_id) if module_id else None
         except ValueError:
@@ -339,6 +364,7 @@ def get_router():
         Route("/services", endpoint=get_service_statistics, methods=["GET"]),
         Route("/modules/rankings", endpoint=get_module_rankings, methods=["GET"]),
         Route("/tools/rankings", endpoint=get_tool_rankings, methods=["GET"]),
+        Route("/services/rankings", endpoint=get_service_rankings, methods=["GET"]),
         Route("/tools/executions", endpoint=get_tool_executions, methods=["GET"]),
         Route("/refresh", endpoint=refresh_statistics, methods=["POST"]),
         Route(

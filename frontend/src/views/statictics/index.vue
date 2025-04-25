@@ -56,7 +56,7 @@
     <!-- 排名和详情部分 -->
     <el-row :gutter="20" class="ranking-section">
       <!-- 模块发布排名 -->
-      <el-col :xs="24" :md="12">
+      <el-col :xs="24" :md="12" :lg="8">
         <el-card class="ranking-card">
           <template #header>
             <div class="card-header">
@@ -84,7 +84,7 @@
       </el-col>
       
       <!-- 工具调用排名 -->
-      <el-col :xs="24" :md="12">
+      <el-col :xs="24" :md="12" :lg="8">
         <el-card class="ranking-card">
           <template #header>
             <div class="card-header">
@@ -111,6 +111,42 @@
                 <el-progress 
                   :percentage="calculateSuccessRate(scope.row)" 
                   :status="getSuccessRateStatus(scope.row)"
+                />
+              </template>
+            </el-table-column>
+          </el-table>
+        </el-card>
+      </el-col>
+
+      <!-- 服务调用排名 -->
+      <el-col :xs="24" :md="12" :lg="8">
+        <el-card class="ranking-card">
+          <template #header>
+            <div class="card-header">
+              <span>服务调用排名</span>
+              <el-button type="primary" size="small" link @click="refreshServiceRankings">
+                <el-icon><Refresh /></el-icon>
+              </el-button>
+            </div>
+          </template>
+          <el-table :data="serviceRankings" stripe style="width: 100%" v-loading="loadingServices">
+            <el-table-column label="排名" width="70">
+              <template #default="scope">
+                <div class="ranking-number">{{ scope.$index + 1 }}</div>
+              </template>
+            </el-table-column>
+            <el-table-column prop="service_name" label="服务名称" />
+            <el-table-column prop="module_name" label="所属模块" width="120" />
+            <el-table-column prop="call_count" label="调用次数" width="100">
+              <template #default="scope">
+                <el-tag size="small" type="warning">{{ scope.row.call_count }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column label="成功率" width="100">
+              <template #default="scope">
+                <el-progress 
+                  :percentage="calculateServiceSuccessRate(scope.row)" 
+                  :status="getServiceSuccessRateStatus(scope.row)"
                 />
               </template>
             </el-table-column>
@@ -151,6 +187,27 @@
       <el-table :data="toolExecutions.items" stripe style="width: 100%" v-loading="loadingExecutions">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="tool_name" label="工具名称" />
+        <el-table-column label="所属服务" width="120">
+          <template #default="scope">
+            <el-tag v-if="scope.row.service && scope.row.service.name" size="small" type="primary">
+              {{ scope.row.service.name }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="所属模块" width="120">
+          <template #default="scope">
+            <el-tag v-if="scope.row.module && scope.row.module.name" size="small" type="success">
+              {{ scope.row.module.name }}
+            </el-tag>
+            <span v-else>-</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="创建者" width="120">
+          <template #default="scope">
+            <span>{{ scope.row.creator_name || '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态" width="100">
           <template #default="scope">
             <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'" size="small">
@@ -194,7 +251,7 @@
     <el-dialog
       v-model="detailsVisible"
       title="工具调用详情"
-      width="60%"
+      width="70%"
       class="execution-dialog"
     >
       <template v-if="selectedExecution">
@@ -213,6 +270,18 @@
             <div class="meta-item">
               <span class="meta-label">创建时间:</span>
               <span class="meta-value">{{ formatDate(selectedExecution.created_at) }}</span>
+            </div>
+            <div v-if="selectedExecution.service && selectedExecution.service.name" class="meta-item">
+              <span class="meta-label">所属服务:</span>
+              <span class="meta-value">{{ selectedExecution.service.name }}</span>
+            </div>
+            <div v-if="selectedExecution.module && selectedExecution.module.name" class="meta-item">
+              <span class="meta-label">所属模块:</span>
+              <span class="meta-value">{{ selectedExecution.module.name }}</span>
+            </div>
+            <div v-if="selectedExecution.creator_name" class="meta-item">
+              <span class="meta-label">创建者:</span>
+              <span class="meta-value">{{ selectedExecution.creator_name }}</span>
             </div>
           </div>
         </div>
@@ -259,6 +328,7 @@ import {
   getServiceStats, 
   getModuleRankings, 
   getToolRankings, 
+  getServiceRankings,
   getToolExecutions, 
   refreshStatistics
 } from '../../api/statistics';
@@ -279,6 +349,10 @@ const loadingModules = ref(false);
 // 工具调用排名
 const toolRankings = ref([]);
 const loadingTools = ref(false);
+
+// 服务调用排名
+const serviceRankings = ref([]);
+const loadingServices = ref(false);
 
 // 工具调用详情
 const toolExecutions = ref({
@@ -306,6 +380,20 @@ const calculateSuccessRate = (tool) => {
 // 获取成功率状态
 const getSuccessRateStatus = (tool) => {
   const rate = calculateSuccessRate(tool);
+  if (rate >= 90) return 'success';
+  if (rate >= 70) return 'warning';
+  return 'exception';
+};
+
+// 计算服务调用成功率
+const calculateServiceSuccessRate = (service) => {
+  if (service.call_count === 0) return 0;
+  return Math.round((service.success_count / service.call_count) * 100);
+};
+
+// 获取服务成功率状态
+const getServiceSuccessRateStatus = (service) => {
+  const rate = calculateServiceSuccessRate(service);
   if (rate >= 90) return 'success';
   if (rate >= 70) return 'warning';
   return 'exception';
@@ -356,6 +444,22 @@ const loadToolRankings = async () => {
   }
 };
 
+// 获取服务调用排名
+const loadServiceRankings = async () => {
+  loadingServices.value = true;
+  try {
+    const response = await getServiceRankings();
+    if (response && response.code === 0) {
+      serviceRankings.value = response.data;
+    }
+  } catch (error) {
+    console.error('获取服务排名失败', error);
+    ElMessage.error('获取服务排名失败');
+  } finally {
+    loadingServices.value = false;
+  }
+};
+
 // 获取工具调用详情
 const loadToolExecutions = async (page) => {
   if (page) currentPage.value = page;
@@ -394,6 +498,7 @@ const refreshAllStatistics = async () => {
       loadServiceStats();
       loadModuleRankings();
       loadToolRankings();
+      loadServiceRankings();
       loadToolExecutions();
     }
   } catch (error) {
@@ -410,6 +515,11 @@ const refreshModuleRankings = () => {
 // 刷新工具排名
 const refreshToolRankings = () => {
   loadToolRankings();
+};
+
+// 刷新服务排名
+const refreshServiceRankings = () => {
+  loadServiceRankings();
 };
 
 // 刷新工具调用
@@ -458,6 +568,7 @@ onMounted(() => {
   loadServiceStats();
   loadModuleRankings();
   loadToolRankings();
+  loadServiceRankings();
   loadToolExecutions();
 });
 </script>
@@ -465,7 +576,7 @@ onMounted(() => {
 <style scoped>
 .statistics-page {
   padding: 20px;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
 }
 

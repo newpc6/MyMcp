@@ -46,7 +46,8 @@ def init_db():
     from app.models.modules.users import User, Tenant, UserTenant  # noqa: F401
     # 导入统计相关模型
     from app.models.statistics import (
-        ServiceStatistics, ModuleStatistics, ToolStatistics
+        ServiceStatistics, ModuleStatistics,
+        ToolStatistics, ServiceCallStatistics
     )
     
     # 创建所有表

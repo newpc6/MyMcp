@@ -8,20 +8,19 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pytz import timezone
-from sqlalchemy import func, desc, case
+from sqlalchemy import func, desc
 from sqlalchemy.orm import Session
-from sqlalchemy.sql import text
 
 from app.models.engine import get_db
 from app.models.statistics import (
     ServiceStatistics,
     ModuleStatistics,
-    ToolStatistics
+    ToolStatistics,
+    ServiceCallStatistics
 )
 from app.models.modules.mcp_services import McpService
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.tools.tool_execution import ToolExecution
-from app.models.modules.users import User
 from app.utils.logging import em_logger
 
 
@@ -41,34 +40,38 @@ class StatisticsService:
         """
         with get_db() as db:
             try:
-                # 获取服务状态统计
-                total_count = db.query(McpService).count()
-                running_count = db.query(McpService).filter(
+                # 查询总服务数
+                total_services = db.query(McpService).count()
+                
+                # 查询各状态服务数
+                running_services = db.query(McpService).filter(
                     McpService.status == "running"
                 ).count()
-                stopped_count = db.query(McpService).filter(
+                
+                stopped_services = db.query(McpService).filter(
                     McpService.status == "stopped"
                 ).count()
-                error_count = db.query(McpService).filter(
+                
+                error_services = db.query(McpService).filter(
                     McpService.status == "error"
                 ).count()
-
+                
                 # 获取或创建统计记录
                 stats = db.query(ServiceStatistics).first()
                 if not stats:
                     stats = ServiceStatistics()
                     db.add(stats)
-
+                
                 # 更新统计数据
-                stats.total_services = total_count
-                stats.running_services = running_count
-                stats.stopped_services = stopped_count
-                stats.error_services = error_count
+                stats.total_services = total_services
+                stats.running_services = running_services
+                stats.stopped_services = stopped_services
+                stats.error_services = error_services
                 stats.updated_at = datetime.now(timezone('Asia/Shanghai'))
-
+                
                 db.commit()
                 db.refresh(stats)
-
+                
                 return stats
             except Exception as e:
                 db.rollback()
@@ -84,46 +87,46 @@ class StatisticsService:
         """
         with get_db() as db:
             try:
-                # 获取模块服务数量统计
+                # 获取每个模块的服务数量
                 module_stats = {}
                 services = db.query(
                     McpService.module_id,
                     func.count(McpService.id).label('service_count')
                 ).group_by(McpService.module_id).all()
-
+                
                 for module_id, service_count in services:
                     module_stats[module_id] = service_count
-
+                
                 # 获取所有模块
                 modules = db.query(McpModule).all()
-
-                # 更新或创建模块统计记录
                 result = []
-                users = db.query(User).all()
-                user_map = {user.id: user for user in users}
+                
                 for module in modules:
-                    # 查找现有统计或创建新统计
+                    # 查找或创建统计记录
                     stats = db.query(ModuleStatistics).filter(
                         ModuleStatistics.module_id == module.id
                     ).first()
-                    # 检查用户名
-                    user = user_map.get(module.user_id)
-                    user_name = '管理员'
-                    if user and hasattr(user, 'username'):
-                        user_name = user.username
+                    
                     if not stats:
                         stats = ModuleStatistics(
                             module_id=module.id,
                             module_name=module.name,
                             user_id=module.user_id,
-                            user_name=user_name
+                            user_name=module.to_dict().get("creator_name")
                         )
                         db.add(stats)
-                    # 更新统计数据
-                    stats.service_count = module_stats.get(module.id, 0)
+                    
+                    # 更新模块名称（可能已更改）
                     stats.module_name = module.name  # 保持名称同步
-                    stats.user_name = user_name
+                    
+                    # 更新服务数量
+                    stats.service_count = module_stats.get(module.id, 0)
+                    
+                    # 更新创建者信息
                     stats.user_id = module.user_id
+                    stats.user_name = module.to_dict().get("creator_name")
+                    
+                    # 更新时间
                     stats.updated_at = datetime.now(timezone('Asia/Shanghai'))
                     
                     result.append(stats)
@@ -213,6 +216,89 @@ class StatisticsService:
                 em_logger.error(f"更新工具统计数据时出错: {str(e)}")
                 raise
     
+    def update_service_call_statistics(self) -> List[ServiceCallStatistics]:
+        """
+        更新服务调用统计数据
+        
+        Returns:
+            List[ServiceCallStatistics]: 更新后的服务调用统计数据列表
+        """
+        with get_db() as db:
+            try:
+                # 获取所有有调用记录的服务ID
+                service_ids = db.query(ToolExecution.service_id).filter(
+                    ToolExecution.service_id.isnot(None)
+                ).distinct().all()
+                
+                result = []
+                
+                for (service_id,) in service_ids:
+                    # 基础查询
+                    base_query = db.query(ToolExecution).filter(
+                        ToolExecution.service_id == service_id
+                    )
+                    
+                    # 统计数据
+                    call_count = base_query.count()
+                    success_count = base_query.filter(
+                        ToolExecution.status == 'success'
+                    ).count()
+                    error_count = base_query.filter(
+                        ToolExecution.status == 'error'
+                    ).count()
+                    
+                    # 获取服务信息
+                    service = db.query(McpService).filter(
+                        McpService.id == service_id
+                    ).first()
+                    
+                    service_name = "未知服务"
+                    module_name = "未知模块"
+                    
+                    if service:
+                        service_name = service.name or f"服务 {service_id}"
+                        
+                        # 获取模块信息
+                        if service.module_id:
+                            module = db.query(McpModule).filter(
+                                McpModule.id == service.module_id
+                            ).first()
+                            if module:
+                                module_name = module.name
+                    
+                    # 查找或创建统计记录
+                    stats = db.query(ServiceCallStatistics).filter(
+                        ServiceCallStatistics.service_id == service_id
+                    ).first()
+                    
+                    if not stats:
+                        stats = ServiceCallStatistics(
+                            service_id=service_id,
+                            service_name=service_name,
+                            module_name=module_name
+                        )
+                        db.add(stats)
+                    
+                    # 更新统计数据
+                    stats.service_name = service_name
+                    stats.module_name = module_name
+                    stats.call_count = call_count
+                    stats.success_count = success_count
+                    stats.error_count = error_count
+                    stats.updated_at = datetime.now(timezone('Asia/Shanghai'))
+                    
+                    result.append(stats)
+                
+                db.commit()
+                for stats in result:
+                    db.refresh(stats)
+                
+                return result
+            except Exception as e:
+                db.rollback()
+                em_logger.error(f"更新服务调用统计数据时出错: {str(e)}")
+                raise
+    
     def get_service_statistics(self) -> Dict[str, Any]:
         """
         获取服务统计数据
@@ -300,6 +386,39 @@ class StatisticsService:
                 for r in rankings
             ]
     
+    def get_service_rankings(self, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        获取服务调用排名
+        
+        Args:
+            limit: 返回结果数量限制
+            
+        Returns:
+            List[Dict]: 服务排名数据列表
+        """
+        # 首先更新统计数据
+        self.update_service_call_statistics()
+        
+        with get_db() as db:
+            # 查询排名数据
+            rankings = db.query(ServiceCallStatistics).order_by(
+                desc(ServiceCallStatistics.call_count)
+            ).limit(limit).all()
+        
+            # 转换为字典列表
+            return [
+                {
+                    "service_id": r.service_id,
+                    "service_name": r.service_name,
+                    "module_name": r.module_name,
+                    "call_count": r.call_count,
+                    "success_count": r.success_count,
+                    "error_count": r.error_count,
+                    "updated_at": r.updated_at.isoformat()
+                }
+                for r in rankings
+            ]
+    
     def get_tool_executions(
         self, 
         page: int = 1, 
@@ -339,6 +458,41 @@ class StatisticsService:
             # 转换为字典列表
             items = []
             for ex in executions:
+                # 获取关联的模块信息
+                module_info = {}
+                if ex.module_id:
+                    module = db.query(McpModule).filter(
+                        McpModule.id == ex.module_id
+                    ).first()
+                    if module:
+                        module_info = {
+                            "id": module.id,
+                            "name": module.name,
+                            "description": module.description
+                        }
+                
+                # 获取关联的服务信息
+                service_info = {}
+                if ex.service_id:
+                    service = db.query(McpService).filter(
+                        McpService.id == ex.service_id
+                    ).first()
+                    if service:
+                        service_info = {
+                            "id": service.id,
+                            "name": service.name,
+                            "description": service.description
+                        }
+                
+                # 获取创建者信息
+                creator_name = None
+                if ex.module_id:
+                    module = db.query(McpModule).filter(
+                        McpModule.id == ex.module_id
+                    ).first()
+                    if module:
+                        creator_name = module.to_dict().get("creator_name")
+                
                 # 解析参数和结果
                 try:
                     parameters = (
@@ -355,6 +509,11 @@ class StatisticsService:
                 items.append({
                     "id": ex.id,
                     "tool_name": ex.tool_name,
+                    "service_id": ex.service_id,
+                    "module_id": ex.module_id,
+                    "service": service_info,
+                    "module": module_info,
+                    "creator_name": creator_name,
                     "description": ex.description,
                     "parameters": parameters,
                     "result": result,
@@ -371,7 +530,7 @@ class StatisticsService:
                 "per_page": per_page,
                 "pages": (total + per_page - 1) // per_page
             }
-
+    
     def get_tool_executions_by_module(
         self,
         page: int = 1,
@@ -551,7 +710,7 @@ class StatisticsService:
                 "per_page": per_page,
                 "pages": (total + per_page - 1) // per_page
             }
-                
+    
     def get_module_tool_rankings(
         self, 
         module_id: int, 
@@ -588,7 +747,39 @@ class StatisticsService:
                 }
                 for tool_name, count in tool_stats
             ]
+    
+    def refresh_all_statistics(self) -> Dict[str, Any]:
+        """
+        刷新所有统计数据
+        
+        Returns:
+            Dict: 刷新结果
+        """
+        try:
+            # 更新服务统计
+            service_stats = self.update_service_statistics()
+            
+            # 更新模块统计
+            module_stats = self.update_module_statistics()
+            
+            # 更新工具统计
+            tool_stats = self.update_tool_statistics()
+            
+            # 更新服务调用统计
+            service_call_stats = self.update_service_call_statistics()
+            
+            return {
+                "service_stats": service_stats.total_services,
+                "module_stats": len(module_stats),
+                "tool_stats": len(tool_stats),
+                "service_call_stats": len(service_call_stats),
+                "updated_at": (datetime.now(timezone('Asia/Shanghai'))
+                              .isoformat())
+            }
+        except Exception as e:
+            em_logger.error(f"刷新统计数据时出错: {str(e)}")
+            raise
 
 
-# 创建服务实例
+# 创建统计服务实例
 statistics_service = StatisticsService() 

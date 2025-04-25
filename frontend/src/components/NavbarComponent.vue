@@ -2,7 +2,7 @@
   <div class="navbar-container">
     <el-menu mode="horizontal" router :ellipsis="false" class="nav-menu">
       <div class="flex-grow logo-container">
-        <h1 class="text-xl font-bold text-primary">智能MCP管理平台</h1>
+        <h1 class="text-xl font-bold text-primary">MCP管理平台</h1>
       </div>
 
       <!-- <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item> -->

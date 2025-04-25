@@ -61,4 +61,23 @@ class ToolStatistics(Base):
         DateTime, 
         default=datetime.utcnow, 
         onupdate=datetime.utcnow
+    )
+
+
+class ServiceCallStatistics(Base):
+    """服务调用统计数据"""
+    
+    __tablename__ = "service_call_statistics"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    service_id = Column(String(100), unique=True, index=True)
+    service_name = Column(String(100))
+    module_name = Column(String(100))
+    call_count = Column(Integer, default=0)
+    success_count = Column(Integer, default=0)
+    error_count = Column(Integer, default=0)
+    updated_at = Column(
+        DateTime, 
+        default=datetime.utcnow, 
+        onupdate=datetime.utcnow
     ) 

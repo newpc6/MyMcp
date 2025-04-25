@@ -65,7 +65,7 @@ router.beforeEach((
   next: NavigationGuardNext
 ) => {
   const toMeta = to.meta as { title?: string; public?: boolean; adminOnly?: boolean };
-  document.title = toMeta.title ? `${toMeta.title} - 智能MCP管理平台` : '智能MCP管理平台';
+  document.title = toMeta.title ? `${toMeta.title} - MCP管理平台` : 'MCP管理平台';
   
   // 检查用户认证状态
   const userInfoStr = localStorage.getItem('userInfo');

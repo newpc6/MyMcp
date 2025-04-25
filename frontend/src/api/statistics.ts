@@ -41,6 +41,19 @@ export interface ToolRanking {
 }
 
 /**
+ * 服务调用排名接口
+ */
+export interface ServiceRanking {
+  service_id: string;
+  service_name: string;
+  module_name: string;
+  call_count: number;
+  success_count: number;
+  error_count: number;
+  updated_at: string;
+}
+
+/**
  * 工具执行记录接口
  */
 export interface ToolExecution {
@@ -52,6 +65,19 @@ export interface ToolExecution {
   status: string;
   execution_time: number;
   created_at: string;
+  service_id?: string;
+  module_id?: number;
+  service?: {
+    id: string;
+    name: string;
+    description: string;
+  };
+  module?: {
+    id: number;
+    name: string;
+    description: string;
+  };
+  creator_name?: string;
 }
 
 /**
@@ -90,6 +116,17 @@ export async function getModuleRankings(limit: number = 10): Promise<ApiResponse
  */
 export async function getToolRankings(limit: number = 10): Promise<ApiResponse<ToolRanking[]>> {
   const response = await api.get('/api/statistics/tools/rankings', {
+    params: { limit }
+  });
+  return response.data;
+}
+
+/**
+ * 获取服务调用排名
+ * @param limit - 返回结果数量限制
+ */
+export async function getServiceRankings(limit: number = 10): Promise<ApiResponse<ServiceRanking[]>> {
+  const response = await api.get('/api/statistics/services/rankings', {
     params: { limit }
   });
   return response.data;
