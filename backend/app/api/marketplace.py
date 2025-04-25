@@ -7,6 +7,7 @@ from app.utils.response import success_response, error_response
 
 from app.services.marketplace.service import marketplace_service
 from app.services.mcp_service.service_manager import service_manager
+from app.utils.logging import em_logger
 
 
 async def list_modules(request: Request):
@@ -79,7 +80,7 @@ async def create_module(request: Request):
     # 获取用户信息并添加到数据中
     user = request.state.user
     if user:
-        data["creator_id"] = user.get("user_id")
+        data["user_id"] = user.get("user_id")
 
     result = marketplace_service.create_module(data)
     return success_response(result, code=0, http_status_code=201)
@@ -179,49 +180,116 @@ async def update_module_category(request: Request):
 
 
 async def publish_module(request: Request):
-    """发布MCP模块服务"""
+    """发布模块MCP服务"""
     module_id = int(request.path_params["module_id"])
+    
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    
     try:
+        from app.services.mcp_service.service_manager import service_manager
+        
         # 发布服务
-        service = service_manager.publish_service(module_id)
+        service = service_manager.publish_service(
+            module_id, 
+            user_id=user_id, 
+            is_admin=is_admin
+        )
         return success_response({
-            "service": {
-                "id": service.id,
-                "module_id": service.module_id,
-                "service_uuid": service.service_uuid,
-                "sse_url": service.sse_url,
-                "status": service.status
-            }
-        }, message="服务已发布")
+            "message": "服务发布成功",
+            "service": service.to_dict()
+        })
+    except ValueError as e:
+        return error_response(str(e), code=400, http_status_code=400)
     except Exception as e:
-        return error_response(f"发布失败: {str(e)}", code=400, http_status_code=400)
+        em_logger.error(f"发布服务失败: {str(e)}")
+        return error_response(f"发布服务失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def stop_service(request: Request):
-    """停止MCP服务"""
+    """停止服务"""
     service_uuid = request.path_params["service_uuid"]
-    success = service_manager.stop_service(service_uuid)
-    if not success:
-        return error_response("停止服务失败", code=400, http_status_code=400)
-    return success_response(message="服务已停止")
+    
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    
+    try:
+        from app.services.mcp_service.service_manager import service_manager
+        
+        # 停止服务
+        result = service_manager.stop_service(
+            service_uuid,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        if not result:
+            return error_response("停止服务失败，服务可能不存在", code=400, http_status_code=400)
+            
+        return success_response({"message": "服务已停止"})
+    except ValueError as e:
+        # 权限错误
+        return error_response(str(e), code=403, http_status_code=403)
+    except Exception as e:
+        em_logger.error(f"停止服务失败: {str(e)}")
+        return error_response(f"停止服务失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def start_service(request: Request):
-    """启动MCP服务"""
+    """启动服务"""
     service_uuid = request.path_params["service_uuid"]
-    success = service_manager.start_service(service_uuid)
-    if not success:
-        return error_response("启动服务失败", code=400, http_status_code=400)
-    return success_response(message="服务已启动")
+    
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    
+    try:
+        from app.services.mcp_service.service_manager import service_manager
+        
+        # 启动服务
+        result = service_manager.start_service(
+            service_uuid,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        if not result:
+            return error_response("启动服务失败，服务可能不存在", code=400, http_status_code=400)
+            
+        return success_response({"message": "服务已启动"})
+    except Exception as e:
+        em_logger.error(f"启动服务失败: {str(e)}")
+        return error_response(f"启动服务失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def uninstall_service(request: Request):
-    """卸载MCP服务（停止并从数据库删除）"""
+    """卸载服务"""
     service_uuid = request.path_params["service_uuid"]
-    success = service_manager.delete_service(service_uuid)
-    if not success:
-        return error_response("卸载服务失败", code=400, http_status_code=400)
-    return success_response(message="服务已卸载")
+    
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    
+    try:
+        from app.services.mcp_service.service_manager import service_manager
+        
+        # 删除服务
+        result = service_manager.delete_service(
+            service_uuid,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        if not result:
+            return error_response("卸载服务失败，服务可能不存在", code=400, http_status_code=400)
+            
+        return success_response({"message": "服务已卸载"})
+    except Exception as e:
+        em_logger.error(f"卸载服务失败: {str(e)}")
+        return error_response(f"卸载服务失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def update_service_description(request: Request):
@@ -259,23 +327,57 @@ async def update_service_description(request: Request):
 
 
 async def list_services(request: Request):
-    """获取已发布的MCP服务列表"""
-    # 支持按模块ID过滤
+    """列出所有服务"""
+    # 获取模块ID参数
     module_id = request.query_params.get("module_id")
     if module_id:
         module_id = int(module_id)
-
-    services = service_manager.list_services(module_id)
-    return success_response(services)
+        
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    
+    try:
+        from app.services.mcp_service.service_manager import service_manager
+        
+        # 获取服务列表
+        services = service_manager.list_services(
+            module_id=module_id,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        return success_response(services)
+    except Exception as e:
+        em_logger.error(f"获取服务列表失败: {str(e)}")
+        return error_response(f"获取服务列表失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def get_service(request: Request):
     """获取服务详情"""
     service_uuid = request.path_params["service_uuid"]
-    service = service_manager.get_service_status(service_uuid)
-    if service:
+    
+    # 获取用户信息
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
+    is_admin = user.get("is_admin", False) if user else False
+    
+    try:
+        from app.services.mcp_service.service_manager import service_manager
+        
+        # 获取服务状态
+        service = service_manager.get_service_status(service_uuid)
+        if not service:
+            return error_response("服务不存在", code=404, http_status_code=404)
+            
+        # 非管理员只能查看自己的服务
+        if not is_admin and user_id is not None and service.get("user_id") != user_id:
+            return error_response("无权访问此服务", code=403, http_status_code=403)
+            
         return success_response(service)
-    return error_response("服务不存在", code=404, http_status_code=404)
+    except Exception as e:
+        em_logger.error(f"获取服务状态失败: {str(e)}")
+        return error_response(f"获取服务状态失败: {str(e)}", code=500, http_status_code=500)
 
 
 async def get_online_services(request: Request):

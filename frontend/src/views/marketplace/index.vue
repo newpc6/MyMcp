@@ -73,12 +73,12 @@
                 <!-- <el-tag size="small" type="info" class="mr-1">
                   {{ module.tools_count }} 个工具
                 </el-tag> -->
-                <el-tag 
+                <!-- <el-tag 
                   size="small" 
                   :type="module.is_hosted ? 'success' : 'primary'"
                 >
                   {{ module.is_hosted ? '托管' : '本地' }}
-                </el-tag>
+                </el-tag> -->
                 <el-tag 
                   v-if="module.category_name" 
                   size="small" 
@@ -360,7 +360,7 @@ async function submitCreateForm() {
       code: createForm.value.code,
       is_public: createForm.value.is_public,
       is_hosted: true,
-      creator_id: currentUser.value.user_id || undefined // 添加创建者ID
+      user_id: currentUser.value.user_id || undefined // 添加创建者ID
     };
     
     const response = await createModule(moduleData);

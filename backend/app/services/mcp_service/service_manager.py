@@ -72,7 +72,8 @@ class McpServiceManager:
                     ).first()
                     if module:
                         self._create_mcp(service, module)
-                        em_logger.info(f"已启动mcp服务: {service.service_uuid} {module.name}")
+                        em_logger.info(
+                            f"已启动mcp服务: {service.service_uuid} {module.name}")
                 except Exception as e:
                     msg = f"启动mcp服务失败 {service.service_uuid} {module.name}: {str(e)}"
                     em_logger.error(msg)
@@ -83,11 +84,13 @@ class McpServiceManager:
         """获取SSE URL"""
         return f"/mcp-{service_uuid}"
 
-    def publish_service(self, module_id: int) -> McpService:
+    def publish_service(self, module_id: int, user_id: Optional[int] = None, is_admin: bool = False) -> McpService:
         """发布一个MCP模块服务
 
         Args:
             module_id: MCP模块ID
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
 
         Returns:
             McpService: 创建的服务记录
@@ -97,19 +100,30 @@ class McpServiceManager:
 
         # 检查是否已经发布
         with get_db() as db:
-            existing = db.query(McpService).filter(
-                McpService.module_id == module_id
-            ).first()
-
-            if existing and existing.status == "running":
-                raise ValueError(f"模块 {module_id} 已经发布服务")
-
             # 检查模块是否存在
             module = db.query(McpModule).filter(
                 McpModule.id == module_id
             ).first()
             if not module:
                 raise ValueError(f"模块不存在: {module_id}")
+
+            # 检查权限: 非管理员只能发布自己创建的或公开的模块
+            if not is_admin and user_id is not None:
+                if not module.is_public and module.user_id != user_id:
+                    raise ValueError("没有权限发布此模块")
+
+            # 检查用户是否已发布此模块的服务
+            query = db.query(McpService).filter(
+                McpService.module_id == module_id
+            )
+            if user_id is not None:
+                query = query.filter(McpService.user_id == user_id)
+            existing = query.first()
+            if existing and existing.status == "running":
+                # 对于已发布的服务，检查是否为同一用户或管理员
+                if not is_admin and user_id is not None and existing.user_id != user_id:
+                    raise ValueError(f"此模块已被其他用户发布服务")
+                raise ValueError(f"模块 {module_id} 已经发布服务")
 
             # 生成唯一ID
             service_uuid = str(
@@ -119,6 +133,10 @@ class McpServiceManager:
             sse_url = f"{settings.SSE_SERVER_URL}{self._get_sse_path(service_uuid)}/sse"
 
             if existing:
+                # 检查是否为同一用户或管理员
+                if not is_admin and user_id is not None and existing.user_id != user_id:
+                    raise ValueError("没有权限更新此服务")
+
                 # 更新现有服务
                 existing.sse_url = sse_url
                 existing.status = "running"
@@ -130,7 +148,8 @@ class McpServiceManager:
                     service_uuid=service_uuid,
                     sse_url=sse_url,
                     status="running",
-                    enabled=True
+                    enabled=True,
+                    user_id=user_id
                 )
                 db.add(service_record)
 
@@ -142,17 +161,30 @@ class McpServiceManager:
 
             return service_record
 
-    def stop_service(self, service_uuid: str) -> bool:
+    def stop_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """停止MCP服务
 
         Args:
             service_uuid: 服务UUID
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
 
         Returns:
             bool: 是否成功停止
         """
         try:
             # 检查服务是否存在
+            with get_db() as db:
+                service = db.query(McpService).filter(
+                    McpService.service_uuid == service_uuid
+                ).first()
+                if not service:
+                    return False
+
+                # 检查权限：非管理员只能停止自己创建的服务
+                if not is_admin and user_id is not None and service.user_id != user_id:
+                    raise ValueError("没有权限停止此服务")
+
             if service_uuid not in self._running_services:
                 with get_db() as db:
                     service = db.query(McpService).filter(
@@ -170,7 +202,7 @@ class McpServiceManager:
             # 添加服务路由到主应用
             sse_path = f"{self._get_sse_path(service_uuid)}/sse"
             message_path = f"{self._get_sse_path(service_uuid)}/messages"
-        
+
             # 删除路由
             routes_to_delete = []
             for i, route in enumerate(self._main_app.routes):
@@ -179,7 +211,7 @@ class McpServiceManager:
                         routes_to_delete.append(route)
                     if route.path == message_path:
                         routes_to_delete.append(route)
-            
+
             # 单独删除以避免迭代时修改列表
             for route in routes_to_delete:
                 try:
@@ -187,7 +219,7 @@ class McpServiceManager:
                     em_logger.info(f"成功删除路由: {route.path}")
                 except Exception as e:
                     em_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
-                    
+
             # 更新数据库状态
             with get_db() as db:
                 service = db.query(McpService).filter(
@@ -203,11 +235,13 @@ class McpServiceManager:
             em_logger.error(f"停止服务失败 {service_uuid}: {str(e)}")
             return False
 
-    def start_service(self, service_uuid: str) -> bool:
+    def start_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """启动已停止的MCP服务
 
         Args:
             service_uuid: 服务UUID
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
 
         Returns:
             bool: 是否成功启动
@@ -222,6 +256,11 @@ class McpServiceManager:
                 McpService.service_uuid == service_uuid
             ).first()
             if not service:
+                return False
+
+            # 检查权限：非管理员只能启动自己创建的服务
+            if not is_admin and user_id is not None and service.user_id != user_id:
+                em_logger.warning(f"用户 {user_id} 尝试启动非自己创建的服务 {service_uuid}")
                 return False
 
             # 检查模块是否存在
@@ -252,17 +291,32 @@ class McpServiceManager:
                         db.commit()
                 return False
 
-    def delete_service(self, service_uuid: str) -> bool:
+    def delete_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """完全删除MCP服务
 
         Args:
             service_uuid: 服务UUID
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
 
         Returns:
             bool: 是否成功删除
         """
+        # 检查权限
+        with get_db() as db:
+            service = db.query(McpService).filter(
+                McpService.service_uuid == service_uuid
+            ).first()
+            if not service:
+                return False
+
+            # 检查权限：非管理员只能删除自己创建的服务
+            if not is_admin and user_id is not None and service.user_id != user_id:
+                em_logger.warning(f"用户 {user_id} 尝试删除非自己创建的服务 {service_uuid}")
+                return False
+
         # 先停止服务
-        self.stop_service(service_uuid)
+        self.stop_service(service_uuid, user_id, is_admin)
 
         # 然后从数据库删除
         with get_db() as db:
@@ -314,11 +368,13 @@ class McpServiceManager:
                 if service.updated_at else None
             }
 
-    def list_services(self, module_id: Optional[int] = None) -> List[Dict]:
+    def list_services(self, module_id: Optional[int] = None, user_id: Optional[int] = None, is_admin: bool = False) -> List[Dict]:
         """列出所有服务
 
         Args:
             module_id: 可选的模块ID筛选
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
 
         Returns:
             List[Dict]: 服务列表
@@ -327,6 +383,10 @@ class McpServiceManager:
             query = db.query(McpService)
             if module_id is not None:
                 query = query.filter(McpService.module_id == module_id)
+
+            # 非管理员只能看到自己创建的服务
+            if not is_admin and user_id is not None:
+                query = query.filter(McpService.user_id == user_id)
 
             services = query.all()
 
@@ -341,7 +401,8 @@ class McpServiceManager:
                     McpModule.id.in_(module_ids)
                 ).all()
                 modules_map = {m.id: m.name for m in modules}
-                modules_description_map = {m.id: m.description for m in modules}
+                modules_description_map = {
+                    m.id: m.description for m in modules}
 
             return [
                 {
@@ -352,6 +413,8 @@ class McpServiceManager:
                     "service_uuid": service.service_uuid,
                     "status": service.status,
                     "sse_url": service.sse_url,
+                    "user_id": service.user_id,
+                    "user_name": service.get_user_name(),
                     "created_at": service.created_at.strftime("%Y-%m-%d %H:%M:%S")
                     if service.created_at else None,
                     "updated_at": service.updated_at.strftime("%Y-%m-%d %H:%M:%S")
@@ -362,14 +425,14 @@ class McpServiceManager:
 
     def register_mcp_tool(self, service_uuid: str):
         """注册指定服务UUID对应模块的工具函数
-        
+
         Args:
             service_uuid: 服务UUID，用于找到对应的模块并注册其工具
         """
         if not service_uuid or service_uuid not in self._running_services:
             em_logger.error(f"无效的服务UUID: {service_uuid}")
             return
-            
+
         try:
             # 从数据库获取指定服务对应的模块
             with get_db() as db:
@@ -377,47 +440,47 @@ class McpServiceManager:
                 service = db.query(McpService).filter(
                     McpService.service_uuid == service_uuid
                 ).first()
-                
+
                 if not service:
                     em_logger.error(f"未找到服务: {service_uuid}")
                     return
-                    
+
                 # 获取对应的模块
                 module = db.query(McpModule).filter(
                     McpModule.id == service.module_id
                 ).first()
-                
+
                 if not module:
                     em_logger.error(f"未找到模块: ID={service.module_id}")
                     return
-                    
+
                 if not module.code:
                     em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
                     return
-                
+
                 # 在数据库会话内复制需要的数据，而不是直接使用数据库对象
                 module_name = module.name
                 module_code = module.code
-                
-            # 数据库会话结束后，使用复制的数据而不是数据库对象    
+
+            # 数据库会话结束后，使用复制的数据而不是数据库对象
             em_logger.info(f"为服务 {service_uuid} 加载模块: {module_name}")
-            
+
             # 创建临时目录存放代码文件
             temp_dir = tempfile.mkdtemp(
                 prefix=f"mcp_module_{service_uuid}_")
-            
+
             # 添加临时目录到Python路径
             if temp_dir not in sys.path:
                 sys.path.insert(0, temp_dir)
-            
+
             # 创建临时模块文件
             module_filename = f"{module_name}.py"
             module_path = os.path.join(temp_dir, module_filename)
-            
+
             # 将代码写入临时文件
             with open(module_path, "w", encoding="utf-8") as f:
                 f.write(module_code)
-            
+
             # 动态导入模块
             spec = importlib.util.spec_from_file_location(
                 module_name, module_path)
@@ -425,7 +488,7 @@ class McpServiceManager:
                 module_obj = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module_obj)
                 em_logger.info(f"成功导入模块: {module_name}")
-                
+
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
                         module_obj, inspect.isfunction):
@@ -433,13 +496,13 @@ class McpServiceManager:
                     if func.__module__ == module_name:
                         # 获取函数文档
                         doc = inspect.getdoc(func)
-                        
+
                         # 将工具注册到对应的服务实例
                         self._running_services[service_uuid]["server"].add_tool(
                             func, name=name, description=doc)
                         em_logger.info(
                             f"为服务 {service_uuid} 注册工具: {name}")
-                        
+
         except Exception as e:
             em_logger.error(f"为服务 {service_uuid} 注册工具失败: {str(e)}")
 
@@ -449,7 +512,7 @@ class McpServiceManager:
             if self._running_services.get(service.service_uuid):
                 em_logger.info(f"服务 {service.service_uuid} 已存在，不重复创建")
                 return
-            
+
             if not self._main_app:
                 raise ValueError("主应用程序未初始化，无法创建路由")
 
@@ -493,7 +556,8 @@ class McpServiceManager:
                         else:
                             em_logger.error(f"服务 {service_uuid} 不存在或已停止")
                 except Exception as e:
-                    em_logger.error(f"处理SSE请求失败: service_uuid={service_uuid}, 错误: {str(e)}")
+                    em_logger.error(
+                        f"处理SSE请求失败: service_uuid={service_uuid}, 错误: {str(e)}")
                 finally:
                     em_logger.info(f"SSE连接关闭: service_uuid={service_uuid}")
 

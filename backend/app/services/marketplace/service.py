@@ -46,7 +46,7 @@ class MarketplaceService:
             # 非管理员用户只能看到自己创建的和公开的模块
             if not is_admin and user_id is not None:
                 query = query.where(
-                    (McpModule.is_public == True) | (McpModule.creator_id == user_id)
+                    (McpModule.is_public == True) | (McpModule.user_id == user_id)
                 )
                 
             modules = db.execute(query).scalars().all()
@@ -63,7 +63,7 @@ class MarketplaceService:
                 
             # 检查权限：非管理员只能查看公开模块或自己创建的模块
             if not is_admin and user_id is not None:
-                if not module.is_public and module.creator_id != user_id:
+                if not module.is_public and module.user_id != user_id:
                     return None
                     
             return module.to_dict()
@@ -516,7 +516,7 @@ class MarketplaceService:
                 code=data.get("code", ""),
                 config_schema=data.get("config_schema"),
                 markdown_docs=data.get("markdown_docs", ""),
-                creator_id=data.get("creator_id"),
+                user_id=data.get("user_id"),
                 is_public=data.get("is_public", True)
             )
             
@@ -548,7 +548,7 @@ class MarketplaceService:
                 return None
                 
             # 检查权限：非管理员只能更新自己创建的模块
-            if not is_admin and user_id is not None and module.creator_id != user_id:
+            if not is_admin and user_id is not None and module.user_id != user_id:
                 return None
             
             # 更新字段
@@ -587,7 +587,7 @@ class MarketplaceService:
                     return False
                     
                 # 检查权限：非管理员只能删除自己创建的模块
-                if not is_admin and user_id is not None and module.creator_id != user_id:
+                if not is_admin and user_id is not None and module.user_id != user_id:
                     return False
                 
                 # 删除相关工具

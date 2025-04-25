@@ -931,7 +931,7 @@ const hasEditPermission = computed(() => {
   }
   
   // 非管理员只能编辑自己创建的MCP服务
-  return moduleInfo.value.creator_id === currentUser.value.user_id;
+  return moduleInfo.value.user_id === currentUser.value.user_id;
 });
 
 // 显示编辑对话框
