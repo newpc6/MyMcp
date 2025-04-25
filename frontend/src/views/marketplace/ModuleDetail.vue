@@ -16,7 +16,8 @@
                 <div class="flex justify-between">
                   <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
                   <div>
-                    <el-button type="primary" @click="showEditDialog" class="mr-2" v-if="hasEditPermission">编辑</el-button>
+                    <el-button type="primary" @click="showEditDialog" class="mr-2"
+                      v-if="hasEditPermission">编辑</el-button>
                     <el-button @click="goBack" class="return-btn">返回广场</el-button>
                   </div>
                 </div>
@@ -26,7 +27,8 @@
                     <p class="text-gray-600 mb-4">{{ moduleInfo.description }}</p>
 
                     <div class="flex flex-wrap mb-3">
-                      <el-tag v-for="tag in moduleInfo.tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag }}</el-tag>
+                      <el-tag v-for="tag in moduleInfo.tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag
+                        }}</el-tag>
                       <el-tag size="small" :type="moduleInfo.is_hosted ? 'success' : 'primary'" class="tag-item">
                         {{ moduleInfo.is_hosted ? '托管' : '本地' }}
                       </el-tag>
@@ -35,13 +37,16 @@
                       </el-tag>
                     </div>
                   </div>
-                  
+
                   <div class="module-info-meta">
-                    <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}</div>
-                    <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version }}</div>
-                    <div v-if="moduleInfo.creator_name" class="module-meta-item"><strong>创建者:</strong> {{ moduleInfo.creator_name }}</div>
+                    <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}
+                    </div>
+                    <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version
+                      }}</div>
+                    <div v-if="moduleInfo.creator_name" class="module-meta-item"><strong>创建者:</strong> {{
+                      moduleInfo.creator_name }}</div>
                     <div class="module-meta-item">
-                      <strong>状态:</strong> 
+                      <strong>状态:</strong>
                       <el-tag size="small" :type="moduleInfo.is_public ? 'success' : 'danger'" class="ml-1">
                         {{ moduleInfo.is_public ? '公开' : '私有' }}
                       </el-tag>
@@ -60,24 +65,17 @@
               <div class="card-header">
                 <h3 class="text-lg font-bold">服务发布</h3>
                 <div class="service-actions" v-if="!loadingServices">
-                  <el-button 
-                    v-if="services.length === 0" 
-                    type="primary" 
-                    size="small"
-                    @click="handlePublishService()">
+                  <el-button v-if="services.length === 0" type="primary" size="small" @click="handlePublishService()">
                     发布服务
                   </el-button>
-                  <el-button 
-                    v-else
-                    type="danger" 
-                    size="small"
+                  <el-button v-else type="danger" size="small"
                     @click="handleUninstallService(services[0].service_uuid)">
                     卸载服务
                   </el-button>
                 </div>
               </div>
             </template>
-            
+
             <div v-if="loadingServices" class="text-center py-2">
               <el-skeleton :rows="1" animated />
             </div>
@@ -89,13 +87,8 @@
               </el-empty>
             </div>
             <div v-else>
-              <el-table 
-                :data="services" 
-                style="width: 100%" 
-                size="small"
-                class="service-table"
-                :header-cell-style="{backgroundColor: '#f5f7fa', color: '#606266', fontWeight: 'bold'}"
-              >
+              <el-table :data="services" style="width: 100%" size="small" class="service-table"
+                :header-cell-style="{ backgroundColor: '#f5f7fa', color: '#606266', fontWeight: 'bold' }">
                 <el-table-column prop="status" label="状态" width="80">
                   <template #default="scope">
                     <el-tag :type="getStatusType(scope.row.status)" size="small">
@@ -107,10 +100,13 @@
                   <template #default="scope">
                     <div class="flex items-center">
                       <el-tooltip :content="scope.row.sse_url" placement="top" :show-after="500">
-                        <el-input v-model="scope.row.sse_url" readonly size="small" class="flex-1 mr-1" :title="scope.row.sse_url" disabled/>
+                        <el-input v-model="scope.row.sse_url" readonly size="small" class="flex-1 mr-1"
+                          :title="scope.row.sse_url" disabled />
                       </el-tooltip>
                       <el-button type="primary" circle size="small" @click="copyUrl(scope.row.sse_url)" title="复制URL">
-                        <el-icon><DocumentCopy /></el-icon>
+                        <el-icon>
+                          <DocumentCopy />
+                        </el-icon>
                       </el-button>
                     </div>
                   </template>
@@ -118,24 +114,15 @@
                 <el-table-column prop="created_at" label="创建时间" width="140" />
                 <el-table-column fixed="right" label="操作" width="80">
                   <template #default="scope">
-                    <el-button 
-                      v-if="scope.row.status === 'running'" 
-                      type="danger" 
-                      size="small" 
+                    <el-button v-if="scope.row.status === 'running'" type="danger" size="small"
                       @click="handleStopService(scope.row.service_uuid)">
                       停止
                     </el-button>
-                    <el-button 
-                      v-else-if="scope.row.status === 'stopped'" 
-                      type="success" 
-                      size="small" 
+                    <el-button v-else-if="scope.row.status === 'stopped'" type="success" size="small"
                       @click="handleStartService(scope.row.service_uuid)">
                       启动
                     </el-button>
-                    <el-button 
-                      v-else-if="scope.row.status === 'error'" 
-                      type="warning" 
-                      size="small" 
+                    <el-button v-else-if="scope.row.status === 'error'" type="warning" size="small"
                       @click="handleStartService(scope.row.service_uuid)">
                       重启
                     </el-button>
@@ -240,46 +227,22 @@
                   <div class="code-editor-header">
                     <h3 class="editor-title">模块代码</h3>
                     <div class="editor-actions">
-                      <el-alert
-                        v-if="!hasEditPermission"
-                        type="warning"
-                        :closable="false"
-                        show-icon
-                        title="您只能查看代码，没有编辑权限"
-                        class="mr-4"
-                      />
-                      <el-button 
-                        type="primary" 
-                        size="small" 
-                        @click="formatPythonCode" 
-                        :loading="saving"
-                        v-if="hasEditPermission"
-                      >
+                      <el-alert v-if="!hasEditPermission" type="warning" :closable="false" show-icon
+                        title="您只能查看代码，没有编辑权限" class="mr-4" />
+                      <el-button type="primary" size="small" @click="formatPythonCode" :loading="saving"
+                        v-if="hasEditPermission">
                         格式化代码
                       </el-button>
-                      <el-button 
-                        type="primary" 
-                        size="small" 
-                        @click="saveModuleCode" 
-                        :loading="saving"
-                        :disabled="!hasCodeChanged"
-                        v-if="hasEditPermission"
-                      >
+                      <el-button type="primary" size="small" @click="saveModuleCode" :loading="saving"
+                        :disabled="!hasCodeChanged" v-if="hasEditPermission">
                         保存修改
                       </el-button>
                     </div>
                   </div>
                   <div class="code-editor-wrapper">
-                    <Codemirror 
-                      v-model="codeContent" 
-                      :extensions="extensions" 
-                      class="code-editor" 
-                      :indent-with-tab="true" 
-                      :tab-size="4" 
-                      @ready="handleEditorCreated"
-                      style="overflow: auto; height: 100%;"
-                      :readonly="!hasEditPermission"
-                    />
+                    <Codemirror v-model="codeContent" :extensions="extensions" class="code-editor"
+                      :indent-with-tab="true" :tab-size="4" @ready="handleEditorCreated"
+                      style="overflow: auto; height: 100%;" :readonly="!hasEditPermission" />
                   </div>
                 </div>
               </div>
@@ -288,76 +251,118 @@
         </el-card>
       </div>
     </el-main>
-    
+
     <!-- 编辑模块对话框 -->
-    <el-dialog
-      v-model="editDialogVisible"
-      title="编辑MCP服务"
-      width="60%"
-      :destroy-on-close="true"
-    >
-      <el-form 
-        ref="editFormRef" 
-        :model="editForm" 
-        :rules="editRules" 
-        label-width="100px"
-        label-position="top"
-      >
+    <el-dialog v-model="editDialogVisible" title="编辑MCP服务" width="60%" :destroy-on-close="true">
+      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px" label-position="top">
         <el-form-item label="服务名称" prop="name">
           <el-input v-model.trim="editForm.name" placeholder="请输入服务名称" clearable></el-input>
         </el-form-item>
-        
+
         <el-form-item label="服务描述" prop="description">
-          <textarea 
-            v-model="editForm.description" 
-            rows="3" 
-            placeholder="请输入服务描述"
-            class="el-textarea__inner" 
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;"
-            clearable
-          ></textarea>
+          <textarea v-model="editForm.description" rows="3" placeholder="请输入服务描述" class="el-textarea__inner"
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;" clearable></textarea>
         </el-form-item>
-        
+
         <el-form-item label="版本" prop="version">
           <el-input v-model.trim="editForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
         </el-form-item>
-        
+
         <el-form-item label="标签" prop="tags">
-          <el-select
-            v-model="editForm.tags"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请输入标签"
-            style="width: 100%"
-            clearable
-          >
+          <el-select v-model="editForm.tags" multiple filterable allow-create default-first-option placeholder="请输入标签"
+            style="width: 100%" clearable>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="分类" prop="category_id">
           <el-select v-model="editForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
-            <el-option
-              v-for="category in categories"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            ></el-option>
+            <el-option v-for="category in categories" :key="category.id" :label="category.name"
+              :value="category.id"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="代码" prop="code">
-          <textarea 
-            v-model="editForm.code" 
-            rows="8" 
-            placeholder="请输入Python代码"
-            class="el-textarea__inner" 
+          <textarea v-model="editForm.code" rows="8" placeholder="请输入Python代码" class="el-textarea__inner"
             style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
-            clearable
-          ></textarea>
+            clearable></textarea>
         </el-form-item>
-        
+
+        <!-- 配置参数编辑区域 -->
+        <el-form-item label="配置参数">
+          <el-card shadow="never" class="config-schema-card">
+            <template #header>
+              <div class="flex justify-between items-center">
+                <span>配置参数定义 (JSON Schema)</span>
+                <el-button type="primary" size="small" @click="addConfigParam">新增参数</el-button>
+              </div>
+            </template>
+
+            <div v-if="!configParams.length" class="text-center py-4 text-gray-500">
+              暂无配置参数，点击上方按钮添加
+            </div>
+
+            <div v-for="(param, index) in configParams" :key="index" class="config-param-item mb-4 p-3 border rounded">
+              <div class="flex justify-between mb-2">
+                <h4 class="font-medium">参数 #{{ index + 1 }}</h4>
+                <el-button type="danger" size="small" circle @click="removeConfigParam(index)" title="删除参数">
+                  <el-icon>
+                    <Delete />
+                  </el-icon>
+                </el-button>
+              </div>
+
+              <el-row :gutter="12">
+                <el-col :span="12">
+                  <el-form-item label="参数名称" class="mb-2">
+                    <el-input v-model="param.key" placeholder="参数键名，如 api_key" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="参数类型" class="mb-2">
+                    <el-select v-model="param.type" style="width: 100%">
+                      <el-option label="文本" value="string" />
+                      <el-option label="密码" value="password" />
+                      <el-option label="数字" value="integer" />
+                      <el-option label="布尔值" value="boolean" />
+                    </el-select>
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-form-item label="标题" class="mb-2">
+                <el-input v-model="param.title" placeholder="参数显示名称，如 API密钥" />
+              </el-form-item>
+
+              <el-form-item label="描述" class="mb-2">
+                <el-input v-model="param.description" placeholder="参数描述，如 您的API访问密钥" />
+              </el-form-item>
+
+              <el-row :gutter="12">
+                <el-col :span="12">
+                  <el-form-item label="是否必填" class="mb-0">
+                    <el-switch v-model="param.required" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12" v-if="param.type === 'string' || param.type === 'password'">
+                  <el-form-item label="占位符文本" class="mb-0">
+                    <el-input v-model="param.placeholder" placeholder="输入框占位提示" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12" v-if="param.type === 'integer'">
+                  <el-form-item label="默认值" class="mb-0">
+                    <el-input-number v-model="param.default" :min="0" style="width: 100%" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12" v-if="param.type === 'boolean'">
+                  <el-form-item label="默认值" class="mb-0">
+                    <el-switch v-model="param.default" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+            </div>
+          </el-card>
+        </el-form-item>
+
         <el-form-item label="访问权限">
           <el-radio-group v-model="editForm.is_public">
             <el-radio :label="true">公开</el-radio>
@@ -365,11 +370,42 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="editDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitEditForm" :loading="updating">更新</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 发布服务对话框 -->
+    <el-dialog v-model="publishDialogVisible" title="配置并发布服务" width="50%" :destroy-on-close="true">
+      <el-form ref="configFormRef" :model="configForm" :rules="configRules" label-width="100px" label-position="top">
+        <div v-if="!hasConfigSchema">
+          <el-alert type="info" :closable="false" show-icon title="此模块没有需要配置的参数，可以直接发布。" class="mb-4" />
+        </div>
+
+        <template v-else>
+          <el-alert type="warning" :closable="false" show-icon title="此模块需要配置以下参数才能发布" class="mb-4" />
+
+          <el-divider content-position="left">配置参数</el-divider>
+
+          <div v-for="(schema, key) in moduleInfo.config_schema" :key="key" class="mb-4">
+            <el-form-item :label="schema.title || key" :prop="key"
+              :rules="[{ required: schema.required, message: `请输入${schema.title || key}`, trigger: 'blur' }]">
+              <div class="text-sm text-gray-500 mb-1">{{ schema.description }}</div>
+              <el-input v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`"
+                :type="schema.type === 'password' ? 'password' : 'text'" />
+            </el-form-item>
+          </div>
+        </template>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="publishDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitConfigForm" :loading="publishing">发布服务</el-button>
         </span>
       </template>
     </el-dialog>
@@ -398,8 +434,8 @@ import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
-import { Document, DocumentCopy, Search } from '@element-plus/icons-vue';
-import { fallbackCopyTextToClipboard } from '@/utils/copy';
+import { Document, DocumentCopy, Search, Delete } from '@element-plus/icons-vue';
+import { fallbackCopyTextToClipboard } from '../../utils/copy';
 
 const route = useRoute();
 const router = useRouter();
@@ -423,7 +459,7 @@ const hasCodeChanged = computed(() => {
 
 // CodeMirror 扩展配置
 const extensions = [
-  python(), 
+  python(),
   oneDark,
   keymap.of(defaultKeymap),
   keymap.of([indentWithTab]),
@@ -467,14 +503,14 @@ async function loadModuleInfo() {
     } else {
       moduleInfo.value = {} as McpModuleInfo;
     }
-    
+
     const toolsResponse = await getModuleTools(moduleId.value);
     if (toolsResponse && toolsResponse.data) {
       moduleTools.value = toolsResponse.data;
     } else {
       moduleTools.value = [];
     }
-    
+
     // 默认选中第一个工具
     if (moduleTools.value.length > 0) {
       selectTool(moduleTools.value[0]);
@@ -484,6 +520,34 @@ async function loadModuleInfo() {
     if (moduleInfo.value.code) {
       codeContent.value = moduleInfo.value.code;
       originalCode.value = moduleInfo.value.code;
+    }
+
+    // 处理config_schema
+    if (moduleInfo.value.config_schema) {
+      try {
+        // 先确保config_schema是对象格式
+        let schema: Record<string, any>;
+        if (typeof moduleInfo.value.config_schema === 'string') {
+          schema = JSON.parse(moduleInfo.value.config_schema);
+        } else {
+          schema = moduleInfo.value.config_schema;
+        }
+
+        Object.entries(schema).forEach(([key, config]: [string, any]) => {
+          configParams.value.push({
+            key,
+            type: config.type || 'string',
+            title: config.title || '',
+            description: config.description || '',
+            required: config.required || false,
+            placeholder: config.placeholder || '',
+            default: config.default
+          });
+        });
+      } catch (e) {
+        console.error('解析配置模式失败', e);
+        ElMessage.error('配置模式解析失败');
+      }
     }
   } catch (error) {
     console.error("加载模块详情失败", error);
@@ -664,7 +728,7 @@ async function saveModuleCode() {
 function handleEditorCreated(editor: any) {
   // 设置编辑器选项
   console.log('编辑器已创建');
-  
+
   // 确保编辑器显示滚动条
   if (editor && editor.view) {
     const scroller = editor.view.scrollDOM;
@@ -706,11 +770,66 @@ const loadServices = async () => {
   }
 };
 
-// 发布服务
-const handlePublishService = async () => {
+// 服务发布相关
+const publishDialogVisible = ref(false);
+const configFormRef = ref<any>();
+const configForm = ref<Record<string, any>>({});
+const configRules = ref<Record<string, any>>({});
+const publishing = ref(false);
+
+// 判断是否有配置模式
+const hasConfigSchema = computed(() => {
+  return moduleInfo.value.config_schema &&
+    Object.keys(moduleInfo.value.config_schema).length > 0;
+});
+
+// 初始化配置表单
+function initConfigForm() {
+  configForm.value = {};
+  configRules.value = {};
+
+  if (moduleInfo.value.config_schema) {
+    Object.entries(moduleInfo.value.config_schema).forEach(([key, schema]: [string, any]) => {
+      configForm.value[key] = '';
+      if (schema.required) {
+        configRules.value[key] = [
+          { required: true, message: `请输入${schema.title || key}`, trigger: 'blur' }
+        ];
+      }
+    });
+  }
+}
+
+// 处理发布服务
+const handlePublishService = () => {
+  // 如果有配置参数，则显示配置对话框
+  if (hasConfigSchema.value) {
+    initConfigForm();
+    publishDialogVisible.value = true;
+  } else {
+    // 否则直接发布
+    publishServiceWithConfig({});
+  }
+};
+
+// 提交配置表单
+const submitConfigForm = async () => {
+  if (!configFormRef.value) return;
+
+  try {
+    await configFormRef.value.validate();
+    publishDialogVisible.value = false;
+    publishServiceWithConfig(configForm.value);
+  } catch (error) {
+    console.error('表单验证失败', error);
+  }
+};
+
+// 带配置参数发布服务
+const publishServiceWithConfig = async (config: Record<string, any>) => {
   try {
     ElMessage.info({ message: '正在发布服务...', duration: 0 });
-    await publishModule(moduleId.value);
+    await publishModule(moduleId.value, config);
     ElMessage.closeAll();
     ElMessage.success('服务发布成功');
     await loadServices();
@@ -761,7 +880,7 @@ const handleUninstallService = async (serviceUuid: string) => {
         type: 'warning',
       }
     );
-    
+
     ElMessage.info({ message: '正在卸载服务...', duration: 0 });
     await uninstallService(serviceUuid);
     ElMessage.closeAll();
@@ -898,10 +1017,67 @@ const hasEditPermission = computed(() => {
   if (currentUser.value.is_admin) {
     return true;
   }
-  
+
   // 非管理员只能编辑自己创建的MCP服务
   return moduleInfo.value.user_id === currentUser.value.user_id;
 });
+
+// 配置参数相关
+const configParams = ref<{
+  key: string;
+  type: string;
+  title: string;
+  description: string;
+  required: boolean;
+  placeholder?: string;
+  default?: any;
+}[]>([]);
+
+// 添加配置参数
+function addConfigParam() {
+  configParams.value.push({
+    key: '',
+    type: 'string',
+    title: '',
+    description: '',
+    required: false,
+    placeholder: ''
+  });
+}
+
+// 删除配置参数
+function removeConfigParam(index: number) {
+  configParams.value.splice(index, 1);
+}
+
+// 生成config_schema对象
+function generateConfigSchema(): Record<string, any> {
+  const schema: Record<string, any> = {};
+
+  configParams.value.forEach(param => {
+    if (!param.key) return;
+
+    schema[param.key] = {
+      type: param.type,
+      description: param.description,
+      required: param.required
+    };
+
+    if (param.title) {
+      schema[param.key].title = param.title;
+    }
+
+    if (param.placeholder && (param.type === 'string' || param.type === 'password')) {
+      schema[param.key].placeholder = param.placeholder;
+    }
+
+    if (param.default !== undefined && param.default !== null) {
+      schema[param.key].default = param.default;
+    }
+  });
+
+  return schema;
+}
 
 // 显示编辑对话框
 function showEditDialog() {
@@ -917,7 +1093,7 @@ function showEditDialog() {
 
   // 加载分类数据
   loadCategories();
-  
+
   // 处理tags，确保是数组
   let tagsArray: string[] = [];
   if (typeof moduleInfo.value.tags === 'string') {
@@ -925,7 +1101,24 @@ function showEditDialog() {
   } else if (Array.isArray(moduleInfo.value.tags)) {
     tagsArray = moduleInfo.value.tags;
   }
-  
+
+  // 处理配置参数
+  configParams.value = [];
+  if (moduleInfo.value.config_schema) {
+    // 将配置转换为参数列表
+    Object.entries(moduleInfo.value.config_schema).forEach(([key, config]: [string, any]) => {
+      configParams.value.push({
+        key,
+        type: config.type || 'string',
+        title: config.title || '',
+        description: config.description || '',
+        required: config.required || false,
+        placeholder: config.placeholder || '',
+        default: config.default
+      });
+    });
+  }
+
   // 填充表单数据，确保每个字段都有默认值
   editForm.value = {
     name: moduleInfo.value.name || '',
@@ -939,7 +1132,7 @@ function showEditDialog() {
     is_public: moduleInfo.value.is_public === false ? false : true,
     markdown_docs: moduleInfo.value.markdown_docs || ''
   };
-  
+
   nextTick(() => {
     editDialogVisible.value = true;
   });
@@ -970,7 +1163,7 @@ async function submitEditForm() {
   try {
     // 处理tags，转换为字符串
     const tagsStr = Array.isArray(editForm.value.tags) ? editForm.value.tags.join(',') : '';
-    
+
     // 构建要更新的数据
     const moduleData: Partial<McpModuleInfo> = {
       name: editForm.value.name,
@@ -981,12 +1174,13 @@ async function submitEditForm() {
       tags: tagsStr,
       category_id: editForm.value.category_id,
       code: editForm.value.code,
-      is_public: editForm.value.is_public,
-      markdown_docs: editForm.value.markdown_docs
+      is_public: Boolean(editForm.value.is_public),
+      markdown_docs: editForm.value.markdown_docs,
+      config_schema: generateConfigSchema()
     };
-    
+
     const response = await updateModule(moduleInfo.value.id, moduleData);
-    
+
     if (response && response.code === 0) {
       ElNotification({
         title: '成功',
@@ -994,7 +1188,7 @@ async function submitEditForm() {
         type: 'success'
       });
       editDialogVisible.value = false;
-      
+
       // 重新加载模块详情
       loadModuleInfo();
     } else {
@@ -1463,7 +1657,7 @@ onMounted(() => {
 }
 
 .tools-list::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.2);
+  background-color: rgba(0, 0, 0, 0.2);
 }
 
 :deep(.cm-scroller::-webkit-scrollbar) {
@@ -1554,5 +1748,25 @@ onMounted(() => {
 
 :deep(.service-table .el-input__wrapper:hover) {
   border-color: #c0c4cc;
+}
+
+.config-schema-card {
+  border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  background: #f9fafc;
+}
+
+.config-param-item {
+  background-color: #ffffff;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  padding: 12px;
+  transition: all 0.2s ease;
+}
+
+.config-param-item:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  border-color: #e6f1ff;
 }
 </style>

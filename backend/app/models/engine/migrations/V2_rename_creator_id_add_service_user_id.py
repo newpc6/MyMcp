@@ -16,60 +16,38 @@ def run(db):
         em_logger.info("开始迁移: 重命名creator_id为user_id并为服务添加user_id")
         
         # 检查mcp_modules表结构
-        modules_columns_query = "PRAGMA table_info(mcp_modules)"
-        modules_columns = db.execute(text(modules_columns_query)).fetchall()
-        modules_column_names = [col[1] for col in modules_columns]
+        modules_columns_query = """
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'mcp_modules'
+        """
+        result = db.execute(text(modules_columns_query)).fetchall()
+        modules_column_names = [row[0] for row in result]
         
         # 如果表中有creator_id但没有user_id，则进行重命名迁移
         if 'creator_id' in modules_column_names and 'user_id' not in modules_column_names:
             em_logger.info("重命名mcp_modules表中的creator_id为user_id")
             
-            # SQLite不直接支持重命名列，需要通过多步操作实现
-            # 1. 创建临时表
+            # MySQL支持直接重命名列
             db.execute(text("""
-                CREATE TABLE mcp_modules_temp (
-                    id INTEGER PRIMARY KEY,
-                    name TEXT NOT NULL,
-                    description TEXT,
-                    module_path TEXT NOT NULL,
-                    author TEXT,
-                    version TEXT,
-                    tags TEXT,
-                    icon TEXT,
-                    is_hosted BOOLEAN,
-                    repository_url TEXT,
-                    category_id INTEGER,
-                    created_at TIMESTAMP,
-                    updated_at TIMESTAMP,
-                    code TEXT,
-                    config_schema TEXT,
-                    markdown_docs TEXT,
-                    user_id INTEGER,
-                    is_public BOOLEAN DEFAULT 1
-                )
+                ALTER TABLE mcp_modules
+                CHANGE COLUMN creator_id user_id INTEGER
             """))
             
-            # 2. 复制数据，将creator_id的值复制到user_id
-            db.execute(text("""
-                INSERT INTO mcp_modules_temp 
-                SELECT 
-                    id, name, description, module_path, author, version, 
-                    tags, icon, is_hosted, repository_url, category_id, 
-                    created_at, updated_at, code, config_schema, markdown_docs, 
-                    creator_id, is_public
-                FROM mcp_modules
-            """))
+            # 确保索引存在
+            # 先检查索引是否存在
+            index_query = """
+                SELECT INDEX_NAME 
+                FROM INFORMATION_SCHEMA.STATISTICS 
+                WHERE TABLE_NAME = 'mcp_modules' 
+                AND INDEX_NAME = 'ix_mcp_modules_user_id'
+            """
+            indexes = db.execute(text(index_query)).fetchall()
             
-            # 3. 删除旧表
-            db.execute(text("DROP TABLE mcp_modules"))
-            
-            # 4. 重命名新表
-            db.execute(text("ALTER TABLE mcp_modules_temp RENAME TO mcp_modules"))
-            
-            # 5. 创建索引
-            db.execute(text("""
-                CREATE INDEX ix_mcp_modules_user_id ON mcp_modules (user_id)
-            """))
+            if not indexes:
+                db.execute(text("""
+                    CREATE INDEX ix_mcp_modules_user_id ON mcp_modules (user_id)
+                """))
             
             em_logger.info("成功重命名mcp_modules表中的creator_id为user_id")
         else:
@@ -89,9 +67,13 @@ def run(db):
         
         # 2. 为mcp_services表添加user_id字段
         # 检查mcp_services表结构
-        services_columns_query = "PRAGMA table_info(mcp_services)"
-        services_columns = db.execute(text(services_columns_query)).fetchall()
-        services_column_names = [col[1] for col in services_columns]
+        services_columns_query = """
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'mcp_services'
+        """
+        result = db.execute(text(services_columns_query)).fetchall()
+        services_column_names = [row[0] for row in result]
         
         if 'user_id' not in services_column_names:
             em_logger.info("为mcp_services表添加user_id字段")

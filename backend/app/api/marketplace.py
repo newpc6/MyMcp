@@ -189,13 +189,17 @@ async def publish_module(request: Request):
     is_admin = user.get("is_admin", False) if user else False
     
     try:
+        # 获取配置参数
+        config_params = await request.json()
+        
         from app.services.mcp_service.service_manager import service_manager
         
         # 发布服务
         service = service_manager.publish_service(
             module_id, 
             user_id=user_id, 
-            is_admin=is_admin
+            is_admin=is_admin,
+            config_params=config_params
         )
         return success_response({
             "message": "服务发布成功",

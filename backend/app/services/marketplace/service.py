@@ -1,6 +1,7 @@
 """
 MCP广场服务
 """
+import json
 from typing import List, Dict, Any, Optional
 import os
 import sys
@@ -554,7 +555,16 @@ class MarketplaceService:
             # 更新字段
             for key, value in data.items():
                 if hasattr(module, key) and key != "id":
-                    setattr(module, key, value)
+                    if key == "is_public" and value in ["True", "true", "False", "false"]:
+                        # 处理布尔值
+                        setattr(module, key, value.lower() == "true")
+                    elif isinstance(value, dict):
+                        # 处理字典类型数据，如config_schema
+                        json_data = json.dumps(value)
+                        setattr(module, key, json_data)
+                    else:
+                        # 其他数据
+                        setattr(module, key, value)
             
             # 更新时间
             module.updated_at = now_beijing()

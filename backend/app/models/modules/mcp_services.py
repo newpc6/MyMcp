@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON, Text
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
 from sqlalchemy.sql import text
@@ -18,6 +18,7 @@ class McpService(Base):
     updated_at = Column(DateTime, default=now_beijing())
     enabled = Column(Boolean, default=False)
     user_id = Column(Integer, nullable=True, index=True)  # 创建者用户ID
+    config_params = Column(Text, nullable=True)  # 存储服务配置参数，包括密钥信息等
     
     def get_module_name(self):
         """获取关联的模块名称"""
@@ -55,6 +56,7 @@ class McpService(Base):
             "enabled": self.enabled,
             "user_id": self.user_id,
             "user_name": user_name,
+            "config_params": self.config_params,
             "created_at": (
                 self.created_at.isoformat() if self.created_at else None
             ),

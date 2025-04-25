@@ -13,9 +13,13 @@ def run(db):
     """执行迁移"""
     try:
         # 检查字段是否已存在
-        columns_query = "PRAGMA table_info(mcp_modules)"
-        columns = db.execute(text(columns_query)).fetchall()
-        column_names = [col[1] for col in columns]  # 第二个元素是列名
+        columns_query = """
+            SELECT COLUMN_NAME 
+            FROM INFORMATION_SCHEMA.COLUMNS 
+            WHERE TABLE_NAME = 'mcp_modules'
+        """
+        result = db.execute(text(columns_query)).fetchall()
+        column_names = [row[0] for row in result]  # 获取列名
         
         # 检查并添加user_id字段
         if 'user_id' not in column_names:
