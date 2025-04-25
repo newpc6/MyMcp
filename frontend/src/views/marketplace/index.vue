@@ -5,66 +5,50 @@
       <el-card shadow="never" class="mb-4">
         <template #header>
           <div class="flex items-center">
-            <el-icon class="mr-2"><Menu /></el-icon>
+            <el-icon class="mr-2">
+              <Menu />
+            </el-icon>
             <span class="text-lg font-semibold">MCP 分类</span>
           </div>
         </template>
-        
-        <el-menu
-          :default-active="activeCategory ? activeCategory.id.toString() : ''"
-          @select="handleCategorySelect"
-          class="border-0 category-menu"
-        >
+
+        <el-menu :default-active="activeCategory ? activeCategory.id.toString() : ''" @select="handleCategorySelect"
+          class="border-0 category-menu">
           <el-menu-item index="all">
-            <el-icon><Collection /></el-icon>
+            <el-icon>
+              <Collection />
+            </el-icon>
             <span>全部</span>
           </el-menu-item>
-          
-          <el-menu-item 
-            v-for="category in categories" 
-            :key="category.id" 
-            :index="category.id.toString()"
-            class="category-item"
-          >
-            <el-icon><component :is="getCategoryIcon(category)" /></el-icon>
+
+          <el-menu-item v-for="category in categories" :key="category.id" :index="category.id.toString()"
+            class="category-item">
+            <el-icon>
+              <component :is="getCategoryIcon(category)" />
+            </el-icon>
             <span class="category-name">{{ category.name }}</span>
             <el-tag size="small" class="ml-auto">{{ category.modules_count || 0 }}</el-tag>
           </el-menu-item>
         </el-menu>
       </el-card>
     </el-aside>
-    
+
     <!-- 右侧内容 -->
     <el-main class="p-4">
-      <el-page-header class="mb-4" :title="activeCategory && activeCategory.id !== 'all' ? activeCategory.name : 'MCP 广场'">
+      <el-page-header class="mb-4"
+        :title="activeCategory && activeCategory.id !== 'all' ? activeCategory.name : 'MCP 广场'">
         <template #extra>
-          <el-button 
-            type="success" 
-            @click="showCreateDialog" 
-            class="mr-2"
-          >新建MCP服务</el-button>
-          <el-button 
-            type="primary" 
-            @click="loadModules" 
-            :loading="scanning"
-          >刷新</el-button>
+          <el-button type="success" @click="showCreateDialog" class="mr-2">新建MCP服务</el-button>
+          <el-button type="primary" @click="loadModules" :loading="scanning">刷新</el-button>
         </template>
       </el-page-header>
-      
+
       <!-- 一行三列的卡片网格 -->
       <div class="module-grid">
         <div v-for="module in modules" :key="module.id" class="module-item">
-          <el-card 
-            class="module-card" 
-            shadow="hover"
-            @click="goToModuleDetail(module.id)"
-          >
+          <el-card class="module-card" shadow="hover" @click="goToModuleDetail(module.id)">
             <div class="card-header">
-              <el-avatar 
-                :icon="getModuleIcon(module)"
-                :size="40"
-                class="mr-2"
-              ></el-avatar>
+              <el-avatar :icon="getModuleIcon(module)" :size="40" class="mr-2"></el-avatar>
               <h3 class="card-title">{{ module.name }}</h3>
             </div>
             <p class="card-desc">{{ module.description }}</p>
@@ -79,36 +63,16 @@
                 >
                   {{ module.is_hosted ? '托管' : '本地' }}
                 </el-tag> -->
-                <el-tag 
-                  v-if="module.category_name" 
-                  size="small" 
-                  type="warning"
-                  class="ml-1"
-                >
+                <el-tag v-if="module.category_name" size="small" type="warning" class="ml-1">
                   {{ module.category_name }}
                 </el-tag>
-                <el-tag 
-                  v-if="!module.is_public" 
-                  size="small" 
-                  type="danger"
-                  class="ml-1"
-                >
+                <el-tag v-if="!module.is_public" size="small" type="danger" class="ml-1">
                   私有
                 </el-tag>
-                <el-tag 
-                  v-else
-                  size="small" 
-                  type="success"
-                  class="ml-1"
-                >
+                <el-tag v-else size="small" type="success" class="ml-1">
                   公开
                 </el-tag>
-                <el-tag 
-                  v-if="module.creator_name" 
-                  size="small" 
-                  type="info"
-                  class="ml-1"
-                >
+                <el-tag v-if="module.creator_name" size="small" type="info" class="ml-1">
                   创建者: {{ module.creator_name }}
                 </el-tag>
               </div>
@@ -122,12 +86,12 @@
           </el-card>
         </div>
       </div>
-      
+
       <div v-if="modules.length === 0 && !loading" class="text-center py-10">
         <el-empty description="暂无MCP模块" />
         <el-button type="primary" @click="loadModules" class="mt-4">刷新</el-button>
       </div>
-      
+
       <div v-if="loading" class="loading-container">
         <div class="module-grid">
           <div v-for="i in 6" :key="i" class="module-item">
@@ -136,75 +100,42 @@
         </div>
       </div>
     </el-main>
-    
+
     <!-- 创建MCP服务对话框 -->
-    <el-dialog
-      v-model="createDialogVisible"
-      title="创建MCP服务"
-      width="60%"
-      :destroy-on-close="true"
-    >
-      <el-form 
-        ref="createFormRef" 
-        :model="createForm" 
-        :rules="createRules" 
-        label-width="100px"
-        label-position="top"
-      >
+    <el-dialog v-model="createDialogVisible" title="创建MCP服务" width="60%" :destroy-on-close="true">
+      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px" label-position="top">
         <el-form-item label="服务名称" prop="name">
           <el-input v-model.trim="createForm.name" placeholder="请输入服务名称" clearable></el-input>
         </el-form-item>
-        
+
         <el-form-item label="服务描述" prop="description">
-          <textarea 
-            v-model="createForm.description" 
-            rows="3" 
-            placeholder="请输入服务描述"
-            class="el-textarea__inner" 
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;"
-            clearable
-          ></textarea>
+          <textarea v-model="createForm.description" rows="3" placeholder="请输入服务描述" class="el-textarea__inner"
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;" clearable></textarea>
         </el-form-item>
-        
+
         <el-form-item label="版本" prop="version">
           <el-input v-model.trim="createForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
         </el-form-item>
-        
+
         <el-form-item label="标签" prop="tags">
-          <el-select
-            v-model="createForm.tags"
-            multiple
-            filterable
-            allow-create
-            default-first-option
-            placeholder="请输入标签"
-            style="width: 100%"
-          >
+          <el-select v-model="createForm.tags" multiple filterable allow-create default-first-option placeholder="请输入标签"
+            style="width: 100%">
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="分类" prop="category_id">
           <el-select v-model="createForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
-            <el-option
-              v-for="category in categories"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            ></el-option>
+            <el-option v-for="category in categories" :key="category.id" :label="category.name"
+              :value="category.id"></el-option>
           </el-select>
         </el-form-item>
-        
+
         <el-form-item label="代码" prop="code">
-          <textarea 
-            v-model="createForm.code" 
-            rows="8" 
-            placeholder="请输入Python代码"
-            class="el-textarea__inner" 
+          <textarea v-model="createForm.code" rows="8" placeholder="请输入Python代码" class="el-textarea__inner"
             style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
-            clearable
-          ></textarea>
+            clearable></textarea>
         </el-form-item>
-        
+
         <el-form-item label="访问权限">
           <el-radio-group v-model="createForm.is_public">
             <el-radio :label="true">公开</el-radio>
@@ -212,7 +143,7 @@
           </el-radio-group>
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="createDialogVisible = false">取消</el-button>
@@ -347,7 +278,7 @@ async function submitCreateForm() {
   try {
     // 处理tags，转换为字符串
     const tagsStr = Array.isArray(createForm.value.tags) ? createForm.value.tags.join(',') : '';
-    
+
     // 构建模块数据
     const moduleData: Partial<McpModuleInfo> = {
       name: createForm.value.name,
@@ -362,9 +293,9 @@ async function submitCreateForm() {
       is_hosted: true,
       user_id: currentUser.value.user_id || undefined // 添加创建者ID
     };
-    
+
     const response = await createModule(moduleData);
-    
+
     if (response && response.code === 0) {
       ElNotification({
         title: '成功',
@@ -490,16 +421,51 @@ onMounted(async () => {
 <style scoped>
 .marketplace-container {
   height: calc(100vh - 80px);
+  background-color: #f9fafc;
+}
+
+.el-aside {
+  border-radius: 0 16px 16px 0;
+  padding-top: 16px;
+}
+
+.el-card {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+/* 移除左侧卡片悬浮效果 */
+.el-aside .el-card:hover {
+  transform: none;
+  box-shadow: none !important;
+}
+
+/* 只保留右侧卡片悬浮效果 */
+.module-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
 .category-menu {
   max-height: calc(100vh - 150px);
   overflow-y: auto;
+  border-radius: 12px;
 }
 
 .category-item {
   display: flex;
   align-items: center;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
+
+.el-menu-item {
+  border-radius: 12px;
+  margin: 4px 0;
+}
+
+.el-menu-item.is-active {
+  background-color: var(--el-color-primary-light-9) !important;
 }
 
 .category-name {
@@ -513,7 +479,7 @@ onMounted(async () => {
 .module-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  gap: 20px;
 }
 
 @media (max-width: 1400px) {
@@ -529,28 +495,25 @@ onMounted(async () => {
 }
 
 .module-card {
-  border-radius: 8px;
+  border-radius: 16px !important;
   height: 100%;
   display: flex;
   flex-direction: column;
   cursor: pointer;
   transition: all 0.3s;
-}
-
-.module-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .card-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
 }
 
@@ -563,22 +526,77 @@ onMounted(async () => {
   overflow: hidden;
   text-overflow: ellipsis;
   margin-bottom: 16px;
+  line-height: 1.6;
 }
 
 .card-footer {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   margin-top: auto;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
 }
 
 .tag-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 6px;
+}
+
+.el-tag {
+  border-radius: 12px;
+  padding: 0 10px;
+}
+
+.el-button {
+  border-radius: 12px;
+}
+
+.el-button--primary {
+  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+}
+
+.el-avatar {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #e0f2ff, #d4e6fd);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+.el-page-header {
+  background-color: white;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+}
+
+.el-main {
+  padding: 24px;
+}
+
+.el-dialog {
+  border-radius: 16px;
+  overflow: hidden;
 }
 
 .loading-container {
   padding: 20px 0;
 }
-</style> 
+
+:deep(.el-menu) {
+  border-right: none;
+}
+
+:deep(.el-textarea__inner) {
+  border-radius: 12px;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 12px;
+}
+
+:deep(.el-select .el-input__wrapper) {
+  border-radius: 12px;
+}
+</style>
