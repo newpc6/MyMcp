@@ -16,8 +16,8 @@
                 <div class="flex justify-between">
                   <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
                   <div>
-                    <el-button type="primary" @click="showEditDialog" class="mr-2">编辑</el-button>
-                    <el-button @click="goBack" class="return-btn">返回列表</el-button>
+                    <el-button type="primary" @click="showEditDialog" class="mr-2" v-if="hasEditPermission">编辑</el-button>
+                    <el-button @click="goBack" class="return-btn">返回广场</el-button>
                   </div>
                 </div>
 
@@ -240,11 +240,31 @@
                   <div class="code-editor-header">
                     <h3 class="editor-title">模块代码</h3>
                     <div class="editor-actions">
-                      <el-button type="primary" size="small" @click="formatPythonCode" :loading="saving">
+                      <el-alert
+                        v-if="!hasEditPermission"
+                        type="warning"
+                        :closable="false"
+                        show-icon
+                        title="您只能查看代码，没有编辑权限"
+                        class="mr-4"
+                      />
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="formatPythonCode" 
+                        :loading="saving"
+                        v-if="hasEditPermission"
+                      >
                         格式化代码
                       </el-button>
-                      <el-button type="primary" size="small" @click="saveModuleCode" :loading="saving"
-                        :disabled="!hasCodeChanged">
+                      <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="saveModuleCode" 
+                        :loading="saving"
+                        :disabled="!hasCodeChanged"
+                        v-if="hasEditPermission"
+                      >
                         保存修改
                       </el-button>
                     </div>
@@ -258,6 +278,7 @@
                       :tab-size="4" 
                       @ready="handleEditorCreated"
                       style="overflow: auto; height: 100%;"
+                      :readonly="!hasEditPermission"
                     />
                   </div>
                 </div>
@@ -607,6 +628,16 @@ function getModuleIcon(module: McpModuleInfo) {
 async function saveModuleCode() {
   if (!hasCodeChanged.value) return;
 
+  // 检查权限
+  if (!hasEditPermission.value) {
+    ElMessageBox.alert(
+      '您没有权限编辑此MCP服务代码。只有管理员或服务创建者才能编辑。',
+      '权限不足',
+      { type: 'warning' }
+    );
+    return;
+  }
+
   saving.value = true;
   try {
     await updateModule(moduleId.value, { code: codeContent.value });
@@ -864,8 +895,57 @@ const editRules = {
   ]
 };
 
+// 当前用户信息
+const currentUser = ref<{
+  user_id: number | null;
+  username: string;
+  is_admin: boolean;
+}>({
+  user_id: null,
+  username: '',
+  is_admin: false
+});
+
+// 加载用户信息
+const loadUserInfo = () => {
+  try {
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr);
+      currentUser.value = {
+        user_id: userInfo.user_id || null,
+        username: userInfo.username || '',
+        is_admin: userInfo.is_admin || false
+      };
+    }
+  } catch (error) {
+    console.error('获取用户信息失败', error);
+  }
+};
+
+// 检查是否有编辑权限
+const hasEditPermission = computed(() => {
+  // 如果是管理员，有编辑权限
+  if (currentUser.value.is_admin) {
+    return true;
+  }
+  
+  // 非管理员只能编辑自己创建的MCP服务
+  return moduleInfo.value.creator_id === currentUser.value.user_id;
+});
+
 // 显示编辑对话框
 function showEditDialog() {
+  // 检查权限
+  if (!hasEditPermission.value) {
+    ElMessageBox.alert(
+      '您没有权限编辑此MCP服务。只有管理员或服务创建者才能编辑。',
+      '权限不足',
+      { type: 'warning' }
+    );
+    return;
+  }
+
   // 加载分类数据
   loadCategories();
   
@@ -969,6 +1049,7 @@ async function submitEditForm() {
 
 // 页面加载时获取模块详情
 onMounted(() => {
+  loadUserInfo(); // 加载用户信息
   loadModuleInfo();
   loadServices(); // 添加加载服务
 });

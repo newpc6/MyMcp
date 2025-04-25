@@ -226,7 +226,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElNotification } from 'element-plus';
+import { ElNotification, ElMessageBox } from 'element-plus';
 import { Tools, Menu, Collection } from '@element-plus/icons-vue';
 import { listModules, listCategories, createModule } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
@@ -284,8 +284,46 @@ const activeCategory = computed(() => {
   return categories.value.find(c => c.id.toString() === selectedCategoryId.value) || null;
 });
 
+// 当前用户信息
+const currentUser = ref<{
+  user_id: number | null;
+  username: string;
+  is_admin: boolean;
+}>({
+  user_id: null,
+  username: '',
+  is_admin: false
+});
+
+// 加载用户信息
+const loadUserInfo = () => {
+  try {
+    const userInfoStr = localStorage.getItem('userInfo');
+    if (userInfoStr) {
+      const userInfo = JSON.parse(userInfoStr);
+      currentUser.value = {
+        user_id: userInfo.user_id || null,
+        username: userInfo.username || '',
+        is_admin: userInfo.is_admin || false
+      };
+    }
+  } catch (error) {
+    console.error('获取用户信息失败', error);
+  }
+};
+
 // 显示创建对话框
 function showCreateDialog() {
+  // 检查用户是否登录
+  if (!currentUser.value.user_id) {
+    ElMessageBox.alert(
+      '您需要登录后才能创建MCP服务。',
+      '请先登录',
+      { type: 'warning' }
+    );
+    return;
+  }
+
   // 重置表单数据
   createForm.value = {
     name: '',
@@ -321,7 +359,8 @@ async function submitCreateForm() {
       category_id: createForm.value.category_id,
       code: createForm.value.code,
       is_public: createForm.value.is_public,
-      is_hosted: true
+      is_hosted: true,
+      creator_id: currentUser.value.user_id || undefined // 添加创建者ID
     };
     
     const response = await createModule(moduleData);
@@ -442,6 +481,7 @@ function formatDate(dateStr: string | undefined): string {
 
 // 页面加载时获取模块列表和分组列表
 onMounted(async () => {
+  loadUserInfo(); // 加载用户信息
   await loadCategories();
   await loadModules();
 });
