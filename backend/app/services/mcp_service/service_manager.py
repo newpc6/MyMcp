@@ -164,6 +164,12 @@ class McpServiceManager:
                 existing.config_params = config_params
                 service_record = existing
             else:
+                params = config_params
+                if isinstance(config_params, dict):
+                    if len(config_params) > 0:
+                        params = json.dumps(config_params)
+                    else:
+                        params = ""
                 # 创建新的服务记录
                 service_record = McpService(
                     module_id=module_id,
@@ -172,7 +178,7 @@ class McpServiceManager:
                     status="running",
                     enabled=True,
                     user_id=user_id,
-                    config_params=json.dumps(config_params) if isinstance(config_params, dict) else config_params
+                    config_params=params
                 )
                 db.add(service_record)
 
