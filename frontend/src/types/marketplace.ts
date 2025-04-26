@@ -77,6 +77,7 @@ export interface McpServiceInfo {
   description?: string // 服务描述
   service_uuid: string
   status: string
+  error_message?: string
   sse_url: string
   port?: number
   user_id?: number | null

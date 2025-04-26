@@ -14,6 +14,7 @@ from app.core.config import settings
 # 重命名以确保使用正确的PyJWT库
 import jwt as pyjwt
 import os
+import time
 from typing import Optional, Tuple, Dict, Any
 
 
@@ -22,21 +23,36 @@ class AuthMiddleware(BaseHTTPMiddleware):
     
     def __init__(self, app: ASGIApp):
         super().__init__(app)
-        self.public_paths = [
+        # API相关公开路径
+        self.public_api_paths = [
             "/api/auth/login", 
             "/api/auth/register",
             "/docs",
             "/redoc",
             "/openapi.json"
         ]
+        # 前端静态资源路径 - 这些路径完全不需要认证
+        self.public_static_paths = [
+            "/",
+            "/assets/",
+            "/vite.svg",
+            "/index.html",
+            "/favicon.ico"
+        ]
         self.sse_paths = [
             "/sse",
             "/messages/"
         ]
+        # 添加静态文件扩展名列表
+        self.static_extensions = [
+            ".js", ".css", ".html", ".htm", ".json", ".png", 
+            ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".eot", 
+            ".woff", ".woff2", ".ttf", ".otf"
+        ]
     
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next):
         """
-        处理请求并验证认证信息
+        处理请求并验证认证
         
         Args:
             request: 请求对象
@@ -45,62 +61,100 @@ class AuthMiddleware(BaseHTTPMiddleware):
         Returns:
             响应对象
         """
-        # 检查是否是公开路径
-        if self._is_public_path(request.url.path):
+        path = request.url.path
+        em_logger.debug(f"处理请求: {path}")
+        
+        # 首先检查是否为API路径 - API路径的处理优先级高于静态资源
+        if path.startswith("/api"):
+            # 如果是API公开路径，直接放行
+            if self._is_public_api_path(path):
+                return await call_next(request)
+                
+            # 否则需要验证认证
+            return await self._authenticate_api_request(request, call_next)
+        
+        # 处理静态资源文件 - 完全不需要认证
+        if self._is_static_resource(path):
+            em_logger.debug(f"允许访问静态资源: {path}")
             return await call_next(request)
         
-        # 验证token
-        auth_header = request.headers.get("Authorization")
-        if not auth_header or not auth_header.startswith("Bearer "):
-            return error_response(
-                message="未登录", 
-                code=401, 
-                http_status_code=401
-            )
-        
-        token = auth_header.replace("Bearer ", "")
-        try:
-            # 验证并解析token
-            user_data, is_valid = self._validate_token(token)
-            if not is_valid or not user_data:
-                return error_response(
-                    message="未登录或会话已过期", 
-                    code=401, 
-                    http_status_code=401
-                )
-            
-            # 将用户信息添加到请求状态
-            request.state.user = user_data
-            
-            # 检查是否需要管理员权限
-            if (self._requires_admin(request.url.path) and 
-                    not user_data.get("is_admin", False)):
-                return error_response(
-                    message="需要管理员权限", 
-                    code=403, 
-                    http_status_code=403
-                )
-            
-            # 继续处理请求
+        # 检查SSE路径
+        if self._is_sse_path(path):
             return await call_next(request)
-        except Exception as e:
-            return error_response(
-                message=f"认证失败: {str(e)}", 
-                code=401, 
-                http_status_code=401
-            )
+            
+        # 其他路径作为前端路由处理，不需要认证
+        return await call_next(request)
     
-    def _is_public_path(self, path: str) -> bool:
-        """检查路径是否为公开路径"""
-        public = any(
+    async def _authenticate_api_request(self, request: Request, call_next):
+        """
+        验证API请求的认证信息
+        
+        Args:
+            request: 请求对象
+            call_next: 下一个处理器
+            
+        Returns:
+            响应对象
+        """
+        # 获取认证令牌
+        auth_header = request.headers.get("Authorization")
+        if not auth_header:
+            return error_response(status_code=401, message="未提供认证令牌")
+            
+        # 提取令牌
+        token = auth_header.replace("Bearer ", "")
+        if not token:
+            return error_response(status_code=401, message="无效的认证令牌格式")
+            
+        # 验证令牌
+        user_data, is_valid = self._validate_token(token)
+        if not is_valid:
+            return error_response(status_code=401, message="认证令牌无效或已过期")
+            
+        # 检查权限
+        if self._requires_admin(request.url.path) and not user_data.get("is_admin", False):
+            return error_response(status_code=403, message="需要管理员权限")
+            
+        # 将用户数据添加到请求中
+        request.state.user = user_data
+        
+        # 继续处理请求
+        return await call_next(request)
+    
+    def _is_public_api_path(self, path: str) -> bool:
+        """检查路径是否为公开API路径"""
+        return any(
             path.startswith(public_path) 
-            for public_path in self.public_paths
+            for public_path in self.public_api_paths
         )
-        sse = any(
+    
+    def _is_static_resource(self, path: str) -> bool:
+        """检查路径是否为静态资源"""
+        # 排除API路径
+        if path.startswith("/api"):
+            return False
+            
+        # 检查是否为明确的静态资源路径
+        if any(path.startswith(static_path) for static_path in self.public_static_paths):
+            return True
+            
+        # 检查是否以资源路径开头
+        if path.startswith("/assets/"):
+            return True
+            
+        # 检查文件扩展名
+        return self._is_static_file(path)
+    
+    def _is_sse_path(self, path: str) -> bool:
+        """检查是否为SSE路径"""
+        return any(
             path.endswith(sse_path)
             for sse_path in self.sse_paths
         )
-        return public or sse
+    
+    def _is_static_file(self, path: str) -> bool:
+        """检查是否为静态文件（根据扩展名）"""
+        return any(path.endswith(ext) for ext in self.static_extensions)
     
     def _requires_admin(self, path: str) -> bool:
         """检查路径是否需要管理员权限"""
@@ -123,34 +177,19 @@ class AuthMiddleware(BaseHTTPMiddleware):
             (用户数据, 是否有效)
         """
         try:
-            # 从环境变量或配置中获取密钥
-            # secret_key = os.environ.get("JWT_SECRET_KEY", "your-secret-key")
-            secret_key = settings.JWT_SECRET_KEY
-            payload = pyjwt.decode(token, secret_key, algorithms=["HS256"])
+            # 使用PyJWT验证令牌
+            payload = pyjwt.decode(
+                token, 
+                settings.JWT_SECRET_KEY, 
+                algorithms=["HS256"]
+            )
             
-            # 支持从user_id或sub字段获取用户ID
-            user_id = payload.get("user_id") or payload.get("sub")
-            if not user_id:
-                em_logger.warning("JWT中没有找到user_id或sub字段")
-                return None, False
-            
-            # 验证用户是否存在
-            user = UserService.get_user_by_id(user_id)
-            if not user:
-                em_logger.warning(f"未找到ID为{user_id}的用户")
+            # 检查令牌是否过期
+            if "exp" in payload and payload["exp"] < time.time():
                 return None, False
             
             # 返回用户数据
-            user_data = {
-                "user_id": user.id,
-                "username": user.username,
-                "is_admin": user.is_admin
-            }
-            
-            return user_data, True
-        except pyjwt.PyJWTError as e:
-            em_logger.error(f"JWT解码失败: {str(e)}")
-            return None, False
+            return payload, True
         except Exception as e:
-            em_logger.error(f"JWT解码失败: {str(e)}")
+            em_logger.error(f"令牌验证失败: {str(e)}")
             return None, False 

@@ -12,20 +12,17 @@
 
     <el-row :gutter="24" v-loading="loading">
       <!-- 服务卡片 -->
-      <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="6" v-for="service in services" :key="service.id" class="service-col">
-        <el-card 
-          class="service-card" 
-          shadow="hover"
-          :body-style="{ padding: '0px' }"
-          :class="{ 'service-running': service.status === 'running' }"
-        >
+      <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="6" v-for="service in services" :key="service.id"
+        class="service-col">
+        <el-card class="service-card" shadow="hover" :body-style="{ padding: '0px' }"
+          :class="{ 'service-running': service.status === 'running' }">
           <div class="card-content">
             <div class="card-header">
               <div class="service-status">
                 <span class="status-dot" :class="getStatusClass(service.status)"></span>
                 <span class="status-text">{{ getStatusText(service.status) }}</span>
               </div>
-              
+
               <!-- 右上角操作按钮 -->
               <div class="service-actions">
                 <el-tooltip content="启动服务" v-if="service.status !== 'running'">
@@ -85,6 +82,9 @@
                     </el-icon>
                   </el-button>
                 </div>
+                <el-text v-if="service.status === 'error'" type="danger" size="small" truncated>
+                  {{ service.error_message }}
+                </el-text>
               </div>
             </div>
 
@@ -99,7 +99,9 @@
       <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="6" class="service-col">
         <el-card class="add-service-card" shadow="hover" @click="goToCreateService">
           <div class="add-service-content">
-            <el-icon class="add-icon"><Plus /></el-icon>
+            <el-icon class="add-icon">
+              <Plus />
+            </el-icon>
             <span class="add-text">创建新服务</span>
           </div>
         </el-card>
@@ -263,7 +265,7 @@ const handleStopService = async (service: McpServiceInfo) => {
 const handleUninstallService = async (service: McpServiceInfo) => {
   // 阻止事件冒泡
   event?.stopPropagation();
-  
+
   // 检查权限
   if (!canManageService(service)) {
     ElMessageBox.alert(
@@ -307,7 +309,7 @@ const handleUninstallService = async (service: McpServiceInfo) => {
 const copyToClipboard = (url: string) => {
   // 阻止事件冒泡
   event?.stopPropagation();
-  
+
   // 首先尝试使用现代的clipboard API
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(url)
@@ -473,10 +475,12 @@ onMounted(() => {
     transform: scale(1);
     opacity: 0.8;
   }
+
   70% {
     transform: scale(1.5);
     opacity: 0;
   }
+
   100% {
     transform: scale(1.5);
     opacity: 0;

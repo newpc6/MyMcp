@@ -79,6 +79,7 @@ class McpServiceManager:
                         msg = f"启动mcp服务失败 {service.service_uuid} {module.name}: {str(e)}"
                         em_logger.error(msg)
                         service.status = "error"
+                        service.error_message = str(e)
                         db.commit()
         except Exception as e:
             em_logger.error(f"启动mcp服务失败: {str(e)}")
@@ -159,6 +160,7 @@ class McpServiceManager:
                 # 更新现有服务
                 existing.sse_url = sse_url
                 existing.status = "running"
+                existing.error_message = ""
                 existing.config_params = config_params
                 service_record = existing
             else:
@@ -177,10 +179,17 @@ class McpServiceManager:
             db.commit()
             db.refresh(service_record)
 
-            # 创建服务路由
-            self._create_mcp(service_record, module)
+            try:
+                # 创建服务路由
+                self._create_mcp(service_record, module)
+                return service_record
+            except Exception as e:
+                service_record.status = "error"
+                service_record.error_message = str(e)
+                db.commit()
+                em_logger.error(f"发布服务失败: {str(e)}")
+                raise e
 
-            return service_record
 
     def stop_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """停止MCP服务
@@ -291,25 +300,18 @@ class McpServiceManager:
             if not module:
                 return False
 
-            # 更新服务状态
-            service.status = "running"
-            service.enabled = True
-            db.commit()
-            db.refresh(service)
             # 创建服务路由
             try:
                 self._create_mcp(service, module)
+                # 更新服务状态
+                service.status = "running"
+                service.error_message = ""
+                service.enabled = True
+                db.commit()
+                db.refresh(service)
                 return True
             except Exception as e:
                 em_logger.error(f"启动服务失败 {service_uuid}: {str(e)}")
-                # 如果启动失败，更新状态为错误
-                with get_db() as db:
-                    service = db.query(McpService).filter(
-                        McpService.service_uuid == service_uuid
-                    ).first()
-                    if service:
-                        service.status = "error"
-                        db.commit()
                 return False
 
     def delete_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
@@ -435,6 +437,7 @@ class McpServiceManager:
                     "status": service.status,
                     "sse_url": service.sse_url,
                     "user_id": service.user_id,
+                    "error_message": service.error_message,
                     "user_name": service.get_user_name(),
                     "created_at": service.created_at.strftime("%Y-%m-%d %H:%M:%S")
                     if service.created_at else None,
@@ -444,7 +447,7 @@ class McpServiceManager:
                 for service in services
             ]
 
-    def register_mcp_tool(self, service_uuid: str):
+    def register_mcp_tool(self, service_uuid: str, service: McpService, module: McpModule):
         """注册指定服务UUID对应模块的工具函数
 
         Args:
@@ -457,31 +460,75 @@ class McpServiceManager:
         try:
             # 从数据库获取指定服务对应的模块
             with get_db() as db:
-                # 先获取服务信息
-                service = db.query(McpService).filter(
-                    McpService.service_uuid == service_uuid
-                ).first()
-
-                if not service:
-                    em_logger.error(f"未找到服务: {service_uuid}")
-                    return
-
-                # 获取对应的模块
-                module = db.query(McpModule).filter(
-                    McpModule.id == service.module_id
-                ).first()
-
-                if not module:
-                    em_logger.error(f"未找到模块: ID={service.module_id}")
-                    return
-
-                if not module.code:
-                    em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
-                    return
+                code = module.code
+                if service.config_params and module.code:
+                    config_params = None
+                    if isinstance(service.config_params, str):
+                        config_params = json.loads(service.config_params)
+                    else:
+                        config_params = service.config_params
+                    
+                    # 处理配置参数替换
+                    for key, value in config_params.items():
+                        # 检查代码中是否有直接引用变量的情况，如 api_key
+                        if key in code and isinstance(value, str):
+                            # 如果代码中包含像 TavilyClient(api_key) 这样的模式
+                            code = code.replace(f"{key})", f'"{value}")')
+                            # 如果代码中包含像 api_key = "REPLACE_ME" 这样的模式
+                            code = code.replace(f'{key} = "REPLACE_ME"', f'{key} = "{value}"')
+                            code = code.replace(f"{key} = 'REPLACE_ME'", f"{key} = '{value}'")
+                            # 如果代码中直接使用变量名作为参数
+                            code = code.replace(f"({key})", f'("{value}")')
+                            code = code.replace(f"({key},", f'("{value}",')
+                            # 如果代码中使用变量但没有任何值设置，可能需要在代码开头添加变量定义
+                            if f"{key} =" not in code and f"{key}=" not in code and f"({key})" in code:
+                                code = f"{key} = \"{value}\"\n" + code
+                        elif key in code:
+                            # 对于非字符串值，如数字、布尔等
+                            code = code.replace(f"{key})", f"{value})")
+                            code = code.replace(f'{key} = "REPLACE_ME"', f'{key} = {value}')
+                            code = code.replace(f"{key} = 'REPLACE_ME'", f"{key} = {value}")
+                            code = code.replace(f"({key})", f"({value})")
+                            code = code.replace(f"({key},", f"({value},")
+                            if f"{key} =" not in code and f"{key}=" not in code and f"({key})" in code:
+                                code = f"{key} = {value}\n" + code
+                        
+                        # 构建可能的变量格式 (保留原有的替换逻辑)
+                        var_patterns = [
+                            f'"{key}" = "REPLACE_ME"',
+                            f'"{key}"="REPLACE_ME"',
+                            f"'{key}' = 'REPLACE_ME'",
+                            f"'{key}'='REPLACE_ME'",
+                            f'{key} = "REPLACE_ME"',
+                            f"{key} = 'REPLACE_ME'",
+                            f'{key}="REPLACE_ME"',
+                            f"{key}='REPLACE_ME'"
+                        ]
+                        
+                        # 为每种模式尝试替换
+                        for pattern in var_patterns:
+                            # 替换为带引号的值
+                            if isinstance(value, str):
+                                replace_value = f'"{key}" = "{value}"'
+                                code = code.replace(pattern, replace_value)
+                                
+                                # 无引号变量名格式
+                                no_quotes_pattern = f"{key} = \"REPLACE_ME\""
+                                no_quotes_replace = f"{key} = \"{value}\""
+                                code = code.replace(no_quotes_pattern, no_quotes_replace)
+                            else:
+                                # 对于非字符串值，直接插入无引号
+                                replace_value = f'"{key}" = {value}'
+                                code = code.replace(pattern, replace_value)
+                                
+                                # 无引号变量名格式
+                                no_quotes_pattern = f"{key} = \"REPLACE_ME\""
+                                no_quotes_replace = f"{key} = {value}"
+                                code = code.replace(no_quotes_pattern, no_quotes_replace)
 
                 # 在数据库会话内复制需要的数据，而不是直接使用数据库对象
                 module_name = module.name
-                module_code = module.code
+                module_code = code
 
             # 数据库会话结束后，使用复制的数据而不是数据库对象
             em_logger.info(f"为服务 {service_uuid} 加载模块: {module_name}")
@@ -532,58 +579,43 @@ class McpServiceManager:
         service_uuid = service.service_uuid
 
         try:
-            # 为MCP服务创建一个临时模块文件
-            code = module.code
-            
-            # 如果有配置参数，替换代码中的变量
-            if service.config_params and code:
-                config_params = None
-                if isinstance(service.config_params, str):
-                    config_params = json.loads(service.config_params)
-                else:
-                    config_params = service.config_params
-                # 处理配置参数替换
-                for key, value in config_params.items():
-                    # 构建可能的变量格式
-                    var_patterns = [
-                        f'"{key}" = "REPLACE_ME"',
-                        f'"{key}"="REPLACE_ME"',
-                        f"'{key}' = 'REPLACE_ME'",
-                        f"'{key}'='REPLACE_ME'",
-                        f'{key} = "REPLACE_ME"',
-                        f"{key} = 'REPLACE_ME'",
-                        f'{key}="REPLACE_ME"',
-                        f"{key}='REPLACE_ME'"
-                    ]
-                    
-                    # 为每种模式尝试替换
-                    for pattern in var_patterns:
-                        # 替换为带引号的值
-                        if isinstance(value, str):
-                            replace_value = f'"{key}" = "{value}"'
-                            code = code.replace(pattern, replace_value)
-                            
-                            # 无引号变量名格式
-                            no_quotes_pattern = f"{key} = \"REPLACE_ME\""
-                            no_quotes_replace = f"{key} = \"{value}\""
-                            code = code.replace(no_quotes_pattern, no_quotes_replace)
-                        else:
-                            # 对于非字符串值，直接插入无引号
-                            replace_value = f'"{key}" = {value}'
-                            code = code.replace(pattern, replace_value)
-                            
-                            # 无引号变量名格式
-                            no_quotes_pattern = f"{key} = \"REPLACE_ME\""
-                            no_quotes_replace = f"{key} = {value}"
-                            code = code.replace(no_quotes_pattern, no_quotes_replace)
-            
-            # 创建服务
-            mcp = FastMCP(transport=SseServerTransport())
-            
+            if not module.code:
+                em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
+                service.status = "error"
+                service.error_message = "模块没有代码内容"
+                db.commit()
+                return
+            if self._running_services.get(service.service_uuid):
+                em_logger.info(f"服务 {service.service_uuid} 已存在，不重复创建")
+                return
+
+            if not self._main_app:
+                service.status = "error"
+                service.error_message = "主应用程序未初始化，无法创建路由"
+                db.commit()
+                raise ValueError("主应用程序未初始化，无法创建路由")
+
+            # 在数据库会话外复制需要的模块信息
+            module_name = module.name
+            service_uuid = service.service_uuid
+
+            # 为每个服务创建独立的FastMCP实例，而不是使用共享实例
+            self._running_services[service_uuid] = {
+                "server": FastMCP(
+                    name=f"{module_name} MCP Server",
+                    host=settings.HOST,
+                    port=settings.PORT,
+                ),
+                "routes": []
+            }
+            self.register_mcp_tool(service_uuid, service, module)
+            # 如果有配置参数，替换代码中的变量            
+            # 创建SSE应用
+            sse = SseServerTransport(
+                f"{self._get_sse_path(service_uuid)}/messages/")
             # 添加服务路由到主应用
             sse_path = f"{self._get_sse_path(service_uuid)}/sse"
-            message_path = f"{self._get_sse_path(service_uuid)}/messages"
-            
+            message_path = f"{self._get_sse_path(service_uuid)}/messages/"
             # 删除现有路由（如果存在）
             routes_to_delete = []
             for i, route in enumerate(self._main_app.routes):
@@ -600,88 +632,57 @@ class McpServiceManager:
                     em_logger.info(f"已删除现有路由: {route.path}")
                 except Exception as e:
                     em_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
-            
-            # 从字符串代码创建模块
-            # 使用临时文件创建模块
-            with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as tmp:
-                tmp.write(code.encode('utf-8'))
-                tmp_path = tmp.name
-            
-            # 添加临时文件目录到sys.path以便导入
-            dir_name = os.path.dirname(tmp_path)
-            file_name = os.path.basename(tmp_path)[:-3]  # 去掉.py后缀
-            
-            if dir_name not in sys.path:
-                sys.path.insert(0, dir_name)
-            
-            try:
-                # 导入模块
-                mod = importlib.import_module(file_name)
-                importlib.reload(mod)  # 确保每次都重新加载
-                
-                # 在模块中设置mcp变量
-                mod.mcp = mcp
-                
-                # 重新加载以确保更新
-                importlib.reload(mod)
-                
-                # 注册服务路由
-                async def handle_sse(request: Request) -> None:
-                    from fastapi.responses import StreamingResponse
-                    stream = await mcp.transport.stream(request)
-                    return StreamingResponse(stream)
-                
-                async def handle_messages(request: Request) -> None:
-                    body = await request.json()
-                    await mcp.transport.handle(body["message"], body.get("attachment"))
-                    return {"status": "ok"}
-                
-                sse_route = Route(sse_path, handle_sse, methods=["GET"])
-                message_route = Route(message_path, handle_messages, methods=["POST"])
-                
-                self._main_app.routes.append(sse_route)
-                self._main_app.routes.append(message_route)
-                
-                # 存储运行服务信息
-                self._running_services[service_uuid] = {
-                    "mcp": mcp,
-                    "module": mod,
-                    "service": service
-                }
-                
-                # 更新服务状态
-                with get_db() as db:
-                    service_record = db.query(McpService).filter(
-                        McpService.service_uuid == service_uuid
-                    ).first()
-                    if service_record:
-                        service_record.status = "running"
-                        service_record.enabled = True
-                        db.commit()
-                
-                return True
-            except Exception as e:
-                em_logger.error(f"创建MCP模块失败: {str(e)}")
-                # 更新服务状态为错误
-                with get_db() as db:
-                    service_record = db.query(McpService).filter(
-                        McpService.service_uuid == service_uuid
-                    ).first()
-                    if service_record:
-                        service_record.status = "error"
-                        db.commit()
-                raise e
-            finally:
-                # 清理临时文件
+            # 创建SSE处理函数，使用特定服务的server实例
+            async def handle_sse(request: Request) -> None:
                 try:
-                    if tmp_path in sys.path:
-                        sys.path.remove(tmp_path)
-                    os.unlink(tmp_path)
+                    em_logger.info(f"开始处理SSE请求: service_uuid={service_uuid}")
+                    async with sse.connect_sse(
+                        request.scope,
+                        request.receive,
+                        request._send,
+                    ) as streams:
+                        if self._running_services.get(service_uuid):
+                            em_logger.info(f"开始运行服务 {service_uuid} 的MCP服务器")
+                            await self._running_services[service_uuid]["server"]._mcp_server.run(
+                                streams[0],
+                                streams[1],
+                                self._running_services[service_uuid]["server"]._mcp_server.create_initialization_options(
+                                ),
+                            )
+                        else:
+                            em_logger.error(f"服务 {service_uuid} 不存在或已停止")
                 except Exception as e:
-                    em_logger.error(f"清理临时文件失败: {str(e)}")
+                    em_logger.error(
+                        f"处理SSE请求失败: service_uuid={service_uuid}, 错误: {str(e)}")
+                finally:
+                    em_logger.info(f"SSE连接关闭: service_uuid={service_uuid}")
+
+            # 添加服务路由到主应用
+            sse_path = f"{self._get_sse_path(service_uuid)}/sse"
+            message_path = f"{self._get_sse_path(service_uuid)}/messages/"
+
+            self._main_app.add_route(sse_path, handle_sse)
+            self._main_app.mount(message_path, sse.handle_post_message)
+            with get_db() as db:
+                service_db = db.query(McpService).filter(
+                    McpService.service_uuid == service.service_uuid
+                ).first()
+                if service_db:
+                    service_db.status = "running"
+                    service_db.error_message = ""
+                    db.commit()           
         
         except Exception as e:
             em_logger.error(f"创建MCP服务失败: {str(e)}")
+             # 更新服务状态为错误
+            with get_db() as db:
+                service_record = db.query(McpService).filter(
+                    McpService.service_uuid == service_uuid
+                ).first()
+                if service_record:
+                    service_record.status = "error"
+                    service_record.error_message = str(e)
+                    db.commit()
             raise e
 
     def _remove_service_routes(self, service_uuid: str):

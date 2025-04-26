@@ -13,6 +13,7 @@ class McpService(Base):
     module_id = Column(Integer, nullable=False, index=True)  # 模块ID
     service_uuid = Column(String(64), unique=True, index=True, nullable=False)
     status = Column(String(20), default="stopped")  # running, stopped, error
+    error_message = Column(Text, nullable=True)  # 错误信息
     sse_url = Column(String(255), nullable=False)
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
@@ -57,6 +58,7 @@ class McpService(Base):
             "user_id": self.user_id,
             "user_name": user_name,
             "config_params": self.config_params,
+            "error_message": self.error_message,
             "created_at": (
                 self.created_at.isoformat() if self.created_at else None
             ),
