@@ -42,6 +42,7 @@ async def login(request: Request):
         access_token_expires = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         payload = {
             "sub": str(user.id),
+            "user_id": str(user.id),
             "username": user.username,
             "is_admin": user.is_admin,
             "exp": access_token_expires

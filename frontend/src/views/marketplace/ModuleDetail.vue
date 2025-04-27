@@ -281,6 +281,12 @@
           </el-select>
         </el-form-item>
 
+        <el-form-item label="服务详情">
+          <textarea v-model="editForm.markdown_docs" rows="5" placeholder="请输入服务详情" class="el-textarea__inner"
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
+            clearable></textarea>
+        </el-form-item>
+
         <el-form-item label="代码" prop="code">
           <textarea v-model="editForm.code" rows="8" placeholder="请输入Python代码" class="el-textarea__inner"
             style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"

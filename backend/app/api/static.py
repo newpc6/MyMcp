@@ -22,7 +22,7 @@ if os.path.exists(BACKEND_DIST_DIR):
 # 检查dist目录是否存在
 if not os.path.exists(DIST_DIR):
     em_logger.error(f"前端资源目录不存在: {DIST_DIR}")
-    raise FileNotFoundError(f"前端资源目录不存在: {DIST_DIR}")
+    # raise FileNotFoundError(f"前端资源目录不存在: {DIST_DIR}")
 
 # 检查assets目录是否存在
 ASSETS_DIR = os.path.join(DIST_DIR, "assets")

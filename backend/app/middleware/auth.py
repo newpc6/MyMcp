@@ -99,21 +99,21 @@ class AuthMiddleware(BaseHTTPMiddleware):
         # 获取认证令牌
         auth_header = request.headers.get("Authorization")
         if not auth_header:
-            return error_response(status_code=401, message="未提供认证令牌")
+            return error_response(http_status_code=401, message="未提供认证令牌")
             
         # 提取令牌
         token = auth_header.replace("Bearer ", "")
         if not token:
-            return error_response(status_code=401, message="无效的认证令牌格式")
+            return error_response(http_status_code=401, message="无效的认证令牌格式")
             
         # 验证令牌
         user_data, is_valid = self._validate_token(token)
         if not is_valid:
-            return error_response(status_code=401, message="认证令牌无效或已过期")
+            return error_response(http_status_code=401, message="认证令牌无效或已过期")
             
         # 检查权限
         if self._requires_admin(request.url.path) and not user_data.get("is_admin", False):
-            return error_response(status_code=403, message="需要管理员权限")
+            return error_response(http_status_code=403, message="需要管理员权限")
             
         # 将用户数据添加到请求中
         request.state.user = user_data
@@ -187,6 +187,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # 检查令牌是否过期
             if "exp" in payload and payload["exp"] < time.time():
                 return None, False
+            
+            # 确保用户数据中包含user_id字段（从sub字段获取）
+            if "sub" in payload and "user_id" not in payload:
+                payload["user_id"] = payload["sub"]
             
             # 返回用户数据
             return payload, True
