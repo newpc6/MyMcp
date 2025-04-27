@@ -78,9 +78,15 @@
               </div>
               <div class="flex flex-col items-end">
                 <div class="text-gray-500 text-xs mb-1">更新时间: {{ formatDate(module.updated_at) }}</div>
-                <el-button type="primary" link @click.stop="goToModuleDetail(module.id)">
-                  查看详情
-                </el-button>
+                <div class="flex">
+                  <el-button type="danger" link size="small" @click.stop="handleDeleteModule(module)"
+                    v-if="hasEditPermission(module)">
+                    删除
+                  </el-button>
+                  <el-button type="primary" link @click.stop="goToModuleDetail(module.id)">
+                    查看详情
+                  </el-button>
+                </div>
               </div>
             </div>
           </el-card>
@@ -165,7 +171,7 @@ import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification, ElMessageBox } from 'element-plus';
 import { Tools, Menu, Collection } from '@element-plus/icons-vue';
-import { listModules, listCategories, createModule } from '../../api/marketplace';
+import { listModules, listCategories, createModule, deleteModule } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 
 const router = useRouter();
@@ -414,6 +420,72 @@ function formatDate(dateStr: string | undefined): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
   return date.toLocaleString();
+}
+
+// 检查是否有编辑权限
+function hasEditPermission(module: McpModuleInfo): boolean {
+  // 如果是管理员，有权限
+  if (currentUser.value.is_admin) {
+    return true;
+  }
+
+  // 非管理员只能编辑自己创建的服务
+  return module.user_id === currentUser.value.user_id;
+}
+
+// 处理删除模块
+async function handleDeleteModule(module: McpModuleInfo) {
+  try {
+    // 弹出确认框
+    await ElMessageBox.confirm(
+      `确定要删除"${module.name}"服务吗？删除后将无法恢复，其关联的所有服务也将被卸载。`,
+      '确认删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    ElNotification({
+      title: '提示',
+      message: '正在删除服务...',
+      type: 'info',
+      duration: 0
+    });
+    
+    const response = await deleteModule(module.id);
+    
+    // 关闭所有通知
+    const notifications = document.querySelectorAll('.el-notification');
+    notifications.forEach(notification => {
+      (notification as any).__vue__?.close();
+    });
+    
+    if (response && response.code === 0) {
+      ElNotification({
+        title: '成功',
+        message: '服务已删除',
+        type: 'success'
+      });
+      // 重新加载模块列表
+      await loadModules();
+    } else {
+      ElNotification({
+        title: '错误',
+        message: `删除服务失败: ${response?.message || '未知错误'}`,
+        type: 'error'
+      });
+    }
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElNotification({
+        title: '错误',
+        message: `删除服务失败: ${error.message || '未知错误'}`,
+        type: 'error'
+      });
+    }
+  }
 }
 
 // 页面加载时获取模块列表和分组列表

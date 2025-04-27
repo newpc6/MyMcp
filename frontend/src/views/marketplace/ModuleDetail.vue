@@ -18,6 +18,8 @@
                   <div>
                     <el-button type="primary" @click="showEditDialog" class="mr-2"
                       v-if="hasEditPermission">编辑</el-button>
+                    <el-button type="danger" @click="handleDeleteModule" class="mr-2"
+                      v-if="hasEditPermission">删除</el-button>
                     <el-button @click="goBack" class="return-btn">返回广场</el-button>
                   </div>
                 </div>
@@ -426,7 +428,8 @@ import {
   getModule, getModuleTools, testModuleTool, updateModule,
   listServices, publishModule, stopService, startService, uninstallService,
   testModuleFunction,
-  listCategories
+  listCategories,
+  deleteModule
 } from '../../api/marketplace';
 import api from '../../api/index';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo, McpCategoryInfo } from '../../types/marketplace';
@@ -1213,6 +1216,38 @@ async function submitEditForm() {
     });
   } finally {
     updating.value = false;
+  }
+}
+
+// 处理删除模块
+async function handleDeleteModule() {
+  try {
+    // 弹出确认框
+    await ElMessageBox.confirm(
+      '确定要删除此MCP服务吗？删除后将无法恢复，其关联的所有服务也将被卸载。',
+      '确认删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+
+    ElMessage.info({ message: '正在删除服务...', duration: 0 });
+    const response = await deleteModule(moduleId.value);
+    ElMessage.closeAll();
+    if (response && response.code === 0) {
+      ElMessage.success('服务已删除');
+      // 删除成功后，返回到广场页面
+      router.push('/marketplace');
+    } else {
+      ElMessage.error(`删除服务失败: ${response?.message || '未知错误'}`);
+    }
+  } catch (error: any) {
+    ElMessage.closeAll();
+    if (error !== 'cancel') {
+      ElMessage.error(`删除服务失败: ${error.message || '未知错误'}`);
+    }
   }
 }
 

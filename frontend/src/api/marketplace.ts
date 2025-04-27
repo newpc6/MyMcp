@@ -210,6 +210,15 @@ export async function uninstallService(serviceUuid: string): Promise<
 }
 
 /**
+ * 删除MCP模块
+ * @param moduleId - 模块ID
+ */
+export async function deleteModule(moduleId: number): Promise<ApiResponse<{ message: string }>> {
+  const response = await api.delete(`/api/marketplace/modules/${moduleId}`)
+  return response.data
+}
+
+/**
  * 获取服务详情
  * @param serviceUuid - 服务UUID
  */
