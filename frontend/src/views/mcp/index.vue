@@ -56,7 +56,9 @@
 
             <div class="service-info">
               <h2 class="service-name">{{ service.module_name || '未命名服务' }}</h2>
-              <p class="service-description">{{ service.description || '暂无描述' }}</p>
+              <el-text truncated>
+                {{ service.description || '暂无描述' }}
+              </el-text>
             </div>
 
             <div class="service-details">
@@ -528,19 +530,6 @@ onMounted(() => {
   font-weight: 600;
   margin-bottom: 10px;
   color: #303133;
-}
-
-.service-description {
-  font-size: 14px;
-  color: #606266;
-  margin: 0;
-  line-height: 1.6;
-  max-height: 66px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
 }
 
 .service-details {
