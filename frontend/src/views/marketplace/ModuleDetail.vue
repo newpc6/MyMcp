@@ -297,78 +297,82 @@
 
         <!-- 配置参数编辑区域 -->
         <el-form-item label="配置参数">
-          <el-card shadow="never" class="config-schema-card">
-            <template #header>
-              <div class="flex justify-between items-center">
-                <span>配置参数定义 (JSON Schema)</span>
-                <el-button type="primary" size="small" @click="addConfigParam">新增参数</el-button>
-              </div>
-            </template>
-
-            <div v-if="!configParams.length" class="text-center py-4 text-gray-500">
-              暂无配置参数，点击上方按钮添加
+          <div class="config-params-container">
+            <div class="mb-4">
+              <el-button type="primary" size="default" @click="addConfigParam" :icon="Plus">新增参数</el-button>
             </div>
-
-            <div v-for="(param, index) in configParams" :key="index" class="config-param-item mb-4 p-3 border rounded">
-              <div class="flex justify-between mb-2">
-                <h4 class="font-medium">参数 #{{ index + 1 }}</h4>
-                <el-button type="danger" size="small" circle @click="removeConfigParam(index)" title="删除参数">
-                  <el-icon>
-                    <Delete />
-                  </el-icon>
-                </el-button>
-              </div>
-
-              <el-row :gutter="12">
-                <el-col :span="12">
-                  <el-form-item label="参数名称" class="mb-2">
-                    <el-input v-model="param.key" placeholder="参数键名，如 api_key" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12">
-                  <el-form-item label="参数类型" class="mb-2">
-                    <el-select v-model="param.type" style="width: 100%">
-                      <el-option label="文本" value="string" />
-                      <el-option label="密码" value="password" />
-                      <el-option label="数字" value="integer" />
-                      <el-option label="布尔值" value="boolean" />
-                    </el-select>
-                  </el-form-item>
-                </el-col>
-              </el-row>
-
-              <el-form-item label="标题" class="mb-2">
-                <el-input v-model="param.title" placeholder="参数显示名称，如 API密钥" />
-              </el-form-item>
-
-              <el-form-item label="描述" class="mb-2">
-                <el-input v-model="param.description" placeholder="参数描述，如 您的API访问密钥" />
-              </el-form-item>
-
-              <el-row :gutter="12">
-                <el-col :span="12">
-                  <el-form-item label="是否必填" class="mb-0">
-                    <el-switch v-model="param.required" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12" v-if="param.type === 'string' || param.type === 'password'">
-                  <el-form-item label="占位符文本" class="mb-0">
-                    <el-input v-model="param.placeholder" placeholder="输入框占位提示" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12" v-if="param.type === 'integer'">
-                  <el-form-item label="默认值" class="mb-0">
-                    <el-input-number v-model="param.default" :min="0" style="width: 100%" />
-                  </el-form-item>
-                </el-col>
-                <el-col :span="12" v-if="param.type === 'boolean'">
-                  <el-form-item label="默认值" class="mb-0">
-                    <el-switch v-model="param.default" />
-                  </el-form-item>
-                </el-col>
-              </el-row>
+            
+            <div v-if="!configParams.length" class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
+              <el-empty description="暂无配置参数，点击上方按钮添加"></el-empty>
             </div>
-          </el-card>
+            
+            <el-table v-else :data="configParams" style="width: 100%" border>
+              <el-table-column type="index" label="#" width="60" align="center" />
+              
+              <el-table-column label="基本信息" width="380">
+                <template #default="scope">
+                  <div class="param-base-info">
+                    <el-form-item label="参数名称" class="mb-2">
+                      <el-input v-model="scope.row.key" placeholder="参数键名，如 api_key" size="default" />
+                    </el-form-item>
+                    
+                    <el-form-item label="参数类型" class="mb-2">
+                      <el-select v-model="scope.row.type" style="width: 100%" size="default">
+                        <el-option label="文本" value="string" />
+                        <el-option label="密码" value="password" />
+                        <el-option label="数字" value="integer" />
+                        <el-option label="布尔值" value="boolean" />
+                      </el-select>
+                    </el-form-item>
+                  </div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column label="显示信息" width="380">
+                <template #default="scope">
+                  <div class="param-display-info">
+                    <el-form-item label="标题" class="mb-2">
+                      <el-input v-model="scope.row.title" placeholder="参数显示名称，如 API密钥" size="default" />
+                    </el-form-item>
+                    
+                    <el-form-item label="描述" class="mb-2">
+                      <el-input v-model="scope.row.description" placeholder="参数描述，如 您的API访问密钥" size="default" />
+                    </el-form-item>
+                  </div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column label="其他设置">
+                <template #default="scope">
+                  <div class="flex items-center">
+                    <el-form-item label="是否必填" class="mb-2 mr-4">
+                      <el-switch v-model="scope.row.required" />
+                    </el-form-item>
+                    
+                    <el-form-item v-if="scope.row.type === 'string' || scope.row.type === 'password'" label="占位符" class="mb-2">
+                      <el-input v-model="scope.row.placeholder" placeholder="占位提示" size="default" style="width: 160px" />
+                    </el-form-item>
+                    
+                    <el-form-item v-if="scope.row.type === 'integer'" label="默认值" class="mb-2">
+                      <el-input-number v-model="scope.row.default" :min="0" style="width: 160px" size="default" />
+                    </el-form-item>
+                    
+                    <el-form-item v-if="scope.row.type === 'boolean'" label="默认值" class="mb-2">
+                      <el-switch v-model="scope.row.default" />
+                    </el-form-item>
+                  </div>
+                </template>
+              </el-table-column>
+              
+              <el-table-column label="操作" width="80" align="center">
+                <template #default="scope">
+                  <el-button type="danger" size="small" circle @click="removeConfigParam(scope.$index)" title="删除参数">
+                    <el-icon><Delete /></el-icon>
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </el-form-item>
 
         <el-form-item label="访问权限">
@@ -443,7 +447,7 @@ import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
-import { Document, DocumentCopy, Search, Delete } from '@element-plus/icons-vue';
+import { Document, DocumentCopy, Search, Delete, Plus } from '@element-plus/icons-vue';
 import { fallbackCopyTextToClipboard } from '../../utils/copy';
 
 const route = useRoute();
@@ -1792,10 +1796,45 @@ onMounted(() => {
 }
 
 .config-schema-card {
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
-  background: #f9fafc;
+  background: #ffffff;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.03) !important;
+}
+
+.config-params-container {
+  width: 100%;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #ebeef5;
+}
+
+:deep(.el-table) {
+  --el-table-border-color: #ebeef5;
+  --el-table-header-bg-color: #f5f7fa;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+:deep(.el-table thead th) {
+  background-color: #f5f7fa;
+  color: #606266;
+  font-weight: 500;
+}
+
+:deep(.el-table__row:hover > td) {
+  background-color: #f5f9ff;
+}
+
+:deep(.el-empty) {
+  padding: 20px 0;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #606266;
 }
 
 .config-param-item {
