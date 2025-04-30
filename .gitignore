@@ -91,3 +91,4 @@ backend/logs
 backend/test
 dist
 dist.zip
+docs

@@ -404,11 +404,18 @@
           <el-divider content-position="left">配置参数</el-divider>
 
           <div v-for="(schema, key) in moduleInfo.config_schema" :key="key" class="mb-4">
-            <el-form-item :label="schema.title || key" :prop="key"
+            <el-form-item :label="schema.title || key" :prop="key" label-position="left"
               :rules="[{ required: schema.required, message: `请输入${schema.title || key}`, trigger: 'blur' }]">
-              <div class="text-sm text-gray-500 mb-1">{{ schema.description }}</div>
-              <el-input v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`"
-                :type="schema.type === 'password' ? 'password' : 'text'" />
+
+              <!-- <div class="text-sm text-gray-500 mb-1">{{ schema.description }}</div> -->
+              <div v-if="schema.type === 'integer'">
+                <el-input-number v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
+              </div>
+              <div v-else>
+                <el-input v-if="schema.type === 'password'" v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`"
+                  :type="schema.type === 'password' ? 'password' : 'text'" show-password />
+                <el-input v-else v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
+              </div>
             </el-form-item>
           </div>
         </template>

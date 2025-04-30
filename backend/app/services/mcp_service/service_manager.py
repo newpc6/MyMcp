@@ -476,62 +476,16 @@ class McpServiceManager:
                     
                     # 处理配置参数替换
                     for key, value in config_params.items():
-                        # 检查代码中是否有直接引用变量的情况，如 api_key
-                        if key in code and isinstance(value, str):
-                            # 如果代码中包含像 TavilyClient(api_key) 这样的模式
-                            code = code.replace(f"{key})", f'"{value}")')
-                            # 如果代码中包含像 api_key = "REPLACE_ME" 这样的模式
-                            code = code.replace(f'{key} = "REPLACE_ME"', f'{key} = "{value}"')
-                            code = code.replace(f"{key} = 'REPLACE_ME'", f"{key} = '{value}'")
-                            # 如果代码中直接使用变量名作为参数
-                            code = code.replace(f"({key})", f'("{value}")')
-                            code = code.replace(f"({key},", f'("{value}",')
-                            # 如果代码中使用变量但没有任何值设置，可能需要在代码开头添加变量定义
-                            if f"{key} =" not in code and f"{key}=" not in code and f"({key})" in code:
-                                code = f"{key} = \"{value}\"\n" + code
-                        elif key in code:
-                            # 对于非字符串值，如数字、布尔等
-                            code = code.replace(f"{key})", f"{value})")
-                            code = code.replace(f'{key} = "REPLACE_ME"', f'{key} = {value}')
-                            code = code.replace(f"{key} = 'REPLACE_ME'", f"{key} = {value}")
-                            code = code.replace(f"({key})", f"({value})")
-                            code = code.replace(f"({key},", f"({value},")
-                            if f"{key} =" not in code and f"{key}=" not in code and f"({key})" in code:
-                                code = f"{key} = {value}\n" + code
+                        # 使用统一的替换标记格式 "${参数名}"
+                        placeholder = "${" + key + "}"
                         
-                        # 构建可能的变量格式 (保留原有的替换逻辑)
-                        var_patterns = [
-                            f'"{key}" = "REPLACE_ME"',
-                            f'"{key}"="REPLACE_ME"',
-                            f"'{key}' = 'REPLACE_ME'",
-                            f"'{key}'='REPLACE_ME'",
-                            f'{key} = "REPLACE_ME"',
-                            f"{key} = 'REPLACE_ME'",
-                            f'{key}="REPLACE_ME"',
-                            f"{key}='REPLACE_ME'"
-                        ]
-                        
-                        # 为每种模式尝试替换
-                        for pattern in var_patterns:
-                            # 替换为带引号的值
-                            if isinstance(value, str):
-                                replace_value = f'"{key}" = "{value}"'
-                                code = code.replace(pattern, replace_value)
-                                
-                                # 无引号变量名格式
-                                no_quotes_pattern = f"{key} = \"REPLACE_ME\""
-                                no_quotes_replace = f"{key} = \"{value}\""
-                                code = code.replace(no_quotes_pattern, no_quotes_replace)
-                            else:
-                                # 对于非字符串值，直接插入无引号
-                                replace_value = f'"{key}" = {value}'
-                                code = code.replace(pattern, replace_value)
-                                
-                                # 无引号变量名格式
-                                no_quotes_pattern = f"{key} = \"REPLACE_ME\""
-                                no_quotes_replace = f"{key} = {value}"
-                                code = code.replace(no_quotes_pattern, no_quotes_replace)
-
+                        # 根据值类型进行不同的替换
+                        if isinstance(value, str):
+                            # 字符串类型需要添加引号
+                            code = code.replace(placeholder, f'"{value}"')
+                        else:
+                            # 数字、布尔等类型不需要引号
+                            code = code.replace(placeholder, str(value))
                 # 在数据库会话内复制需要的数据，而不是直接使用数据库对象
                 module_name = module.name
                 module_code = code
