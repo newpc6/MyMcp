@@ -114,7 +114,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="140" />
-                <el-table-column fixed="right" label="操作" width="80">
+                <el-table-column fixed="right" label="操作" width="120">
                   <template #default="scope">
                     <el-button v-if="scope.row.status === 'running'" type="danger" size="small"
                       @click="handleStopService(scope.row.service_uuid)">
@@ -127,6 +127,9 @@
                     <el-button v-else-if="scope.row.status === 'error'" type="warning" size="small"
                       @click="handleStartService(scope.row.service_uuid)">
                       重启
+                    </el-button>
+                    <el-button type="primary" size="small" @click="viewServiceParams(scope.row)" title="查看参数">
+                      参数
                     </el-button>
                   </template>
                 </el-table-column>
@@ -428,6 +431,43 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 服务参数查看/编辑对话框 -->
+    <el-dialog v-model="serviceParamsDialogVisible" title="服务参数设置" width="50%" :destroy-on-close="true">
+      <div v-if="currentService">
+        <div v-if="!currentService.config_params || Object.keys(currentService.config_params).length === 0" class="text-center py-4">
+          <el-empty description="此服务没有配置参数" :image-size="60" />
+        </div>
+        <div v-else>
+          <el-form ref="serviceParamsFormRef" :model="serviceParamsForm" label-width="120px" label-position="top">
+            <div v-for="(value, key) in currentService.config_params" :key="key" class="mb-4">
+              <el-form-item :label="getParamDisplay(key)" label-position="left">
+                <div v-if="isNumeric(value)">
+                  <el-input-number v-model="serviceParamsForm[key]" />
+                </div>
+                <div v-else-if="isBoolean(value)">
+                  <el-switch v-model="serviceParamsForm[key]" />
+                </div>
+                <div v-else>
+                  <el-input v-if="isPassword(key)" v-model="serviceParamsForm[key]" type="password" show-password />
+                  <el-input v-else v-model="serviceParamsForm[key]" />
+                </div>
+              </el-form-item>
+            </div>
+          </el-form>
+        </div>
+      </div>
+      <div v-else class="text-center py-4">
+        <el-empty description="无法加载服务参数" :image-size="60" />
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="serviceParamsDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="updateServiceParams" :loading="updatingParams">更新参数</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -440,7 +480,9 @@ import {
   listServices, publishModule, stopService, startService, uninstallService,
   testModuleFunction,
   listCategories,
-  deleteModule
+  deleteModule,
+  getService,
+  updateServiceParams
 } from '../../api/marketplace';
 import api from '../../api/index';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo, McpCategoryInfo } from '../../types/marketplace';
@@ -1261,6 +1303,77 @@ async function handleDeleteModule() {
     }
   }
 }
+
+// 服务参数对话框相关
+const serviceParamsDialogVisible = ref(false);
+const currentService = ref<McpServiceInfo | null>(null);
+const serviceParamsForm = ref<Record<string, any>>({});
+const updatingParams = ref(false);
+
+// 查看服务参数
+const viewServiceParams = async (service: McpServiceInfo) => {
+  try {
+    // 获取最新的服务信息
+    const response = await getService(service.service_uuid);
+    if (response && response.data) {
+      currentService.value = response.data;
+      // 初始化表单
+      serviceParamsForm.value = { ...response.data.config_params };
+      serviceParamsDialogVisible.value = true;
+    }
+  } catch (error) {
+    console.error('获取服务参数失败', error);
+    ElMessage.error('获取服务参数失败');
+  }
+};
+
+// 获取参数显示名称
+const getParamDisplay = (key: string): string => {
+  if (!moduleInfo.value.config_schema) return key;
+  
+  const schema = moduleInfo.value.config_schema[key];
+  if (schema && schema.title) {
+    return schema.title;
+  }
+  return key;
+};
+
+// 判断值类型
+const isNumeric = (value: any): boolean => {
+  return typeof value === 'number';
+};
+
+const isBoolean = (value: any): boolean => {
+  return typeof value === 'boolean';
+};
+
+const isPassword = (key: string): boolean => {
+  if (!moduleInfo.value.config_schema) return false;
+  
+  const schema = moduleInfo.value.config_schema[key];
+  return schema && schema.type === 'password';
+};
+
+// 更新服务参数
+const updateServiceParams = async () => {
+  if (!currentService.value) return;
+  
+  updatingParams.value = true;
+  try {
+    // 调用API更新服务参数
+    await updateServiceParams(currentService.value.service_uuid, serviceParamsForm.value);
+    ElMessage.success('服务参数更新成功');
+    serviceParamsDialogVisible.value = false;
+    
+    // 重新加载服务列表
+    await loadServices();
+  } catch (error) {
+    console.error('更新服务参数失败', error);
+    ElMessage.error('更新服务参数失败');
+  } finally {
+    updatingParams.value = false;
+  }
+};
 
 // 页面加载时获取模块详情
 onMounted(() => {
