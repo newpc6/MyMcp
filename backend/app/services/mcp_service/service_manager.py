@@ -381,7 +381,7 @@ class McpServiceManager:
             ).first()
             module_name = module.name if module else None
             module_description = module.description if module else ""
-
+            config_params = json.loads(service.config_params) if service.config_params else {}
             # 转换为字典
             return {
                 "id": service.id,
@@ -394,7 +394,11 @@ class McpServiceManager:
                 "created_at": service.created_at.isoformat()
                 if service.created_at else None,
                 "updated_at": service.updated_at.isoformat()
-                if service.updated_at else None
+                if service.updated_at else None,
+                "user_id": service.user_id,
+                "user_name": service.get_user_name(),
+                "config_params": config_params,
+                "error_message": service.error_message
             }
 
     def list_services(self, module_id: Optional[int] = None, user_id: Optional[int] = None, is_admin: bool = False) -> List[Dict]:

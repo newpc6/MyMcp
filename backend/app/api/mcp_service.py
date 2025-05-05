@@ -5,7 +5,7 @@ import importlib
 
 from app.utils.response import success_response, error_response
 from app.server.mcp_server import (
-    add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools
+    add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools, update_service_params
 )
 from ..core.config import settings
 
@@ -138,6 +138,18 @@ async def update_sse_url(request: Request):
         return error_response(f"更新SSE URL失败: {str(e)}", code=500, http_status_code=500)
 
 
+async def update_params(request: Request):
+    """更新服务参数"""
+    try:
+        data = await request.json()
+        id = request.path_params["id"]
+        # 更新服务参数
+        update_service_params(id, data)
+
+        return success_response(message="服务参数更新成功")
+    except Exception as e:
+        return error_response(f"更新服务参数失败: {str(e)}", code=500, http_status_code=500)
+
 def get_router():
     """获取MCP服务路由"""
     routes = [
@@ -146,7 +158,8 @@ def get_router():
         Route("/restart", endpoint=restart_service, methods=["POST"]),
         Route("/status", endpoint=get_status, methods=["GET"]),
         Route("/enabled_tools", endpoint=enabled_tools, methods=["GET"]),
-        Route("/sse_url", endpoint=update_sse_url, methods=["PUT"])
+        Route("/sse_url", endpoint=update_sse_url, methods=["PUT"]),
+        Route("/{id:int}/params", endpoint=update_params, methods=["PUT"])
     ]
     
     return routes 

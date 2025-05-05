@@ -114,7 +114,7 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="140" />
-                <el-table-column fixed="right" label="操作" width="120">
+                <el-table-column fixed="right" label="操作" width="160">
                   <template #default="scope">
                     <el-button v-if="scope.row.status === 'running'" type="danger" size="small"
                       @click="handleStopService(scope.row.service_uuid)">
@@ -304,21 +304,21 @@
             <div class="mb-4">
               <el-button type="primary" size="default" @click="addConfigParam" :icon="Plus">新增参数</el-button>
             </div>
-            
+
             <div v-if="!configParams.length" class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
               <el-empty description="暂无配置参数，点击上方按钮添加"></el-empty>
             </div>
-            
+
             <el-table v-else :data="configParams" style="width: 100%" border>
               <el-table-column type="index" label="#" width="60" align="center" />
-              
+
               <el-table-column label="基本信息" width="380">
                 <template #default="scope">
                   <div class="param-base-info">
                     <el-form-item label="参数名称" class="mb-2">
                       <el-input v-model="scope.row.key" placeholder="参数键名，如 api_key" size="default" />
                     </el-form-item>
-                    
+
                     <el-form-item label="参数类型" class="mb-2">
                       <el-select v-model="scope.row.type" style="width: 100%" size="default">
                         <el-option label="文本" value="string" />
@@ -330,47 +330,51 @@
                   </div>
                 </template>
               </el-table-column>
-              
+
               <el-table-column label="显示信息" width="380">
                 <template #default="scope">
                   <div class="param-display-info">
                     <el-form-item label="标题" class="mb-2">
                       <el-input v-model="scope.row.title" placeholder="参数显示名称，如 API密钥" size="default" />
                     </el-form-item>
-                    
+
                     <el-form-item label="描述" class="mb-2">
                       <el-input v-model="scope.row.description" placeholder="参数描述，如 您的API访问密钥" size="default" />
                     </el-form-item>
                   </div>
                 </template>
               </el-table-column>
-              
+
               <el-table-column label="其他设置">
                 <template #default="scope">
                   <div class="flex items-center">
                     <el-form-item label="是否必填" class="mb-2 mr-4">
                       <el-switch v-model="scope.row.required" />
                     </el-form-item>
-                    
-                    <el-form-item v-if="scope.row.type === 'string' || scope.row.type === 'password'" label="占位符" class="mb-2">
-                      <el-input v-model="scope.row.placeholder" placeholder="占位提示" size="default" style="width: 160px" />
+
+                    <el-form-item v-if="scope.row.type === 'string' || scope.row.type === 'password'" label="占位符"
+                      class="mb-2">
+                      <el-input v-model="scope.row.placeholder" placeholder="占位提示" size="default"
+                        style="width: 160px" />
                     </el-form-item>
-                    
+
                     <el-form-item v-if="scope.row.type === 'integer'" label="默认值" class="mb-2">
                       <el-input-number v-model="scope.row.default" :min="0" style="width: 160px" size="default" />
                     </el-form-item>
-                    
+
                     <el-form-item v-if="scope.row.type === 'boolean'" label="默认值" class="mb-2">
                       <el-switch v-model="scope.row.default" />
                     </el-form-item>
                   </div>
                 </template>
               </el-table-column>
-              
+
               <el-table-column label="操作" width="80" align="center">
                 <template #default="scope">
                   <el-button type="danger" size="small" circle @click="removeConfigParam(scope.$index)" title="删除参数">
-                    <el-icon><Delete /></el-icon>
+                    <el-icon>
+                      <Delete />
+                    </el-icon>
                   </el-button>
                 </template>
               </el-table-column>
@@ -412,12 +416,15 @@
 
               <!-- <div class="text-sm text-gray-500 mb-1">{{ schema.description }}</div> -->
               <div v-if="schema.type === 'integer'">
-                <el-input-number v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
+                <el-input-number v-model="configForm[key]"
+                  :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
               </div>
               <div v-else>
-                <el-input v-if="schema.type === 'password'" v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`"
+                <el-input v-if="schema.type === 'password'" v-model="configForm[key]"
+                  :placeholder="schema.placeholder || `请输入${schema.title || key}`"
                   :type="schema.type === 'password' ? 'password' : 'text'" show-password />
-                <el-input v-else v-model="configForm[key]" :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
+                <el-input v-else v-model="configForm[key]"
+                  :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
               </div>
             </el-form-item>
           </div>
@@ -435,7 +442,8 @@
     <!-- 服务参数查看/编辑对话框 -->
     <el-dialog v-model="serviceParamsDialogVisible" title="服务参数设置" width="50%" :destroy-on-close="true">
       <div v-if="currentService">
-        <div v-if="!currentService.config_params || Object.keys(currentService.config_params).length === 0" class="text-center py-4">
+        <div v-if="!currentService.config_params || Object.keys(currentService.config_params).length === 0"
+          class="text-center py-4">
           <el-empty description="此服务没有配置参数" :image-size="60" />
         </div>
         <div v-else>
@@ -464,7 +472,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="serviceParamsDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateServiceParams" :loading="updatingParams">更新参数</el-button>
+          <el-button type="primary" @click="updateServiceParamsFunc" :loading="updatingParams">更新参数</el-button>
         </span>
       </template>
     </el-dialog>
@@ -481,9 +489,9 @@ import {
   testModuleFunction,
   listCategories,
   deleteModule,
-  getService,
-  updateServiceParams
+  getService
 } from '../../api/marketplace';
+import { updateServiceParams } from '../../api/mcpServer';
 import api from '../../api/index';
 import type { McpModuleInfo, McpToolInfo, McpToolParameter, McpServiceInfo, McpCategoryInfo } from '../../types/marketplace';
 import Codemirror from 'vue-codemirror6';
@@ -1330,7 +1338,7 @@ const viewServiceParams = async (service: McpServiceInfo) => {
 // 获取参数显示名称
 const getParamDisplay = (key: string): string => {
   if (!moduleInfo.value.config_schema) return key;
-  
+
   const schema = moduleInfo.value.config_schema[key];
   if (schema && schema.title) {
     return schema.title;
@@ -1349,22 +1357,22 @@ const isBoolean = (value: any): boolean => {
 
 const isPassword = (key: string): boolean => {
   if (!moduleInfo.value.config_schema) return false;
-  
+
   const schema = moduleInfo.value.config_schema[key];
   return schema && schema.type === 'password';
 };
 
 // 更新服务参数
-const updateServiceParams = async () => {
+const updateServiceParamsFunc = async () => {
   if (!currentService.value) return;
-  
+
   updatingParams.value = true;
   try {
     // 调用API更新服务参数
-    await updateServiceParams(currentService.value.service_uuid, serviceParamsForm.value);
+    await updateServiceParams(currentService.value.id, serviceParamsForm.value);
     ElMessage.success('服务参数更新成功');
     serviceParamsDialogVisible.value = false;
-    
+
     // 重新加载服务列表
     await loadServices();
   } catch (error) {

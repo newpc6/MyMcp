@@ -28,6 +28,12 @@ engine = create_engine(
 # 创建Session工厂
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
+# 全局数据库会话对象
+db = SessionLocal()
+
+def get_global_db():
+    """获取全局数据库会话对象"""
+    return db
 
 @contextmanager
 def get_db():

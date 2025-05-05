@@ -1,3 +1,4 @@
+import json
 import os
 import sys
 import time
@@ -6,7 +7,11 @@ from typing import Callable, Dict, Any, Optional, List
 import threading
 
 import anyio
+from sqlalchemy import update
 import uvicorn
+
+from app.models.modules.mcp_services import McpService
+from app.models.engine import get_db
 
 # 导入配置和基础模块
 from ..core.config import settings
@@ -96,6 +101,34 @@ def remove_tool(tool_name: str) -> bool:
         em_logger.error(f"移除工具 {tool_name} 时出错: {str(e)}")
         return False
 
+def get_service_by_id(id: int):
+    """获取服务实例"""
+    with get_db() as db:
+        query = db.query(McpService)
+        query = query.filter(McpService.id == id)
+        return query.first()
+    
+
+def update_service_params(id: int, config_params: Dict[str, Any]):
+    """更新服务参数"""
+    if server_instance is None:
+        em_logger.warning("MCP服务器尚未启动，无法更新服务参数")
+        return False
+    
+    try:
+        from app.models.engine import get_global_db
+        db = get_global_db()
+        db.execute(
+            update(McpService)
+            .where(McpService.id == id)
+            .values(config_params=json.dumps(config_params))
+        )
+        db.commit()
+        
+        return True
+    except Exception as e:
+        em_logger.error(f"更新服务参数时出错: {str(e)}")
+        raise e
 
 def get_enabled_tools() -> List[str]:
     """

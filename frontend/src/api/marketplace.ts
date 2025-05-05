@@ -234,21 +234,3 @@ export async function getOnlineServices(): Promise<ApiResponse<string[]>> {
   const response = await api.get(`/api/marketplace/services/online`)
   return response.data
 }
-
-/**
- * 更新服务参数
- * @param serviceUuid - 服务UUID
- * @param configParams - 配置参数
- */
-export async function updateServiceParams(
-  serviceUuid: string,
-  configParams: Record<string, any>
-): Promise<
-  ApiResponse<{
-    message: string
-    service: McpServiceInfo
-  }>
-> {
-  const response = await api.put(`/api/marketplace/services/${serviceUuid}/params`, configParams)
-  return response.data
-}
