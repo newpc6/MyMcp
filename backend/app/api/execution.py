@@ -5,6 +5,8 @@ import importlib
 import sys
 import tempfile
 import os
+import json
+from datetime import datetime
 from starlette.routing import Route
 from starlette.requests import Request
 
@@ -12,6 +14,7 @@ from app.utils.response import success_response, error_response
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpTool, McpModule
 from app.services.execution.executor import execute_tool_by_name
+from app.services.mcp_service.service_manager import service_manager
 
 
 async def execute_tool(request: Request):
@@ -82,7 +85,8 @@ async def execute_module_function(request: Request):
     module_id = int(request.path_params["module_id"])
     function_name = request.path_params["function_name"]
     params = await request.json()
-    
+    user = request.state.user
+    user_id = user.get("user_id") if user else None
     try:
         with get_db() as db:
             # 从数据库获取模块信息
@@ -93,18 +97,41 @@ async def execute_module_function(request: Request):
             if not module.code:
                 return error_response("模块代码为空", code=400, http_status_code=400)
             
-            # 创建临时目录和文件
-            temp_dir = tempfile.mkdtemp(prefix="mcp_exec_")
-            temp_file = os.path.join(temp_dir, f"{module.name}.py")
+            # 处理代码中的配置参数替换
+            code = module.code
+            if code.find("${") != -1:
+                service = service_manager.get_service_by_module_id(module_id)
+                if service and service.config_params and code:
+                    config_params = None
+                    if isinstance(service.config_params, str):
+                        config_params = json.loads(service.config_params)
+                    else:
+                        config_params = service.config_params
+                    code = service_manager.replace_config_params(
+                        code, config_params
+                    )
+            
+            # 创建当天日期文件夹
+            today = datetime.now().strftime("%Y-%m-%d")
+            debug_dir = os.path.join(
+                os.path.dirname(__file__), 
+                '..', '..', 
+                'data', 'script', 'debug', 
+                today
+            )
+            if not os.path.exists(debug_dir):
+                os.makedirs(debug_dir)
+            
+            temp_file = os.path.join(debug_dir, f"{module.name}-{user_id}.py")
             
             try:
                 # 写入模块代码到临时文件
                 with open(temp_file, "w", encoding="utf-8") as f:
-                    f.write(module.code)
+                    f.write(code)
                 
                 # 将临时目录添加到Python路径
-                if temp_dir not in sys.path:
-                    sys.path.insert(0, temp_dir)
+                if debug_dir not in sys.path:
+                    sys.path.insert(0, debug_dir)
                 
                 # 动态导入模块
                 module_name = module.name
@@ -135,16 +162,10 @@ async def execute_module_function(request: Request):
                 # 清理临时文件和目录
                 if module_name in sys.modules:
                     del sys.modules[module_name]
-                    
-                try:
-                    import shutil
-                    shutil.rmtree(temp_dir)
-                except Exception as e:
-                    pass  # 忽略清理错误
                 
                 # 从Python路径中移除临时目录
-                if temp_dir in sys.path:
-                    sys.path.remove(temp_dir)
+                if debug_dir in sys.path:
+                    sys.path.remove(debug_dir)
                 
     except Exception as e:
         import traceback

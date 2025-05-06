@@ -359,6 +359,24 @@ class McpServiceManager:
 
         return False
 
+    def get_service_by_module_id(self, module_id: int) -> Optional[McpService]:
+        """获取指定模块ID的服务
+
+        Args:
+            module_id: 模块ID
+        """
+        try:
+            with get_db() as db:
+                service = db.query(McpService).filter(
+                    McpService.module_id == module_id
+                ).first()
+                return service
+        except Exception as e:
+            em_logger.error(f"获取指定模块ID的服务失败: {str(e)}")
+            return None
+
+        
+    
     def get_service_status(self, service_uuid: str) -> Optional[Dict]:
         """获取服务状态
 
@@ -457,6 +475,26 @@ class McpServiceManager:
                 for service in services
             ]
 
+    def replace_config_params(self, code: str, config_params: Dict) -> str:
+        """替换配置参数
+
+        Args:
+            code: 代码
+            config_params: 配置参数
+        """
+        for key, value in config_params.items():
+            # 使用统一的替换标记格式 "${参数名}"
+            placeholder = "${" + key + "}"
+            
+            # 根据值类型进行不同的替换
+            if isinstance(value, str):
+                # 字符串类型需要添加引号
+                code = code.replace(placeholder, f'"{value}"')
+            else:
+                # 数字、布尔等类型不需要引号
+                code = code.replace(placeholder, str(value))
+        return code
+    
     def register_mcp_tool(self, service_uuid: str, service: McpService, module: McpModule):
         """注册指定服务UUID对应模块的工具函数
 
@@ -468,31 +506,17 @@ class McpServiceManager:
             return
 
         try:
-            # 从数据库获取指定服务对应的模块
-            with get_db() as db:
-                code = module.code
-                if service.config_params and module.code:
-                    config_params = None
-                    if isinstance(service.config_params, str):
-                        config_params = json.loads(service.config_params)
-                    else:
-                        config_params = service.config_params
-                    
-                    # 处理配置参数替换
-                    for key, value in config_params.items():
-                        # 使用统一的替换标记格式 "${参数名}"
-                        placeholder = "${" + key + "}"
-                        
-                        # 根据值类型进行不同的替换
-                        if isinstance(value, str):
-                            # 字符串类型需要添加引号
-                            code = code.replace(placeholder, f'"{value}"')
-                        else:
-                            # 数字、布尔等类型不需要引号
-                            code = code.replace(placeholder, str(value))
-                # 在数据库会话内复制需要的数据，而不是直接使用数据库对象
-                module_name = module.name
-                module_code = code
+            code = module.code
+            if service.config_params and module.code:
+                config_params = None
+                if isinstance(service.config_params, str):
+                    config_params = json.loads(service.config_params)
+                else:
+                    config_params = service.config_params
+                code = self.replace_config_params(code, config_params)
+            # 在数据库会话内复制需要的数据，而不是直接使用数据库对象
+            module_name = module.name
+            module_code = code
 
             # 数据库会话结束后，使用复制的数据而不是数据库对象
             em_logger.info(f"为服务 {service_uuid} 加载模块: {module_name}")
@@ -524,6 +548,9 @@ class McpServiceManager:
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
                         module_obj, inspect.isfunction):
+                    if name.startswith("_"):
+                        # 过滤掉以_开头的函数
+                        continue
                     # 过滤出该模块定义的函数(而不是导入的函数)
                     if func.__module__ == module_name:
                         # 获取函数文档

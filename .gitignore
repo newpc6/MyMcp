@@ -92,3 +92,5 @@ backend/test
 dist
 dist.zip
 docs
+backend/data/publish/
+backend/data

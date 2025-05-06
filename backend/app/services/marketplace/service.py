@@ -1,6 +1,7 @@
 """
 MCP广场服务
 """
+from datetime import datetime
 import json
 from typing import List, Dict, Any, Optional
 import os
@@ -17,6 +18,7 @@ from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule, McpTool, McpCategory
 from app.core.utils import now_beijing
 from app.utils.logging import em_logger
+from app.services.mcp_service.service_manager import service_manager
 
 
 class MarketplaceService:
@@ -93,11 +95,27 @@ class MarketplaceService:
                 import inspect
                 import tempfile
                 import os
+                # 创建当天日期文件夹
+                today = datetime.now().strftime("%Y-%m-%d")
+                publish_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', 'script', 'publish', today)
+                if not os.path.exists(publish_dir):
+                    os.makedirs(publish_dir)
+                
+                code = module.code
+                if code.find("${") != -1:
+                    service = service_manager.get_service_by_module_id(module_id)
+                    if service.config_params and code:
+                        config_params = None
+                        if isinstance(service.config_params, str):
+                            config_params = json.loads(service.config_params)
+                        else:
+                            config_params = service.config_params
+                        code = service_manager.replace_config_params(code, config_params)
                 
                 # 创建临时文件并写入代码
-                with tempfile.NamedTemporaryFile(suffix='.py', delete=False) as temp:
+                with tempfile.NamedTemporaryFile(suffix='.py', prefix=f'module_{module_id}_', delete=False, dir=publish_dir) as temp:
                     temp_path = temp.name
-                    temp.write(module.code.encode('utf-8'))
+                    temp.write(code.encode('utf-8'))
                 
                 try:
                     # 动态加载模块
@@ -170,9 +188,9 @@ class MarketplaceService:
                             }
                             tools.append(tool_info)
                 finally:
-                    # 清理临时文件
-                    if os.path.exists(temp_path):
-                        os.unlink(temp_path)
+                    # # 清理临时文件
+                    # if os.path.exists(temp_path):
+                    #     os.unlink(temp_path)
                     
                     # 从sys.modules中移除临时模块
                     if module_name in sys.modules:
