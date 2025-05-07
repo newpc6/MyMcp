@@ -54,15 +54,6 @@
             <p class="card-desc">{{ module.description }}</p>
             <div class="card-footer">
               <div class="tag-container">
-                <!-- <el-tag size="small" type="info" class="mr-1">
-                  {{ module.tools_count }} 个工具
-                </el-tag> -->
-                <!-- <el-tag 
-                  size="small" 
-                  :type="module.is_hosted ? 'success' : 'primary'"
-                >
-                  {{ module.is_hosted ? '托管' : '本地' }}
-                </el-tag> -->
                 <el-tag v-if="module.category_name" size="small" type="warning" class="ml-1">
                   {{ module.category_name }}
                 </el-tag>
@@ -82,6 +73,9 @@
                   <el-button type="danger" link size="small" @click.stop="handleDeleteModule(module)"
                     v-if="hasEditPermission(module)">
                     删除
+                  </el-button>
+                  <el-button type="primary" link size="small" @click.stop="handleCloneModule(module)">
+                    复制
                   </el-button>
                   <el-button type="primary" link @click.stop="goToModuleDetail(module.id)">
                     查看详情
@@ -163,6 +157,51 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 复制MCP服务对话框 -->
+    <el-dialog v-model="cloneDialogVisible" title="复制MCP服务" width="60%" :destroy-on-close="true">
+      <el-form ref="cloneFormRef" :model="cloneForm" :rules="cloneRules" label-width="100px" label-position="top">
+        <el-form-item label="服务名称" prop="name">
+          <el-input v-model.trim="cloneForm.name" placeholder="请输入服务名称" clearable></el-input>
+        </el-form-item>
+
+        <el-form-item label="服务描述" prop="description">
+          <textarea v-model="cloneForm.description" rows="3" placeholder="请输入服务描述" class="el-textarea__inner"
+            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;" clearable></textarea>
+        </el-form-item>
+
+        <el-form-item label="版本" prop="version">
+          <el-input v-model.trim="cloneForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
+        </el-form-item>
+
+        <el-form-item label="标签" prop="tags">
+          <el-select v-model="cloneForm.tags" multiple filterable allow-create default-first-option placeholder="请输入标签"
+            style="width: 100%">
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="分类" prop="category_id">
+          <el-select v-model="cloneForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
+            <el-option v-for="category in categories" :key="category.id" :label="category.name"
+              :value="category.id"></el-option>
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="访问权限">
+          <el-radio-group v-model="cloneForm.is_public">
+            <el-radio :label="true">公开</el-radio>
+            <el-radio :label="false">私有</el-radio>
+          </el-radio-group>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="cloneDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitCloneForm" :loading="submitting">复制</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -171,7 +210,7 @@ import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification, ElMessageBox } from 'element-plus';
 import { Tools, Menu, Collection } from '@element-plus/icons-vue';
-import { listModules, listCategories, createModule, deleteModule } from '../../api/marketplace';
+import { listModules, listCategories, createModule, deleteModule, cloneModule } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 
 const router = useRouter();
@@ -217,6 +256,37 @@ const createRules = {
   ],
   code: [
     { required: true, message: '请输入代码', trigger: 'blur' }
+  ]
+};
+
+// 复制服务相关
+const cloneDialogVisible = ref(false);
+const cloneFormRef = ref<any>();
+const cloneForm = ref<{
+  name: string;
+  description: string;
+  version: string;
+  tags: string[];
+  category_id: number | null;
+  is_public: boolean;
+  source_module_id: number | null;
+}>({
+  name: '',
+  description: '',
+  version: '1.0.0',
+  tags: [] as string[],
+  category_id: null,
+  is_public: true,
+  source_module_id: null
+});
+
+const cloneRules = {
+  name: [
+    { required: true, message: '请输入服务名称', trigger: 'blur' },
+    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
+  ],
+  description: [
+    { required: true, message: '请输入服务描述', trigger: 'blur' }
   ]
 };
 
@@ -488,6 +558,89 @@ async function handleDeleteModule(module: McpModuleInfo) {
   }
 }
 
+// 处理复制模块
+function handleCloneModule(module: McpModuleInfo) {
+  // 检查用户是否登录
+  if (!currentUser.value.user_id) {
+    ElMessageBox.alert(
+      '您需要登录后才能复制MCP服务。',
+      '请先登录',
+      { type: 'warning' }
+    );
+    return;
+  }
+
+  // 阻止事件冒泡，避免触发卡片点击事件
+  event?.stopPropagation();
+
+  // 设置复制表单的初始数据
+  cloneForm.value = {
+    name: `${module.name}_copy`,
+    description: module.description || '',
+    version: module.version || '1.0.0',
+    tags: module.tags ? module.tags.split(',') : [],
+    category_id: module.category_id || null,
+    is_public: module.is_public !== undefined ? module.is_public : true,
+    source_module_id: module.id
+  };
+  
+  nextTick(() => {
+    cloneDialogVisible.value = true;
+  });
+}
+
+// 提交复制表单
+async function submitCloneForm() {
+  submitting.value = true;
+  try {
+    if (!cloneForm.value.source_module_id) {
+      throw new Error('源服务ID不能为空');
+    }
+
+    // 处理tags，转换为字符串
+    const tagsStr = Array.isArray(cloneForm.value.tags) ? cloneForm.value.tags.join(',') : '';
+
+    // 构建模块数据
+    const moduleData: Partial<McpModuleInfo> = {
+      name: cloneForm.value.name,
+      description: cloneForm.value.description,
+      version: cloneForm.value.version,
+      tags: tagsStr,
+      category_id: cloneForm.value.category_id || undefined,
+      is_public: cloneForm.value.is_public,
+      user_id: currentUser.value.user_id || undefined // 添加创建者ID
+    };
+
+    const response = await cloneModule(cloneForm.value.source_module_id, moduleData);
+
+    if (response && response.code === 0) {
+      ElNotification({
+        title: '成功',
+        message: 'MCP服务复制成功',
+        type: 'success'
+      });
+      cloneDialogVisible.value = false;
+      // 重新加载模块列表
+      loadModules();
+    } else {
+      ElNotification({
+        title: '错误',
+        message: response?.message || '复制MCP服务失败',
+        type: 'error'
+      });
+    }
+  } catch (error) {
+    console.error('复制MCP服务失败:', error);
+    ElNotification({
+      title: '错误',
+      message: '复制MCP服务失败',
+      type: 'error'
+    });
+  } finally {
+    submitting.value = false;
+  }
+}
+
 // 页面加载时获取模块列表和分组列表
 onMounted(async () => {
   loadUserInfo(); // 加载用户信息
@@ -581,6 +734,8 @@ onMounted(async () => {
   transition: all 0.3s;
   border: none;
   overflow: hidden;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .card-header {
@@ -593,6 +748,7 @@ onMounted(async () => {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
+  color: #333;
 }
 
 .card-desc {
@@ -605,6 +761,7 @@ onMounted(async () => {
   text-overflow: ellipsis;
   margin-bottom: 16px;
   line-height: 1.6;
+  min-height: 48px;
 }
 
 .card-footer {
@@ -620,6 +777,7 @@ onMounted(async () => {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+  max-width: 65%;
 }
 
 .el-tag {

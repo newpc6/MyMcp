@@ -234,3 +234,13 @@ export async function getOnlineServices(): Promise<ApiResponse<string[]>> {
   const response = await api.get(`/api/marketplace/services/online`)
   return response.data
 }
+
+/**
+ * 复制MCP模块
+ * @param moduleId - 源模块ID
+ * @param data - 新模块的自定义数据
+ */
+export async function cloneModule(moduleId: number, data: Partial<McpModuleInfo>): Promise<ApiResponse<McpModuleInfo>> {
+  const response = await api.post(`/api/marketplace/modules/${moduleId}/clone`, data)
+  return response.data
+}
