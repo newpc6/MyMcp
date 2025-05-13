@@ -22,6 +22,12 @@
 ### MCP统计
 [![statistics.jpg](https://img.picui.cn/free/2025/05/13/68234a467204f.jpg)](https://img.picui.cn/free/2025/05/13/68234a467204f.jpg)
 
+
+## 临时体验地址
+http://111.4.141.154:7002/login
+guest
+123456
+
 ## 安装教程
 
 ### 1. 拉取项目
