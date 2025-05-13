@@ -1,0 +1,36 @@
+{
+    "cors": {
+        "origins": ["*"],
+        "credentials": true,
+        "methods": ["*"],
+        "headers": ["*"]
+    },
+    "api": {
+        "prefix": "/api",
+        "title": "MCP Server",
+        "version": "1.0.0"
+    },
+    "server": {
+        "host": "0.0.0.0",
+        "port": 8002,
+        "debug": true
+    },
+    "mcp": {
+        "port": 8002,
+        "sse_url": "http://127.0.0.1:8002/sse",
+        "enabled_tools": []
+    },
+    "logging": {
+        "level": "info",
+        "backup_count": 7
+    },
+    "database": {
+        "type": "sqlite",
+        "file": "mcp.db",
+        "mysql_host": "127.0.0.1",
+        "mysql_port": 3306,
+        "mysql_user": "root",
+        "mysql_password": "xxxxxx",
+        "mysql_database": "mcp"
+    }
+} 

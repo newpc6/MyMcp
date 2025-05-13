@@ -94,3 +94,6 @@ dist.zip
 docs
 backend/data/publish/
 backend/data
+dist*zip
+start.sh
+*.db

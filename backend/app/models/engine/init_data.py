@@ -203,6 +203,12 @@ def init_demo_modules():
                 search_cat = db.execute(cat_query).scalar_one_or_none()
                 search_cat_id = search_cat.id if search_cat else None
 
+                cat_query = select(McpCategory).where(
+                    McpCategory.name == "数据库工具"
+                )
+                db_cat = db.execute(cat_query).scalar_one_or_none()
+                db_cat_id = db_cat.id if db_cat else search_cat_id
+
                 # 添加演示模块1：计算工具
                 calc_module = McpModule(
                     name="calculator",
@@ -510,6 +516,449 @@ topics = get_trending_topics()
                 )
                 db.add(search_module)
 
+                # 添加演示模块3：Tavily搜索助手
+                tavily_module = McpModule(
+                    name="tavily_search",
+                    description="使用Tavily API进行实时在线搜索",
+                    module_path="repository.tavily_search",
+                    author="系统",
+                    version="1.0.0",
+                    tags="搜索,Tavily,实时搜索,网络搜索",
+                    icon="search",
+                    is_hosted=True,
+                    category_id=search_cat_id,
+                    config_schema="""
+{
+    "api_key": {
+        "type": "string",
+        "description": "Tavily API密钥",
+        "required": true
+    }
+}
+""",
+                    code="""
+\"\"\"
+Tavily搜索助手，提供实时在线搜索功能
+\"\"\"
+from tavily import TavilyClient
+import json
+
+def online_search(query):
+    \"\"\"
+    使用tavily sdk在线实时搜索
+
+    工具参数:
+    query (str): 要搜索的查询字符串。
+    
+    平台配置参数：
+    ${api_key}: 平台API密钥, 请在平台配置，平台运行时会自动替换。
+
+    返回:
+    包含搜索结果的字典列表。如果没有结果，则返回 None。
+    \"\"\"
+    tavily_client = TavilyClient(${api_key})
+    response = tavily_client.search(query)
+    
+    if response.get("results"):
+        # 将Unicode转义序列解析为中文并转换为英文
+        results = []
+        for item in response.get("results"):
+            # 如果结果已经是字典格式直接使用
+            if isinstance(item, dict):
+                results.append(item)
+            # 如果结果是JSON字符串需要解析
+            else:
+                try:
+                    item_dict = json.loads(item)
+                    results.append(item_dict)
+                except json.JSONDecodeError:
+                    results.append({"content": item})
+        
+        return json.dumps(results)
+    else:
+        return None
+""",
+                    markdown_docs="""
+# Tavily搜索助手
+
+## 简介
+Tavily搜索助手利用Tavily API提供实时在线搜索功能，可以获取最新的互联网内容。
+
+## 配置项
+该模块需要以下配置：
+
+| 配置项 | 类型 | 描述 | 默认值 |
+|-------|-----|------|-------|
+| api_key | 字符串 | Tavily API密钥 | 必填 |
+
+## 功能列表
+
+### 在线搜索
+根据查询词在互联网上实时搜索内容，返回相关结果。
+
+**参数：**
+- query: 搜索查询词
+
+**返回：**
+- 包含搜索结果的JSON字符串，每个结果包含内容和元数据
+- 如果没有结果，则返回None
+
+## 使用示例
+```python
+# 搜索"人工智能最新进展"
+results = online_search("人工智能最新进展")
+# 返回相关的搜索结果
+```
+
+## 注意事项
+1. 使用前需要在平台配置有效的Tavily API密钥
+2. 需要安装tavily-python库
+3. 结果内容可能包含HTML标记，根据需要进行处理
+"""
+                )
+                db.add(tavily_module)
+
+                # 添加演示模块4：数据库工具助手
+                db_utils_module = McpModule(
+                    name="数据库助手",
+                    description="数据库操作工具模块",
+                    module_path="repository.db_utils",
+                    author="系统",
+                    version="1.0.0",
+                    tags="数据库,MySQL,查询,SQL",
+                    icon="database",
+                    is_hosted=True,
+                    category_id=db_cat_id,
+                    config_schema="""
+{
+    "database_host": {
+        "type": "string",
+        "description": "数据库主机地址",
+        "required": true
+    },
+    "database_port": {
+        "type": "integer",
+        "description": "数据库端口",
+        "default": 3306
+    },
+    "database_user": {
+        "type": "string",
+        "description": "数据库用户名",
+        "required": true
+    },
+    "database_password": {
+        "type": "string",
+        "description": "数据库密码",
+        "required": true
+    },
+    "database_name": {
+        "type": "string",
+        "description": "数据库名称",
+        "required": true
+    }
+}
+""",
+                    code="""
+\"\"\"
+数据库工具助手，提供数据库操作功能
+\"\"\"
+from decimal import Decimal
+import pymysql
+import json
+from datetime import datetime
+
+
+def _connect_database():
+    \"\"\"
+    连接到数据库
+
+    平台配置参数 (使用${参数名}格式):
+    host: 数据库主机地址
+    port: 数据库端口
+    user: 数据库用户名
+    password: 数据库密码
+    database: 数据库名称
+
+    返回:
+    connection: 数据库连接对象
+    \"\"\"
+    try:
+        connection = pymysql.connect(
+            host=${database_host},
+            port=${database_port},
+            user=${database_user},
+            password=${database_password},
+            database=${database_name},
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        return connection
+    except Exception as e:
+        raise Exception(f"数据库连接失败: {str(e)}")
+
+
+def _type_to_str(type):
+    \"\"\"将不同类型转换为字符串格式\"\"\"
+    if isinstance(type, datetime):
+        return type.strftime('%Y-%m-%d %H:%M:%S')
+    elif isinstance(type, Decimal):
+        return str(type)
+    else:
+        return type
+
+
+def get_all_tables():
+    \"\"\"
+    获取数据库中所有表的列表
+
+    返回:
+    数据库中所有表名的JSON字符串
+    \"\"\"
+    try:
+        connection = _connect_database()
+        with connection.cursor() as cursor:
+            # 查询所有表信息
+            sql = \"\"\"
+            SELECT 
+                table_name as name,
+                table_comment as comment,
+                create_time,
+                update_time
+            FROM information_schema.tables
+            WHERE table_schema = DATABASE()
+            ORDER BY table_name
+            \"\"\"
+
+            cursor.execute(sql)
+            results = cursor.fetchall()
+
+            # 处理类型转换
+            for item in results:
+                for key, value in item.items():
+                    item[key] = _type_to_str(value)
+
+            return json.dumps(results, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    finally:
+        if 'connection' in locals() and connection:
+            connection.close()
+
+
+def get_table_columns(table_name):
+    \"\"\"
+    获取指定表的所有字段信息
+    
+    工具参数:
+    table_name (str): 表名
+    
+    返回:
+    表字段信息的JSON字符串
+    \"\"\"
+    try:
+        connection = _connect_database()
+        with connection.cursor() as cursor:
+            # 验证表名
+            if not table_name:
+                return json.dumps({"error": "表名不能为空"}, ensure_ascii=False)
+            
+            # 查询表字段信息
+            sql = \"\"\"
+            SELECT
+                column_name as name,
+                column_type as type,
+                column_comment as comment,
+                is_nullable as nullable,
+                column_key as 'key',
+                column_default as 'default',
+                extra
+            FROM information_schema.columns
+            WHERE table_schema = DATABASE()
+            AND table_name = %s
+            ORDER BY ordinal_position
+            \"\"\"
+            
+            cursor.execute(sql, (table_name,))
+            results = cursor.fetchall()
+            
+            return json.dumps(results, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    finally:
+        if 'connection' in locals() and connection:
+            connection.close()
+
+
+def execute_raw_query(sql, limit=100):
+    \"\"\"
+    执行自定义SQL查询
+
+    工具参数:
+    sql (str): SQL查询语句
+    limit (int): 返回结果数量限制，默认为100
+
+    返回:
+    查询结果的JSON字符串
+    \"\"\"
+    try:
+        connection = _connect_database()
+        with connection.cursor() as cursor:
+            # 限制查询类型，只允许SELECT查询
+            sql_lower = sql.lower().strip()
+            if not sql_lower.startswith('select'):
+                return json.dumps(
+                    {"error": "只允许执行SELECT查询"},
+                    ensure_ascii=False
+                )
+
+            # 添加限制条件
+            if 'limit' not in sql_lower:
+                sql = f"{sql} LIMIT {limit}"
+
+            cursor.execute(sql)
+            results = cursor.fetchall()
+
+            # 处理类型转换
+            for item in results:
+                for key, value in item.items():
+                    item[key] = _type_to_str(value)
+
+            return json.dumps(results, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    finally:
+        if 'connection' in locals() and connection:
+            connection.close()
+
+
+def get_table_data(table_name, columns=None, where=None, order_by=None, limit=100):
+    \"\"\"
+    获取表数据
+
+    工具参数:
+    table_name (str): 表名
+    columns (str): 要查询的列，多个列用逗号分隔，默认为*
+    where (str): WHERE条件语句，不包含WHERE关键字
+    order_by (str): ORDER BY语句，不包含ORDER BY关键字
+    limit (int): 返回结果数量限制，默认为100
+
+    返回:
+    表数据的JSON字符串
+    \"\"\"
+    try:
+        connection = _connect_database()
+        with connection.cursor() as cursor:
+            # 验证表名
+            if not table_name:
+                return json.dumps({"error": "表名不能为空"}, ensure_ascii=False)
+
+            # 构建查询语句
+            select_cols = "*" if not columns else columns
+            sql = f"SELECT {select_cols} FROM `{table_name}`"
+
+            if where:
+                sql += f" WHERE {where}"
+
+            if order_by:
+                sql += f" ORDER BY {order_by}"
+
+            sql += f" LIMIT {limit}"
+
+            cursor.execute(sql)
+            results = cursor.fetchall()
+
+            # 处理类型转换
+            for item in results:
+                for key, value in item.items():
+                    item[key] = _type_to_str(value)
+
+            return json.dumps(results, ensure_ascii=False)
+    except Exception as e:
+        return json.dumps({"error": str(e)}, ensure_ascii=False)
+    finally:
+        if 'connection' in locals() and connection:
+            connection.close()
+""",
+                    markdown_docs="""
+# 数据库工具助手
+
+## 简介
+数据库工具助手提供MySQL数据库操作功能，包括查询表结构、获取表数据和执行自定义SQL查询等功能。
+
+## 配置项
+该模块需要以下配置：
+
+| 配置项 | 类型 | 描述 | 默认值 |
+|-------|-----|------|-------|
+| database_host | 字符串 | 数据库主机地址 | 必填 |
+| database_port | 整数 | 数据库端口 | 3306 |
+| database_user | 字符串 | 数据库用户名 | 必填 |
+| database_password | 字符串 | 数据库密码 | 必填 |
+| database_name | 字符串 | 数据库名称 | 必填 |
+
+## 功能列表
+
+### 1. 获取所有表
+获取数据库中所有表的列表及其基本信息。
+
+**返回：**
+- 包含表名、注释、创建时间和更新时间的JSON字符串
+
+### 2. 获取表字段
+获取指定表的所有字段信息。
+
+**参数：**
+- table_name: 表名
+
+**返回：**
+- 包含字段名、类型、注释等信息的JSON字符串
+
+### 3. 执行自定义SQL查询
+执行用户提供的SQL查询语句。
+
+**参数：**
+- sql: SQL查询语句
+- limit: 返回结果数量限制，默认为100
+
+**返回：**
+- 查询结果的JSON字符串
+
+### 4. 获取表数据
+灵活查询表中的数据。
+
+**参数：**
+- table_name: 表名
+- columns: 要查询的列，多个列用逗号分隔，默认为*
+- where: WHERE条件语句
+- order_by: 排序条件
+- limit: 返回结果数量限制，默认为100
+
+**返回：**
+- 表数据的JSON字符串
+
+## 使用示例
+```python
+# 获取所有表
+tables = get_all_tables()
+
+# 获取用户表的字段信息
+columns = get_table_columns("users")
+
+# 执行自定义SQL查询
+results = execute_raw_query("SELECT * FROM users WHERE age > 18")
+
+# 获取表数据
+data = get_table_data("orders", columns="id,customer_name,total", where="total > 100", order_by="id DESC")
+```
+
+## 注意事项
+1. 出于安全考虑，只支持执行SELECT查询
+2. 查询结果默认限制为100条记录
+3. 需要安装pymysql库
+"""
+                )
+                db.add(db_utils_module)
+
                 db.commit()
                 em_logger.info("初始化了演示模块数据")
 
@@ -544,10 +993,10 @@ def init_admin_users():
                         code="default"
                     )
 
-                # 修改默认密码为 eGova@2025
+                # 修改默认密码为 mcp@12345
                 admin_user = UserService.create_user(
                     username="admin",
-                    password="eGova@2025",  # 直接使用明文密码，由create_user内部进行哈希
+                    password="mcp@12345",  # 直接使用明文密码，由create_user内部进行哈希
                     fullname="系统管理员",
                     is_admin=True,
                     tenant_ids=[default_tenant.id]

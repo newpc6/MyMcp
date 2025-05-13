@@ -29,10 +29,20 @@ ASSETS_DIR = os.path.join(DIST_DIR, "assets")
 if not os.path.exists(ASSETS_DIR):
     em_logger.warning(f"前端资源目录中没有assets子目录: {ASSETS_DIR}")
 
-# 创建StaticFiles实例
-static_files = StaticFiles(directory=DIST_DIR)
-# 创建专门用于assets的StaticFiles实例
-assets_files = StaticFiles(directory=ASSETS_DIR) if os.path.exists(ASSETS_DIR) else None
+
+try:
+    # 创建StaticFiles实例
+    static_files = StaticFiles(directory=DIST_DIR)
+except Exception as e:
+    em_logger.error(f"未找到dist前端资源目录: {DIST_DIR}")
+
+
+try:
+    # 创建专门用于assets的StaticFiles实例
+    assets_files = StaticFiles(directory=ASSETS_DIR) if os.path.exists(ASSETS_DIR) else None
+except Exception as e:
+    em_logger.error(f"未找到assets目录: {ASSETS_DIR}")
+
 
 async def index(request):
     """提供前端首页"""
@@ -81,13 +91,22 @@ async def asset_file(request):
         content="File not found"
     )
 
+
 def get_static_mount():
     """获取静态文件挂载点"""
+    if static_files is None:
+        em_logger.error("静态文件挂载点不存在")
+        return None
     return static_files
+
 
 def get_assets_mount():
     """获取assets目录的挂载点"""
+    if assets_files is None:
+        em_logger.error("assets目录挂载点不存在")
+        return None
     return assets_files
+
 
 def get_router():
     """获取静态文件路由配置"""
