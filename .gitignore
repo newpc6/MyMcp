@@ -97,3 +97,5 @@ backend/data
 dist*zip
 start.sh
 *.db
+assests
+assests/

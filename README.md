@@ -1,19 +1,34 @@
 # MyMcp
 
-#### 介绍
+## 介绍
 开源介绍 https://blog.csdn.net/u012327423/article/details/147531100
 
-#### 软件架构
+## 软件架构
 软件架构说明
 
+## 模块说明
+### MCP广场
+![](https://img.remit.ee/api/file/AgACAgUAAyEGAASHRsPbAAIKLmgjSUf-awc7pOFluacXGKLBtIeaAAJJxDEbmboZVXNO4KdTf63RAQADAgADdwADNgQ.jpg)
 
-#### 安装教程
+#### MCP工具-测试
+[![tool1.jpg](https://img.picui.cn/free/2025/05/13/68234a4668f1d.jpg)](https://img.picui.cn/free/2025/05/13/68234a4668f1d.jpg)
+
+#### MCP服务发布-参数配置
+[![tool2.jpg](https://img.picui.cn/free/2025/05/13/68234a466f775.jpg)](https://img.picui.cn/free/2025/05/13/68234a466f775.jpg)
+
+### MCP服务
+![](https://img.remit.ee/api/file/AgACAgUAAyEGAASHRsPbAAIKL2gjSe1pWFa6MYOfRk3gpqW4y7xKAAJLxDEbmboZVS9Rh0LI4QQgAQADAgADdwADNgQ.jpg)
+
+### MCP统计
+[![statistics.jpg](https://img.picui.cn/free/2025/05/13/68234a467204f.jpg)](https://img.picui.cn/free/2025/05/13/68234a467204f.jpg)
+
+## 安装教程
 
 ### 1. 拉取项目
 拉取工程到本地
 
 ### 2. 后端
-#### 2.1 创建python环境
+## 2.1 创建python环境
 以conda为例，创建conda环境，命名可以是mcp。python版本推荐3.11
 
 等待创建成功后
@@ -29,13 +44,13 @@ cd backend
 pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
-#### 2.2 调整配置文件
+## 2.2 调整配置文件
 新建配置文件，在backend路径下，复制config.jsonbak为config.json
 
-#### 2.3 配置文件结构
+## 2.3 配置文件结构
 配置文件`backend/config.json`包含以下主要部分：
 
-##### 1. cors（跨域资源共享配置）
+### 1. cors（跨域资源共享配置）
 ```json
 "cors": {
     "origins": ["*"],           // 允许的来源域，"*"表示允许所有域
@@ -45,7 +60,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 }
 ```
 
-##### 2. api（API配置）
+### 2. api（API配置）
 ```json
 "api": {
     "prefix": "/api",           // API路径前缀
@@ -54,7 +69,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 }
 ```
 
-##### 3. server（服务器配置）
+### 3. server（服务器配置）
 ```json
 "server": {
     "host": "0.0.0.0",          // 服务器绑定地址，0.0.0.0表示监听所有网络接口
@@ -63,7 +78,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 }
 ```
 
-##### 4. mcp（MCP特定配置）
+### 4. mcp（MCP特定配置）
 ```json
 "mcp": {
     "port": 8002,               // MCP服务端口
@@ -72,7 +87,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 }
 ```
 
-##### 5. logging（日志配置）
+### 5. logging（日志配置）
 ```json
 "logging": {
     "level": "info",            // 日志级别
@@ -80,7 +95,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 }
 ```
 
-##### 6. database（数据库配置）
+### 6. database（数据库配置）
 ```json
 "database": {
     "type": "mysql",            // 数据库类型，支持mysql和sqlite
@@ -97,7 +112,7 @@ mysql模式会连接mysql数据库，需要新建一个库，服务启动会自�
 
 sqlite模式会在服务启动时，自动在backend下新建db数据库
 
-#### 2.4 启动服务
+## 2.4 启动服务
 在backend目录下
 ```
 python run.py
@@ -110,7 +125,7 @@ frontend文件夹为前端工程，需要安装node，编译工具推荐yarn（n
 - node: v18.20.4
 - yarn: 1.22.15
 
-#### 3.1 安装依赖
+## 3.1 安装依赖
 ```
 cd frontend
 yarn install
@@ -118,7 +133,7 @@ yarn install
 
 等待安装成功
 
-#### 3.2 启动前端
+## 3.2 启动前端
 进入frontend文件夹
 ```
 yarn run dev
@@ -132,7 +147,7 @@ yarn run dev
 
 后端地址配置在vite.config.ts，前端会把/api请求，转发到后端服务上
 
-#### 3.3 打包
+## 3.3 打包
 进入frontend文件夹
 ```
 yarn run build
@@ -140,13 +155,13 @@ yarn run build
 
 打包成功后，将生成的dist文件夹，放到backend/文件夹下，即可直接访问后端端口，实现平台预览
 
-#### 使用说明
+## 使用说明
 
-#### 配置文件说明
+## 配置文件说明
 
 配置文件`backend/config.json`包含以下主要部分：
 
-##### 1. cors（跨域资源共享配置）
+### 1. cors（跨域资源共享配置）
 ```json
 "cors": {
     "origins": ["*"],           // 允许的来源域，"*"表示允许所有域
@@ -156,7 +171,7 @@ yarn run build
 }
 ```
 
-##### 2. api（API配置）
+### 2. api（API配置）
 ```json
 "api": {
     "prefix": "/api",           // API路径前缀
@@ -165,7 +180,7 @@ yarn run build
 }
 ```
 
-##### 3. server（服务器配置）
+### 3. server（服务器配置）
 ```json
 "server": {
     "host": "0.0.0.0",          // 服务器绑定地址，0.0.0.0表示监听所有网络接口
@@ -174,7 +189,7 @@ yarn run build
 }
 ```
 
-##### 4. mcp（MCP特定配置）
+### 4. mcp（MCP特定配置）
 ```json
 "mcp": {
     "port": 8002,               // MCP服务端口
@@ -183,7 +198,7 @@ yarn run build
 }
 ```
 
-##### 5. logging（日志配置）
+### 5. logging（日志配置）
 ```json
 "logging": {
     "level": "info",            // 日志级别
@@ -191,7 +206,7 @@ yarn run build
 }
 ```
 
-##### 6. database（数据库配置）
+### 6. database（数据库配置）
 ```json
 "database": {
     "type": "mysql",            // 数据库类型，支持mysql和sqlite
@@ -204,23 +219,23 @@ yarn run build
 }
 ```
 
-#### MCP工具示例说明
+## MCP工具示例说明
 
 系统启动时会自动创建以下MCP示例：
 
-##### 1. 计算工具 (calculator)
+### 1. 计算工具 (calculator)
 提供基本的数学计算功能，包括加法、乘法和复杂表达式计算。
 
-##### 2. 网络搜索工具 (web_search)
+### 2. 网络搜索工具 (web_search)
 提供网络搜索功能，可以从互联网上获取信息和热门话题。
 
-##### 3. Tavily搜索助手
+### 3. Tavily搜索助手
 使用Tavily API进行实时在线搜索，需要配置Tavily API密钥。
 
-##### 4. 数据库工具助手
+### 4. 数据库工具助手
 提供数据库操作功能，包括表查询、字段查询和执行SQL语句等。需要配置数据库连接参数。
 
-##### 自定义MCP工具
+### 自定义MCP工具
 
 用户可以通过以下方式自定义MCP工具：
 1. 编写工具代码
