@@ -249,3 +249,34 @@ yarn run build
 3. 发布为MCP服务
 
 具体开发规范请参考示例代码。在代码中使用`${参数名}`格式的占位符，可在运行时由平台自动替换为实际配置的参数值。
+
+
+## MCP使用效果
+
+### 效果说明
+
+提问：查询10条告警数据的设备编号、告警时间，先通过工具查询告警表是哪个，再用查询sql的方法，查询数据。不是查询表字段信息，是查询表中记录的行数据
+
+大模型根据提问和MCP工具，自动执行了下面的步骤：
+
+1. 查询出了可以用的MCP工具
+   - execute_raw_query
+   - get_all_tables
+   - get_table_columns
+   - get_table_data
+
+2. 选择get_all_tables工具，查询所有的表数据
+   ```json
+   [{"name": "com_alarm_data", "comment": "", "CREATE_TIME": "2025-04-10 11:49:07", "UPDATE_TIME": "2025-05-07 13:56:17"}, {"name": "com_alarm_level", "comment": "", "CREATE_TIME": "2024-05-20 17:07:57", "UPDATE_TIME": null}, {"na...
+   ```
+
+3. 选择了com_base_alarm表
+
+4. 选择execute_raw_query工具，编写sql查询，从alarm表查询device_id，查询结果是没有该字段
+
+5. 重新选择get_table_colums工具，查询alarm表有哪些字段
+
+6. 选择execute_raw_query工具，编写sql，从alarm表查询DeviceCode、AlarmTime字段的数据（因为问题是告警设备编号和时间）
+
+7. 调用图表mcp工具，生成echarts图表代码，页面上渲染
+![chat.png](https://img.picui.cn/free/2025/05/14/68242dc44c79e.png)
