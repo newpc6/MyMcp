@@ -27,5 +27,8 @@
         "mysql_user": "root",
         "mysql_password": "xxxxxx",
         "mysql_database": "mcp"
+    },
+    "schedule": {
+        "statistics_interval": 1
     }
 } 

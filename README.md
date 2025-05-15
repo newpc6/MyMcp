@@ -20,7 +20,7 @@
 ![](https://img.remit.ee/api/file/AgACAgUAAyEGAASHRsPbAAIKL2gjSe1pWFa6MYOfRk3gpqW4y7xKAAJLxDEbmboZVS9Rh0LI4QQgAQADAgADdwADNgQ.jpg)
 
 ### MCP统计
-[![statistics.jpg](https://img.picui.cn/free/2025/05/13/68234a467204f.jpg)](https://img.picui.cn/free/2025/05/13/68234a467204f.jpg)
+![statistics2.jpg](https://img.picui.cn/free/2025/05/15/6825c4b8a9c0f.jpg)
 
 
 ## 临时体验地址

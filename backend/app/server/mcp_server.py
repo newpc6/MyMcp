@@ -295,7 +295,6 @@ def start_mcp_server():
     # server_instance = server
     em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
         
-
     global uni_server
     config = uvicorn.Config(
         app,
@@ -306,6 +305,16 @@ def start_mcp_server():
     uni_server = uvicorn.Server(config)
     from app.services.mcp_service.service_manager import service_manager
     service_manager.init_app(app)
+
+    # 启动统计数据定时任务
+    try:
+        from app.services.schedule_service.statistics_task import (
+            start_statistics_scheduler
+        )
+        start_statistics_scheduler()
+        em_logger.info("统计数据定时任务已启动")
+    except Exception as e:
+        em_logger.error(f"启动统计数据定时任务时出错: {str(e)}")
 
     # 启动服务器
     if threading.current_thread() is not threading.main_thread():
