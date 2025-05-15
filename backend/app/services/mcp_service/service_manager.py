@@ -14,6 +14,7 @@ from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route, Mount
 from starlette.requests import Request
+import re
 
 from app.core.config import settings
 from app.utils.logging import em_logger
@@ -149,8 +150,8 @@ class McpServiceManager:
             service_uuid = str(
                 uuid.uuid4()) if not existing else existing.service_uuid
 
-            # 构建SSE URL
-            sse_url = f"{settings.SSE_SERVER_URL}{self._get_sse_path(service_uuid)}/sse"
+            # 构建SSE URL (只存储相对路径)
+            sse_path = f"{self._get_sse_path(service_uuid)}/sse"
 
             if existing:
                 # 检查是否为同一用户或管理员
@@ -158,7 +159,7 @@ class McpServiceManager:
                     raise ValueError("没有权限更新此服务")
 
                 # 更新现有服务
-                existing.sse_url = sse_url
+                existing.sse_url = sse_path
                 existing.status = "running"
                 existing.error_message = ""
                 existing.config_params = config_params
@@ -174,7 +175,7 @@ class McpServiceManager:
                 service_record = McpService(
                     module_id=module_id,
                     service_uuid=service_uuid,
-                    sse_url=sse_url,
+                    sse_url=sse_path,
                     status="running",
                     enabled=True,
                     user_id=user_id,
@@ -375,13 +376,37 @@ class McpServiceManager:
             em_logger.error(f"获取指定模块ID的服务失败: {str(e)}")
             return None
 
+    def _get_full_sse_url(self, sse_url: str, request: Optional[Request] = None) -> str:
+        """获取完整的SSE URL
         
-    
-    def get_service_status(self, service_uuid: str) -> Optional[Dict]:
+        如果URL已经是http://或https://开头，则直接返回，否则根据请求信息构建完整URL
+        
+        Args:
+            sse_url: 原始SSE URL
+            request: HTTP请求对象，用于获取主机和端口信息
+            
+        Returns:
+            str: 完整的SSE URL
+        """
+        # 检查URL是否已经是完整的URL格式
+        if sse_url and re.match(r'^(http|https)://', sse_url):
+            return sse_url
+            
+        # 如果不是完整URL并且提供了请求对象，构建完整URL
+        if request:
+            host = request.headers.get("host", f"{settings.HOST}:{settings.PORT}")
+            scheme = request.headers.get("x-forwarded-proto", "http")
+            return f"{scheme}://{host}{sse_url}"
+            
+        # 如果既不是完整URL也没有请求对象，返回原始URL
+        return sse_url
+
+    def get_service_status(self, service_uuid: str, request: Optional[Request] = None) -> Optional[Dict]:
         """获取服务状态
 
         Args:
             service_uuid: 服务UUID
+            request: HTTP请求对象，用于获取主机和端口信息
 
         Returns:
             Dict: 服务状态信息
@@ -400,6 +425,10 @@ class McpServiceManager:
             module_name = module.name if module else None
             module_description = module.description if module else ""
             config_params = json.loads(service.config_params) if service.config_params else {}
+            
+            # 获取完整URL
+            full_sse_url = self._get_full_sse_url(service.sse_url, request)
+            
             # 转换为字典
             return {
                 "id": service.id,
@@ -408,7 +437,7 @@ class McpServiceManager:
                 "description": module_description,
                 "service_uuid": service.service_uuid,
                 "status": service.status,
-                "sse_url": service.sse_url,
+                "sse_url": full_sse_url,
                 "created_at": service.created_at.isoformat()
                 if service.created_at else None,
                 "updated_at": service.updated_at.isoformat()
@@ -419,13 +448,15 @@ class McpServiceManager:
                 "error_message": service.error_message
             }
 
-    def list_services(self, module_id: Optional[int] = None, user_id: Optional[int] = None, is_admin: bool = False) -> List[Dict]:
+    def list_services(self, module_id: Optional[int] = None, user_id: Optional[int] = None, 
+                       is_admin: bool = False, request: Optional[Request] = None) -> List[Dict]:
         """列出所有服务
 
         Args:
             module_id: 可选的模块ID筛选
             user_id: 当前用户ID，可选
             is_admin: 是否为管理员用户
+            request: HTTP请求对象，用于获取主机和端口信息
 
         Returns:
             List[Dict]: 服务列表
@@ -455,15 +486,26 @@ class McpServiceManager:
                 modules_description_map = {
                     m.id: m.description for m in modules}
 
-            return [
-                {
+            # 如果提供了请求对象，获取主机和端口
+            host = None
+            scheme = "http"
+            if request:
+                host = request.headers.get("host", f"{settings.HOST}:{settings.PORT}")
+                scheme = request.headers.get("x-forwarded-proto", "http")
+
+            result = []
+            for service in services:
+                # 处理SSE URL
+                sse_url = self._get_full_sse_url(service.sse_url, request)
+                
+                result.append({
                     "id": service.id,
                     "module_id": service.module_id,
                     "module_name": modules_map.get(service.module_id),
                     "description": modules_description_map.get(service.module_id, ""),
                     "service_uuid": service.service_uuid,
                     "status": service.status,
-                    "sse_url": service.sse_url,
+                    "sse_url": sse_url,
                     "user_id": service.user_id,
                     "error_message": service.error_message,
                     "user_name": service.get_user_name(),
@@ -471,9 +513,9 @@ class McpServiceManager:
                     if service.created_at else None,
                     "updated_at": service.updated_at.strftime("%Y-%m-%d %H:%M:%S")
                     if service.updated_at else None
-                }
-                for service in services
-            ]
+                })
+            
+            return result
 
     def replace_config_params(self, code: str, config_params: Dict) -> str:
         """替换配置参数
@@ -574,7 +616,14 @@ class McpServiceManager:
                 em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
                 service.status = "error"
                 service.error_message = "模块没有代码内容"
-                db.commit()
+                with get_db() as db:
+                    db_service = db.query(McpService).filter(
+                        McpService.service_uuid == service_uuid
+                    ).first()
+                    if db_service:
+                        db_service.status = "error"
+                        db_service.error_message = "模块没有代码内容"
+                        db.commit()
                 return
             if self._running_services.get(service.service_uuid):
                 em_logger.info(f"服务 {service.service_uuid} 已存在，不重复创建")
@@ -583,7 +632,14 @@ class McpServiceManager:
             if not self._main_app:
                 service.status = "error"
                 service.error_message = "主应用程序未初始化，无法创建路由"
-                db.commit()
+                with get_db() as db:
+                    db_service = db.query(McpService).filter(
+                        McpService.service_uuid == service_uuid
+                    ).first()
+                    if db_service:
+                        db_service.status = "error"
+                        db_service.error_message = "主应用程序未初始化，无法创建路由"
+                        db.commit()
                 raise ValueError("主应用程序未初始化，无法创建路由")
 
             # 在数据库会话外复制需要的模块信息

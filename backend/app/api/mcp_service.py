@@ -124,13 +124,8 @@ async def update_sse_url(request: Request):
     try:
         data = await request.json()
         request_data = UpdateSSEUrlRequest(**data)
-        
-        # 更新配置
-        settings.MCP_SSE_URL = request_data.sse_url
-        
         # 返回更新后的状态
         return success_response({
-            "new_sse_url": settings.MCP_SSE_URL
         }, message="MCP SSE URL已更新")
     except ValidationError as e:
         return error_response(str(e), code=422, http_status_code=422)

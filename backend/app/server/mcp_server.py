@@ -186,8 +186,7 @@ def check_mcp_status() -> Dict[str, Any]:
         Dict: 包含状态信息的字典
     """
     status = {
-        "port": settings.MCP_PORT,
-        "sse_url": settings.MCP_SSE_URL,
+        "port": settings.PORT,
         "enabled_tools_count": 0,
         "enabled_tools": []
     }
@@ -264,7 +263,7 @@ def start_mcp_server():
     server_instance = FastMCP(
         name="MCP Server",
         host=settings.HOST,
-        port=settings.MCP_PORT,
+        port=settings.PORT,
     )
 
     # 创建SSE应用并配置中间件
@@ -301,7 +300,7 @@ def start_mcp_server():
     config = uvicorn.Config(
         app,
         host=settings.HOST,
-        port=settings.MCP_PORT,
+        port=settings.PORT,
         log_level=settings.LOG_LEVEL.lower(),
     )
     uni_server = uvicorn.Server(config)
@@ -315,13 +314,10 @@ def start_mcp_server():
 
     # 这是阻塞调用
     try:
-        em_logger.info(f"启动MCP服务器... 端口: {settings.MCP_PORT}")
+        em_logger.info(f"启动MCP服务器... 端口: {settings.PORT}")
         anyio.run(run_sse_async, app)
-        # server_instance.run(transport='sse', routes=app.routes)
     except Exception as e:
         em_logger.error(f"启动MCP服务器时出错: {str(e)}")
-        # 出错时不要重置server_instance，保持其已初始化状态
-
     return server_instance
 
 
