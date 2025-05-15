@@ -25,6 +25,20 @@ class ServiceStatistics(Base):
         default=datetime.utcnow, 
         onupdate=datetime.utcnow
     )
+    
+    def to_dict(self):
+        """转换为字典格式"""
+        return {
+            "id": self.id,
+            "total_services": self.total_services,
+            "running_services": self.running_services,
+            "stopped_services": self.stopped_services,
+            "error_services": self.error_services,
+            "updated_at": (
+                self.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                if self.updated_at else None
+            )
+        }
 
 
 class ModuleStatistics(Base):
@@ -43,6 +57,21 @@ class ModuleStatistics(Base):
         default=datetime.utcnow, 
         onupdate=datetime.utcnow
     )
+    
+    def to_dict(self):
+        """转换为字典格式"""
+        return {
+            "id": self.id,
+            "module_id": self.module_id,
+            "module_name": self.module_name,
+            "service_count": self.service_count,
+            "user_id": self.user_id,
+            "user_name": self.user_name,
+            "updated_at": (
+                self.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                if self.updated_at else None
+            )
+        }
 
 
 class ToolStatistics(Base):
@@ -62,6 +91,25 @@ class ToolStatistics(Base):
         default=datetime.utcnow, 
         onupdate=datetime.utcnow
     )
+    
+    def to_dict(self):
+        """转换为字典格式"""
+        return {
+            "id": self.id,
+            "tool_name": self.tool_name,
+            "call_count": self.call_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "avg_execution_time": self.avg_execution_time,
+            "last_called_at": (
+                self.last_called_at.strftime("%Y-%m-%d %H:%M:%S")
+                if self.last_called_at else None
+            ),
+            "updated_at": (
+                self.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                if self.updated_at else None
+            )
+        }
 
 
 class ServiceCallStatistics(Base):
@@ -80,4 +128,20 @@ class ServiceCallStatistics(Base):
         DateTime, 
         default=datetime.utcnow, 
         onupdate=datetime.utcnow
-    ) 
+    )
+    
+    def to_dict(self):
+        """转换为字典格式"""
+        return {
+            "id": self.id,
+            "service_id": self.service_id,
+            "service_name": self.service_name,
+            "module_name": self.module_name,
+            "call_count": self.call_count,
+            "success_count": self.success_count,
+            "error_count": self.error_count,
+            "updated_at": (
+                self.updated_at.strftime("%Y-%m-%d %H:%M:%S")
+                if self.updated_at else None
+            )
+        } 

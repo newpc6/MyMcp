@@ -9,7 +9,6 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional
 from pytz import timezone
 from sqlalchemy import func, desc
-from sqlalchemy.orm import Session
 
 from app.models.engine import get_db
 from app.models.statistics import (
@@ -22,6 +21,7 @@ from app.models.modules.mcp_services import McpService
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.tools.tool_execution import ToolExecution
 from app.utils.logging import em_logger
+from app.utils.http import PageParams, PageResult
 
 
 class StatisticsService:
@@ -318,111 +318,130 @@ class StatisticsService:
             "updated_at": stats.updated_at.isoformat()
         }
     
-    def get_module_rankings(self, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_module_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
         """
         获取模块发布排名
-        
+
         Args:
-            limit: 返回结果数量限制
+            size: 每页数量限制
+            page: 页码
             
         Returns:
-            List[Dict]: 模块排名数据列表
+            Dict[str, Any]: 分页的模块排名数据
         """
-        # 首先更新统计数据
-        self.update_module_statistics()
-        
         with get_db() as db:
-            # 查询排名数据
-            rankings = db.query(ModuleStatistics).order_by(
-                desc(ModuleStatistics.service_count)
-            ).limit(limit).all()
-        
-            # 转换为字典列表
-            return [
-                {
-                    "module_id": r.module_id,
-                    "module_name": r.module_name,
-                    "service_count": r.service_count,
-                    "user_id": r.user_id,
-                    "user_name": r.user_name,
-                    "updated_at": r.updated_at.isoformat()
+            try:
+                # 创建分页参数
+                page_params = PageParams(
+                    page=page, 
+                    size=size, 
+                    offset=(page - 1) * size
+                )
+                
+                # 构建查询
+                query = db.query(ModuleStatistics).order_by(
+                    ModuleStatistics.service_count.desc()
+                )
+                
+                # 使用通用分页功能获取结果
+                result = PageResult.from_query(query, page_params)
+                
+                # 转换为字典格式
+                return {
+                    "items": [stat.to_dict() for stat in result.items],
+                    "total": result.total,
+                    "page": result.page,
+                    "size": result.size,
+                    "pages": result.total_pages
                 }
-                for r in rankings
-            ]
-    
-    def get_tool_rankings(self, limit: int = 10) -> List[Dict[str, Any]]:
+            except Exception as e:
+                em_logger.error(f"获取模块排名数据时出错: {str(e)}")
+                raise
+
+    def get_tool_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
         """
         获取工具调用排名
-        
+
         Args:
-            limit: 返回结果数量限制
+            size: 每页数量限制
+            page: 页码
             
         Returns:
-            List[Dict]: 工具排名数据列表
+            Dict[str, Any]: 分页的工具排名数据
         """
-        # 首先更新统计数据
-        self.update_tool_statistics()
-        
         with get_db() as db:
-            # 查询排名数据
-            rankings = db.query(ToolStatistics).order_by(
-                desc(ToolStatistics.call_count)
-            ).limit(limit).all()
-        
-            # 转换为字典列表
-            return [
-                {
-                    "tool_name": r.tool_name,
-                    "call_count": r.call_count,
-                    "success_count": r.success_count,
-                    "error_count": r.error_count,
-                    "avg_execution_time": r.avg_execution_time,
-                    "last_called_at": (
-                        r.last_called_at.isoformat() 
-                        if r.last_called_at else None
-                    ),
-                    "updated_at": r.updated_at.isoformat()
+            try:
+                # 创建分页参数
+                page_params = PageParams(
+                    page=page, 
+                    size=size, 
+                    offset=(page - 1) * size
+                )
+                
+                # 构建查询
+                query = db.query(ToolStatistics).order_by(
+                    ToolStatistics.call_count.desc()
+                )
+                
+                # 使用通用分页功能获取结果
+                result = PageResult.from_query(query, page_params)
+                
+                # 转换为字典格式
+                return {
+                    "items": [stat.to_dict() for stat in result.items],
+                    "total": result.total,
+                    "page": result.page,
+                    "size": result.size,
+                    "pages": result.total_pages
                 }
-                for r in rankings
-            ]
-    
-    def get_service_rankings(self, limit: int = 10) -> List[Dict[str, Any]]:
+            except Exception as e:
+                em_logger.error(f"获取工具排名数据时出错: {str(e)}")
+                raise
+
+    def get_service_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
         """
         获取服务调用排名
-        
+
         Args:
-            limit: 返回结果数量限制
+            size: 每页数量限制
+            page: 页码
             
         Returns:
-            List[Dict]: 服务排名数据列表
+            Dict[str, Any]: 分页的服务排名数据
         """
-        # 首先更新统计数据
-        self.update_service_call_statistics()
-        
         with get_db() as db:
-            # 查询排名数据
-            rankings = db.query(ServiceCallStatistics).order_by(
-                desc(ServiceCallStatistics.call_count)
-            ).limit(limit).all()
-        
-            # 转换为字典列表
-            return [
-                {
-                    "service_id": r.service_id,
-                    "service_name": r.service_name,
-                    "module_name": r.module_name,
-                    "call_count": r.call_count,
-                    "success_count": r.success_count,
-                    "error_count": r.error_count,
-                    "updated_at": r.updated_at.isoformat()
+            try:
+                # 创建分页参数
+                page_params = PageParams(
+                    page=page, 
+                    size=size, 
+                    offset=(page - 1) * size
+                )
+                
+                # 构建查询
+                query = db.query(ServiceCallStatistics).order_by(
+                    ServiceCallStatistics.call_count.desc()
+                )
+                
+                # 使用通用分页功能获取结果
+                result = PageResult.from_query(query, page_params)
+                
+                # 转换为字典格式
+                return {
+                    "items": [stat.to_dict() for stat in result.items],
+                    "total": result.total,
+                    "page": result.page,
+                    "size": result.size,
+                    "pages": result.total_pages
                 }
-                for r in rankings
-            ]
+            except Exception as e:
+                em_logger.error(f"获取服务排名数据时出错: {str(e)}")
+                raise
     
     def get_tool_executions(
         self, 
         page: int = 1, 
-        per_page: int = 20, 
+        size: int = 20, 
         tool_name: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -430,7 +449,7 @@ class StatisticsService:
         
         Args:
             page: 页码
-            per_page: 每页记录数
+            size: 每页记录数
             tool_name: 工具名称过滤
             
         Returns:
@@ -444,54 +463,69 @@ class StatisticsService:
             if tool_name:
                 query = query.filter(ToolExecution.tool_name == tool_name)
             
-            # 获取总记录数
-            total = query.count()
+            # 创建分页参数
+            page_params = PageParams(
+                page=page, 
+                size=size, 
+                offset=(page - 1) * size
+            )
             
-            # 计算分页
-            offset = (page - 1) * per_page
-            
-            # 获取分页数据
-            executions = query.order_by(
-                desc(ToolExecution.created_at)
-            ).offset(offset).limit(per_page).all()
+            # 应用排序
+            query = query.order_by(desc(ToolExecution.created_at))
+            # 使用通用分页功能获取结果
+            result = PageResult.from_query(query, page_params)
             
             # 转换为字典列表
             items = []
-            for ex in executions:
+            
+            # 获取所有涉及的模块ID和服务ID
+            module_ids = {
+                ex.module_id for ex in result.items 
+                if ex.module_id is not None
+            }
+            service_ids = {
+                ex.service_id for ex in result.items 
+                if ex.service_id is not None
+            }
+            
+            # 一次性查询所有相关模块
+            modules = {}
+            if module_ids:
+                module_records = db.query(McpModule).filter(
+                    McpModule.id.in_(module_ids)
+                ).all()
+                modules = {m.id: m for m in module_records}
+            
+            # 一次性查询所有相关服务
+            services = {}
+            if service_ids:
+                service_records = db.query(McpService).filter(
+                    McpService.id.in_(service_ids)
+                ).all()
+                services = {s.id: s for s in service_records}
+            
+            for ex in result.items:
                 # 获取关联的模块信息
                 module_info = {}
-                if ex.module_id:
-                    module = db.query(McpModule).filter(
-                        McpModule.id == ex.module_id
-                    ).first()
-                    if module:
-                        module_info = {
-                            "id": module.id,
-                            "name": module.name,
-                            "description": module.description
-                        }
+                creator_name = None
+                if ex.module_id and ex.module_id in modules:
+                    module = modules[ex.module_id]
+                    module_info = {
+                        "id": module.id,
+                        "name": module.name,
+                        "description": module.description
+                    }
+                    creator_name = module.to_dict().get("creator_name")
                 
                 # 获取关联的服务信息
                 service_info = {}
-                if ex.service_id:
-                    service = db.query(McpService).filter(
-                        McpService.id == ex.service_id
-                    ).first()
-                    if service:
-                        service_info = {
-                            "id": service.id,
-                            "name": service.name,
-                            "description": service.description
-                        }
-                
-                # 获取创建者信息
-                creator_name = None
-                if ex.module_id:
-                    module = db.query(McpModule).filter(
-                        McpModule.id == ex.module_id
-                    ).first()
-                    if module:
-                        creator_name = module.to_dict().get("creator_name")
+                if ex.service_id and ex.service_id in services:
+                    service = services[ex.service_id]
+                    service_info = {
+                        "id": service.id,
+                        "name": service.name,
+                        "description": service.description
+                    }
                 
                 # 解析参数和结果
                 try:
@@ -502,9 +536,9 @@ class StatisticsService:
                     parameters = {"raw": ex.parameters}
                 
                 try:
-                    result = json.loads(ex.result) if ex.result else None
+                    result_json = json.loads(ex.result) if ex.result else None
                 except json.JSONDecodeError:
-                    result = {"raw": ex.result}
+                    result_json = {"raw": ex.result}
                 
                 items.append({
                     "id": ex.id,
@@ -516,25 +550,22 @@ class StatisticsService:
                     "creator_name": creator_name,
                     "description": ex.description,
                     "parameters": parameters,
-                    "result": result,
+                    "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
                     "created_at": ex.created_at.isoformat()
                 })
             
+            # 将转换后的字典列表赋值给result.items
+            result.items = items
+            
             # 返回分页结果
-            return {
-                "items": items,
-                "total": total,
-                "page": page,
-                "per_page": per_page,
-                "pages": (total + per_page - 1) // per_page
-            }
+            return result.to_dict()
     
     def get_tool_executions_by_module(
         self,
         page: int = 1,
-        per_page: int = 20,
+        size: int = 20,
         module_id: Optional[int] = None
     ) -> Dict[str, Any]:
         """
@@ -542,7 +573,7 @@ class StatisticsService:
         
         Args:
             page: 页码
-            per_page: 每页记录数
+            size: 每页记录数
             module_id: 模块ID过滤
             
         Returns:
@@ -559,32 +590,70 @@ class StatisticsService:
                 # 只查询有模块ID的记录
                 query = query.filter(ToolExecution.module_id.isnot(None))
             
-            # 获取总记录数
+            # 创建分页参数
+            page_params = PageParams(
+                page=page, 
+                size=size, 
+                offset=(page - 1) * size
+            )
+            
+            # 应用排序
+            query = query.order_by(desc(ToolExecution.created_at))
+            
+            # 获取总记录数和分页后的数据
             total = query.count()
-            
-            # 计算分页
-            offset = (page - 1) * per_page
-            
-            # 获取分页数据
-            executions = query.order_by(
-                desc(ToolExecution.created_at)
-            ).offset(offset).limit(per_page).all()
+            executions = query.offset(page_params.offset).limit(page_params.size).all()
             
             # 转换为字典列表
             items = []
+            
+            # 获取所有涉及的模块ID和服务ID
+            module_ids = {
+                ex.module_id for ex in executions 
+                if ex.module_id is not None
+            }
+            service_ids = {
+                ex.service_id for ex in executions 
+                if ex.service_id is not None
+            }
+            
+            # 一次性查询所有相关模块
+            modules = {}
+            if module_ids:
+                module_records = db.query(McpModule).filter(
+                    McpModule.id.in_(module_ids)
+                ).all()
+                modules = {m.id: m for m in module_records}
+            
+            # 一次性查询所有相关服务
+            services = {}
+            if service_ids:
+                service_records = db.query(McpService).filter(
+                    McpService.id.in_(service_ids)
+                ).all()
+                services = {s.id: s for s in service_records}
+            
             for ex in executions:
                 # 获取关联的模块信息
                 module_info = {}
-                if ex.module_id:
-                    module = db.query(McpModule).filter(
-                        McpModule.id == ex.module_id
-                    ).first()
-                    if module:
-                        module_info = {
-                            "id": module.id,
-                            "name": module.name,
-                            "description": module.description
-                        }
+                if ex.module_id and ex.module_id in modules:
+                    module = modules[ex.module_id]
+                    module_info = {
+                        "id": module.id,
+                        "name": module.name,
+                        "description": module.description
+                    }
+                
+                # 获取关联的服务信息（添加到字典中，但此方法不在输出中使用）
+                # 此变量仍保留以便将来可能的扩展
+                service_info = {}
+                if ex.service_id and ex.service_id in services:
+                    service = services[ex.service_id]
+                    service_info = {
+                        "id": service.id,
+                        "name": service.name,
+                        "description": service.description
+                    }
                 
                 # 解析参数和结果
                 try:
@@ -595,9 +664,9 @@ class StatisticsService:
                     parameters = {"raw": ex.parameters}
                 
                 try:
-                    result = json.loads(ex.result) if ex.result else None
+                    result_json = json.loads(ex.result) if ex.result else None
                 except json.JSONDecodeError:
-                    result = {"raw": ex.result}
+                    result_json = {"raw": ex.result}
                 
                 items.append({
                     "id": ex.id,
@@ -606,25 +675,29 @@ class StatisticsService:
                     "module": module_info,
                     "description": ex.description,
                     "parameters": parameters,
-                    "result": result,
+                    "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
                     "created_at": ex.created_at.isoformat()
                 })
             
+            # 计算总页数
+            total_pages = ((total + page_params.size - 1) // page_params.size
+                           if total > 0 else 0)
+            
             # 返回分页结果
             return {
                 "items": items,
                 "total": total,
-                "page": page,
-                "per_page": per_page,
-                "pages": (total + per_page - 1) // per_page
+                "page": page_params.page,
+                "size": page_params.size,
+                "pages": total_pages
             }
     
     def get_tool_executions_by_service(
         self,
         page: int = 1,
-        per_page: int = 20,
+        size: int = 20,
         service_id: Optional[str] = None
     ) -> Dict[str, Any]:
         """
@@ -632,7 +705,7 @@ class StatisticsService:
         
         Args:
             page: 页码
-            per_page: 每页记录数
+            size: 每页记录数
             service_id: 服务ID过滤
             
         Returns:
@@ -649,32 +722,70 @@ class StatisticsService:
                 # 只查询有服务ID的记录
                 query = query.filter(ToolExecution.service_id.isnot(None))
             
-            # 获取总记录数
+            # 创建分页参数
+            page_params = PageParams(
+                page=page, 
+                size=size, 
+                offset=(page - 1) * size
+            )
+            
+            # 应用排序
+            query = query.order_by(desc(ToolExecution.created_at))
+            
+            # 获取总记录数和分页后的数据
             total = query.count()
-            
-            # 计算分页
-            offset = (page - 1) * per_page
-            
-            # 获取分页数据
-            executions = query.order_by(
-                desc(ToolExecution.created_at)
-            ).offset(offset).limit(per_page).all()
+            executions = (query.offset(page_params.offset)
+                         .limit(page_params.size).all())
             
             # 转换为字典列表
             items = []
+            
+            # 获取所有涉及的模块ID和服务ID
+            module_ids = {
+                ex.module_id for ex in executions 
+                if ex.module_id is not None
+            }
+            service_ids = {
+                ex.service_id for ex in executions 
+                if ex.service_id is not None
+            }
+            
+            # 一次性查询所有相关模块
+            modules = {}
+            if module_ids:
+                module_records = db.query(McpModule).filter(
+                    McpModule.id.in_(module_ids)
+                ).all()
+                modules = {m.id: m for m in module_records}
+            
+            # 一次性查询所有相关服务
+            services = {}
+            if service_ids:
+                service_records = db.query(McpService).filter(
+                    McpService.id.in_(service_ids)
+                ).all()
+                services = {s.id: s for s in service_records}
+            
             for ex in executions:
+                # 获取关联的模块信息
+                module_info = {}
+                if ex.module_id and ex.module_id in modules:
+                    module = modules[ex.module_id]
+                    module_info = {
+                        "id": module.id,
+                        "name": module.name,
+                        "description": module.description
+                    }
+                
                 # 获取关联的服务信息
                 service_info = {}
-                if ex.service_id:
-                    service = db.query(McpService).filter(
-                        McpService.id == ex.service_id
-                    ).first()
-                    if service:
-                        service_info = {
-                            "id": service.id,
-                            "name": service.name,
-                            "description": service.description
-                        }
+                if ex.service_id and ex.service_id in services:
+                    service = services[ex.service_id]
+                    service_info = {
+                        "id": service.id,
+                        "name": service.name,
+                        "description": service.description
+                    }
                 
                 # 解析参数和结果
                 try:
@@ -685,30 +796,36 @@ class StatisticsService:
                     parameters = {"raw": ex.parameters}
                 
                 try:
-                    result = json.loads(ex.result) if ex.result else None
+                    result_json = json.loads(ex.result) if ex.result else None
                 except json.JSONDecodeError:
-                    result = {"raw": ex.result}
+                    result_json = {"raw": ex.result}
                 
                 items.append({
                     "id": ex.id,
                     "tool_name": ex.tool_name,
                     "service_id": ex.service_id,
                     "service": service_info,
+                    "module_id": ex.module_id,
+                    "module": module_info,
                     "description": ex.description,
                     "parameters": parameters,
-                    "result": result,
+                    "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
                     "created_at": ex.created_at.isoformat()
                 })
             
+            # 计算总页数
+            total_pages = ((total + page_params.size - 1) // page_params.size
+                           if total > 0 else 0)
+            
             # 返回分页结果
             return {
                 "items": items,
                 "total": total,
-                "page": page,
-                "per_page": per_page,
-                "pages": (total + per_page - 1) // per_page
+                "page": page_params.page,
+                "size": page_params.size,
+                "pages": total_pages
             }
     
     def get_module_tool_rankings(
@@ -774,7 +891,7 @@ class StatisticsService:
                 "tool_stats": len(tool_stats),
                 "service_call_stats": len(service_call_stats),
                 "updated_at": (datetime.now(timezone('Asia/Shanghai'))
-                              .isoformat())
+                               .isoformat())
             }
         except Exception as e:
             em_logger.error(f"刷新统计数据时出错: {str(e)}")

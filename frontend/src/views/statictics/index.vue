@@ -66,20 +66,32 @@
               </el-button>
             </div>
           </template>
-          <el-table :data="moduleRankings" stripe style="width: 100%" v-loading="loadingModules">
-            <el-table-column label="排名" width="70">
-              <template #default="scope">
-                <div class="ranking-number">{{ scope.$index + 1 }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="module_name" label="模块名称" />
-            <el-table-column prop="service_count" label="服务数量" width="100">
-              <template #default="scope">
-                <el-tag size="small" type="success">{{ scope.row.service_count }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="user_name" label="创建者" width="100" />
-          </el-table>
+          <div class="fixed-height-table">
+            <el-table :data="moduleRankings" stripe style="width: 100%" v-loading="loadingModules">
+              <el-table-column label="排名" width="70">
+                <template #default="scope">
+                  <div class="ranking-number">{{ (moduleCurrentPage - 1) * 5 + scope.$index + 1 }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="module_name" label="模块名称" />
+              <el-table-column prop="service_count" label="服务数量" width="100">
+                <template #default="scope">
+                  <el-tag size="small" type="success">{{ scope.row.service_count }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="user_name" label="创建者" width="100" />
+            </el-table>
+          </div>
+          <div class="ranking-pagination">
+            <el-pagination
+              small
+              layout="prev, pager, next"
+              :total="moduleTotalItems"
+              :page-size="5"
+              :current-page="moduleCurrentPage"
+              @current-change="handleModulePageChange"
+            />
+          </div>
         </el-card>
       </el-col>
       
@@ -94,27 +106,39 @@
               </el-button>
             </div>
           </template>
-          <el-table :data="toolRankings" stripe style="width: 100%" v-loading="loadingTools">
-            <el-table-column label="排名" width="70">
-              <template #default="scope">
-                <div class="ranking-number">{{ scope.$index + 1 }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="tool_name" label="工具名称" />
-            <el-table-column prop="call_count" label="调用次数" width="100">
-              <template #default="scope">
-                <el-tag size="small" type="info">{{ scope.row.call_count }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="成功率" width="100">
-              <template #default="scope">
-                <el-progress 
-                  :percentage="calculateSuccessRate(scope.row)" 
-                  :status="getSuccessRateStatus(scope.row)"
-                />
-              </template>
-            </el-table-column>
-          </el-table>
+          <div class="fixed-height-table">
+            <el-table :data="toolRankings" stripe style="width: 100%" v-loading="loadingTools">
+              <el-table-column label="排名" width="70">
+                <template #default="scope">
+                  <div class="ranking-number">{{ (toolCurrentPage - 1) * 5 + scope.$index + 1 }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="tool_name" label="工具名称" />
+              <el-table-column prop="call_count" label="调用次数" width="100">
+                <template #default="scope">
+                  <el-tag size="small" type="info">{{ scope.row.call_count }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="成功率" width="100">
+                <template #default="scope">
+                  <el-progress 
+                    :percentage="calculateSuccessRate(scope.row)" 
+                    :status="getSuccessRateStatus(scope.row)"
+                  />
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div class="ranking-pagination">
+            <el-pagination
+              small
+              layout="prev, pager, next"
+              :total="toolTotalItems"
+              :page-size="5"
+              :current-page="toolCurrentPage"
+              @current-change="handleToolPageChange"
+            />
+          </div>
         </el-card>
       </el-col>
 
@@ -129,28 +153,40 @@
               </el-button>
             </div>
           </template>
-          <el-table :data="serviceRankings" stripe style="width: 100%" v-loading="loadingServices">
-            <el-table-column label="排名" width="70">
-              <template #default="scope">
-                <div class="ranking-number">{{ scope.$index + 1 }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column prop="service_name" label="服务名称" />
-            <el-table-column prop="module_name" label="所属模块" width="120" />
-            <el-table-column prop="call_count" label="调用次数" width="100">
-              <template #default="scope">
-                <el-tag size="small" type="warning">{{ scope.row.call_count }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="成功率" width="100">
-              <template #default="scope">
-                <el-progress 
-                  :percentage="calculateServiceSuccessRate(scope.row)" 
-                  :status="getServiceSuccessRateStatus(scope.row)"
-                />
-              </template>
-            </el-table-column>
-          </el-table>
+          <div class="fixed-height-table">
+            <el-table :data="serviceRankings" stripe style="width: 100%" v-loading="loadingServices">
+              <el-table-column label="排名" width="70">
+                <template #default="scope">
+                  <div class="ranking-number">{{ (serviceCurrentPage - 1) * 5 + scope.$index + 1 }}</div>
+                </template>
+              </el-table-column>
+              <el-table-column prop="service_name" label="服务名称" />
+              <el-table-column prop="module_name" label="所属模块" width="120" />
+              <el-table-column prop="call_count" label="调用次数" width="100">
+                <template #default="scope">
+                  <el-tag size="small" type="warning">{{ scope.row.call_count }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="成功率" width="100">
+                <template #default="scope">
+                  <el-progress 
+                    :percentage="calculateServiceSuccessRate(scope.row)" 
+                    :status="getServiceSuccessRateStatus(scope.row)"
+                  />
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+          <div class="ranking-pagination">
+            <el-pagination
+              small
+              layout="prev, pager, next"
+              :total="serviceTotalItems"
+              :page-size="5"
+              :current-page="serviceCurrentPage"
+              @current-change="handleServicePageChange"
+            />
+          </div>
         </el-card>
       </el-col>
     </el-row>
@@ -345,26 +381,32 @@ const serviceStats = ref({
 // 模块发布排名
 const moduleRankings = ref([]);
 const loadingModules = ref(false);
+const moduleCurrentPage = ref(1);
+const moduleTotalItems = ref(0);
 
 // 工具调用排名
 const toolRankings = ref([]);
 const loadingTools = ref(false);
+const toolCurrentPage = ref(1);
+const toolTotalItems = ref(0);
 
 // 服务调用排名
 const serviceRankings = ref([]);
 const loadingServices = ref(false);
+const serviceCurrentPage = ref(1);
+const serviceTotalItems = ref(0);
 
 // 工具调用详情
 const toolExecutions = ref({
   items: [],
   total: 0,
   page: 1,
-  per_page: 20,
+  size: 10,
   pages: 0
 });
 const loadingExecutions = ref(false);
 const currentPage = ref(1);
-const pageSize = ref(20);
+const pageSize = ref(10);
 const toolFilter = ref('');
 
 // 详情对话框
@@ -413,12 +455,13 @@ const loadServiceStats = async () => {
 };
 
 // 获取模块发布排名
-const loadModuleRankings = async () => {
+const loadModuleRankings = async (page = 1) => {
   loadingModules.value = true;
   try {
-    const response = await getModuleRankings();
+    const response = await getModuleRankings(5, page);
     if (response && response.code === 0) {
-      moduleRankings.value = response.data;
+      moduleRankings.value = response.data.items;
+      moduleTotalItems.value = response.data.total;
     }
   } catch (error) {
     console.error('获取模块排名失败', error);
@@ -429,12 +472,13 @@ const loadModuleRankings = async () => {
 };
 
 // 获取工具调用排名
-const loadToolRankings = async () => {
+const loadToolRankings = async (page = 1) => {
   loadingTools.value = true;
   try {
-    const response = await getToolRankings();
+    const response = await getToolRankings(5, page);
     if (response && response.code === 0) {
-      toolRankings.value = response.data;
+      toolRankings.value = response.data.items;
+      toolTotalItems.value = response.data.total;
     }
   } catch (error) {
     console.error('获取工具排名失败', error);
@@ -445,12 +489,13 @@ const loadToolRankings = async () => {
 };
 
 // 获取服务调用排名
-const loadServiceRankings = async () => {
+const loadServiceRankings = async (page = 1) => {
   loadingServices.value = true;
   try {
-    const response = await getServiceRankings();
+    const response = await getServiceRankings(5, page);
     if (response && response.code === 0) {
-      serviceRankings.value = response.data;
+      serviceRankings.value = response.data.items;
+      serviceTotalItems.value = response.data.total;
     }
   } catch (error) {
     console.error('获取服务排名失败', error);
@@ -496,9 +541,9 @@ const refreshAllStatistics = async () => {
       
       // 重新加载所有数据
       loadServiceStats();
-      loadModuleRankings();
-      loadToolRankings();
-      loadServiceRankings();
+      refreshModuleRankings();
+      refreshToolRankings();
+      refreshServiceRankings();
       loadToolExecutions();
     }
   } catch (error) {
@@ -507,19 +552,38 @@ const refreshAllStatistics = async () => {
   }
 };
 
+// 分页处理函数
+const handleModulePageChange = (page) => {
+  moduleCurrentPage.value = page;
+  loadModuleRankings(page);
+};
+
+const handleToolPageChange = (page) => {
+  toolCurrentPage.value = page;
+  loadToolRankings(page);
+};
+
+const handleServicePageChange = (page) => {
+  serviceCurrentPage.value = page;
+  loadServiceRankings(page);
+};
+
 // 刷新模块排名
 const refreshModuleRankings = () => {
-  loadModuleRankings();
+  moduleCurrentPage.value = 1;
+  loadModuleRankings(1);
 };
 
 // 刷新工具排名
 const refreshToolRankings = () => {
-  loadToolRankings();
+  toolCurrentPage.value = 1;
+  loadToolRankings(1);
 };
 
 // 刷新服务排名
 const refreshServiceRankings = () => {
-  loadServiceRankings();
+  serviceCurrentPage.value = 1;
+  loadServiceRankings(1);
 };
 
 // 刷新工具调用
@@ -749,5 +813,16 @@ onMounted(() => {
   .execution-dialog {
     width: 90% !important;
   }
+}
+
+.fixed-height-table {
+  height: 280px;
+  overflow: hidden;
+}
+
+.ranking-pagination {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
 }
 </style> 

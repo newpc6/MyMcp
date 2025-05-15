@@ -7,23 +7,12 @@
 from starlette.routing import Route
 from starlette.requests import Request
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 from app.services.statistics.service import statistics_service
 from app.utils.response import success_response, error_response
 from app.utils.logging import em_logger
-
-class LimitRequest(BaseModel):
-    """排名限制请求模型"""
-    limit: int = 10
-
-
-class PaginationRequest(BaseModel):
-    """分页请求模型"""
-    page: int = 1
-    per_page: int = 20
-    tool_name: Optional[str] = None
-
+from app.utils.http import get_page_params
 
 async def get_service_statistics(request: Request):
     """获取服务统计数据"""
@@ -59,19 +48,14 @@ async def get_module_rankings(request: Request):
                 http_status_code=403
             )
         
-        # 获取查询参数
-        limit = request.query_params.get("limit", "10")
-        try:
-            limit = int(limit)
-            if limit < 1:
-                limit = 10
-            elif limit > 50:
-                limit = 50
-        except ValueError:
-            limit = 10
+        # 使用通用分页工具获取分页参数
+        page_params = get_page_params(request)
         
-        rankings = statistics_service.get_module_rankings(limit=limit)
-        return success_response(rankings)
+        result = statistics_service.get_module_rankings(
+            size=page_params.size, 
+            page=page_params.page
+        )
+        return success_response(result)
     except Exception as e:
         return error_response(
             f"获取模块排名失败: {str(e)}",
@@ -92,19 +76,14 @@ async def get_tool_rankings(request: Request):
                 http_status_code=403
             )
         
-        # 获取查询参数
-        limit = request.query_params.get("limit", "10")
-        try:
-            limit = int(limit)
-            if limit < 1:
-                limit = 10
-            elif limit > 50:
-                limit = 50
-        except ValueError:
-            limit = 10
+        # 使用通用分页工具获取分页参数
+        page_params = get_page_params(request)
         
-        rankings = statistics_service.get_tool_rankings(limit=limit)
-        return success_response(rankings)
+        result = statistics_service.get_tool_rankings(
+            size=page_params.size, 
+            page=page_params.page
+        )
+        return success_response(result)
     except Exception as e:
         return error_response(
             f"获取工具排名失败: {str(e)}",
@@ -125,19 +104,14 @@ async def get_service_rankings(request: Request):
                 http_status_code=403
             )
         
-        # 获取查询参数
-        limit = request.query_params.get("limit", "10")
-        try:
-            limit = int(limit)
-            if limit < 1:
-                limit = 10
-            elif limit > 50:
-                limit = 50
-        except ValueError:
-            limit = 10
+        # 使用通用分页工具获取分页参数
+        page_params = get_page_params(request)
         
-        rankings = statistics_service.get_service_rankings(limit=limit)
-        return success_response(rankings)
+        result = statistics_service.get_service_rankings(
+            size=page_params.size, 
+            page=page_params.page
+        )
+        return success_response(result)
     except Exception as e:
         return error_response(
             f"获取服务调用排名失败: {str(e)}",
@@ -158,32 +132,15 @@ async def get_tool_executions(request: Request):
                 http_status_code=403
             )
         
-        # 获取查询参数
-        params = request.query_params
-        page = params.get("page", "1")
-        per_page = params.get("per_page", "20")
-        tool_name = params.get("tool_name")
+        # 使用通用分页工具获取分页参数
+        page_params = get_page_params(request)
         
-        # 转换参数类型
-        try:
-            page = int(page)
-            if page < 1:
-                page = 1
-        except ValueError:
-            page = 1
-        
-        try:
-            per_page = int(per_page)
-            if per_page < 1:
-                per_page = 20
-            elif per_page > 100:
-                per_page = 100
-        except ValueError:
-            per_page = 20
+        # 获取其他过滤参数
+        tool_name = request.query_params.get("tool_name")
         
         data = statistics_service.get_tool_executions(
-            page=page,
-            per_page=per_page,
+            page=page_params.page,
+            size=page_params.size,
             tool_name=tool_name
         )
         return success_response(data)
@@ -226,37 +183,21 @@ async def get_tool_executions_by_module(request: Request):
                 http_status_code=403
             )
         
-        # 获取查询参数
-        params = request.query_params
-        page = params.get("page", "1")
-        per_page = params.get("per_page", "20")
-        module_id = params.get("module_id")
+        # 使用通用分页工具获取分页参数
+        page_params = get_page_params(request)
         
-        # 转换参数类型
-        try:
-            page = int(page)
-            if page < 1:
-                page = 1
-        except ValueError:
-            page = 1
+        # 获取其他过滤参数
+        module_id = request.query_params.get("module_id")
         
-        try:
-            per_page = int(per_page)
-            if per_page < 1:
-                per_page = 20
-            elif per_page > 100:
-                per_page = 100
-        except ValueError:
-            per_page = 20
-        
+        # 转换module_id参数类型
         try:
             module_id = int(module_id) if module_id else None
         except ValueError:
             module_id = None
         
         data = statistics_service.get_tool_executions_by_module(
-            page=page,
-            per_page=per_page,
+            page=page_params.page,
+            size=page_params.size,
             module_id=module_id
         )
         return success_response(data)
@@ -277,32 +218,15 @@ async def get_tool_executions_by_service(request: Request):
                 http_status_code=403
             )
         
-        # 获取查询参数
-        params = request.query_params
-        page = params.get("page", "1")
-        per_page = params.get("per_page", "20")
-        service_id = params.get("service_id")
+        # 使用通用分页工具获取分页参数
+        page_params = get_page_params(request)
         
-        # 转换参数类型
-        try:
-            page = int(page)
-            if page < 1:
-                page = 1
-        except ValueError:
-            page = 1
-        
-        try:
-            per_page = int(per_page)
-            if per_page < 1:
-                per_page = 20
-            elif per_page > 100:
-                per_page = 100
-        except ValueError:
-            per_page = 20
+        # 获取其他过滤参数
+        service_id = request.query_params.get("service_id")
         
         data = statistics_service.get_tool_executions_by_service(
-            page=page,
-            per_page=per_page,
+            page=page_params.page,
+            size=page_params.size,
             service_id=service_id
         )
         return success_response(data)
@@ -327,7 +251,6 @@ async def get_module_tool_rankings(request: Request):
         module_id = request.path_params.get("module_id")
         
         # 获取查询参数
-        limit = request.query_params.get("limit", "10")
         
         # 转换参数类型
         try:
@@ -338,19 +261,13 @@ async def get_module_tool_rankings(request: Request):
                 code=400, 
                 http_status_code=400
             )
-            
-        try:
-            limit = int(limit)
-            if limit < 1:
-                limit = 10
-            elif limit > 50:
-                limit = 50
-        except ValueError:
-            limit = 10
+        
+        page_params = get_page_params(request)
+        size = page_params.size
         
         data = statistics_service.get_module_tool_rankings(
             module_id=module_id,
-            limit=limit
+            limit=size
         )
         return success_response(data)
     except Exception as e:

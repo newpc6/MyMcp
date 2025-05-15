@@ -54,6 +54,17 @@ export interface ServiceRanking {
 }
 
 /**
+ * 排名分页响应接口
+ */
+export interface RankingPaginationResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  size: number;
+  pages: number;
+}
+
+/**
  * 工具执行记录接口
  */
 export interface ToolExecution {
@@ -87,7 +98,7 @@ export interface ToolExecutionsResponse {
   items: ToolExecution[];
   total: number;
   page: number;
-  per_page: number;
+  size: number;
   pages: number;
 }
 
@@ -101,33 +112,45 @@ export async function getServiceStats(): Promise<ApiResponse<ServiceStats>> {
 
 /**
  * 获取模块发布排名
- * @param limit - 返回结果数量限制
+ * @param size - 每页返回数量
+ * @param page - 页码
  */
-export async function getModuleRankings(limit: number = 10): Promise<ApiResponse<ModuleRanking[]>> {
+export async function getModuleRankings(
+  size: number = 10, 
+  page: number = 1
+): Promise<ApiResponse<RankingPaginationResponse<ModuleRanking>>> {
   const response = await api.get('/api/statistics/modules/rankings', {
-    params: { limit }
+    params: { size, page }
   });
   return response.data;
 }
 
 /**
  * 获取工具调用排名
- * @param limit - 返回结果数量限制
+ * @param size - 每页返回数量
+ * @param page - 页码
  */
-export async function getToolRankings(limit: number = 10): Promise<ApiResponse<ToolRanking[]>> {
+export async function getToolRankings(
+  size: number = 10,
+  page: number = 1
+): Promise<ApiResponse<RankingPaginationResponse<ToolRanking>>> {
   const response = await api.get('/api/statistics/tools/rankings', {
-    params: { limit }
+    params: { size, page }
   });
   return response.data;
 }
 
 /**
  * 获取服务调用排名
- * @param limit - 返回结果数量限制
+ * @param size - 每页返回数量
+ * @param page - 页码
  */
-export async function getServiceRankings(limit: number = 10): Promise<ApiResponse<ServiceRanking[]>> {
+export async function getServiceRankings(
+  size: number = 10,
+  page: number = 1
+): Promise<ApiResponse<RankingPaginationResponse<ServiceRanking>>> {
   const response = await api.get('/api/statistics/services/rankings', {
-    params: { limit }
+    params: { size, page }
   });
   return response.data;
 }
@@ -135,17 +158,17 @@ export async function getServiceRankings(limit: number = 10): Promise<ApiRespons
 /**
  * 获取工具执行记录
  * @param page - 页码
- * @param perPage - 每页记录数
+ * @param size - 每页记录数
  * @param toolName - 工具名称过滤
  */
 export async function getToolExecutions(
   page: number = 1,
-  perPage: number = 20,
+  size: number = 10,
   toolName?: string
 ): Promise<ApiResponse<ToolExecutionsResponse>> {
   const params: any = {
     page,
-    per_page: perPage
+    size
   };
   
   if (toolName) {
