@@ -110,6 +110,11 @@
                           <DocumentCopy />
                         </el-icon>
                       </el-button>
+                      <el-button type="success" circle size="small" @click="copyAsEgovakbUrl(scope.row.sse_url)" title="复制为egovakb格式">
+                        <el-icon>
+                          <Connection />
+                        </el-icon>
+                      </el-button>
                     </div>
                   </template>
                 </el-table-column>
@@ -504,8 +509,8 @@ import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
-import { Document, DocumentCopy, Search, Delete, Plus } from '@element-plus/icons-vue';
-import { fallbackCopyTextToClipboard } from '../../utils/copy';
+import { Document, DocumentCopy, Search, Delete, Plus, Connection } from '@element-plus/icons-vue';
+import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 
 const route = useRoute();
 const router = useRouter();
@@ -967,20 +972,21 @@ const handleUninstallService = async (serviceUuid: string) => {
 
 // 复制URL到剪贴板
 const copyUrl = (url: string) => {
-  // 首先尝试使用现代的clipboard API
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        ElMessage.success('URL已复制到剪贴板');
-      })
-      .catch(error => {
-        // 如果clipboard API失败，使用传统方法
-        fallbackCopyTextToClipboard(url);
-      });
-  } else {
-    // 浏览器不支持clipboard API，使用传统方法
-    fallbackCopyTextToClipboard(url);
-  }
+  copyTextToClipboard(url, 'URL已复制到剪贴板');
+};
+
+// 复制为egovakb格式的URL
+const copyAsEgovakbUrl = (url: string) => {
+  // 创建egovakb格式的JSON
+  const egovakbFormat = JSON.stringify({
+    "mcp-sse": {
+      "url": url,
+      "transport": "sse"
+    }
+  }, null, 2);
+  
+  // 复制到剪贴板
+  copyTextToClipboard(egovakbFormat, 'egovakb格式URL已复制到剪贴板');
 };
 
 // 获取状态类型

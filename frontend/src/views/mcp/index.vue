@@ -83,6 +83,13 @@
                       <CopyDocument />
                     </el-icon>
                   </el-button>
+                  <el-tooltip content="复制为egovakb格式" placement="top">
+                    <el-button link type="success" @click.stop="copyAsEgovakbUrl(service.sse_url)" class="copy-button">
+                      <el-icon>
+                        <Connection />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
                 </div>
                 <el-text v-if="service.status === 'error'" type="danger" size="small" truncated>
                   {{ service.error_message }}
@@ -126,14 +133,14 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus';
-import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus } from '@element-plus/icons-vue';
+import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus, Connection } from '@element-plus/icons-vue';
 import {
   listServices,
   startService,
   stopService,
   uninstallService
 } from '../../api/marketplace';
-import { fallbackCopyTextToClipboard } from '../../utils/copy';
+import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 import type { McpServiceInfo } from '../../types/marketplace';
 
 // 路由
@@ -312,20 +319,24 @@ const copyToClipboard = (url: string) => {
   // 阻止事件冒泡
   event?.stopPropagation();
 
-  // 首先尝试使用现代的clipboard API
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url)
-      .then(() => {
-        ElMessage.success('URL已复制到剪贴板');
-      })
-      .catch(error => {
-        // 如果clipboard API失败，使用传统方法
-        fallbackCopyTextToClipboard(url);
-      });
-  } else {
-    // 浏览器不支持clipboard API，使用传统方法
-    fallbackCopyTextToClipboard(url);
-  }
+  copyTextToClipboard(url, 'URL已复制到剪贴板');
+};
+
+// 复制为egovakb格式的URL
+const copyAsEgovakbUrl = (url: string) => {
+  // 阻止事件冒泡
+  event?.stopPropagation();
+  
+  // 创建egovakb格式的JSON
+  const egovakbFormat = JSON.stringify({
+    "在线搜索": {
+      "url": url,
+      "transport": "sse"
+    }
+  }, null, 2);
+  
+  // 复制到剪贴板
+  copyTextToClipboard(egovakbFormat, 'egovakb格式URL已复制到剪贴板');
 };
 
 // 获取服务状态样式类名
