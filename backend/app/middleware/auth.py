@@ -191,6 +191,10 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # 确保用户数据中包含user_id字段（从sub字段获取）
             if "sub" in payload and "user_id" not in payload:
                 payload["user_id"] = payload["sub"]
+                
+            if "user_id" in payload:
+                if isinstance(payload["user_id"], str):
+                    payload["user_id"] = int(payload["user_id"])
             
             # 返回用户数据
             return payload, True

@@ -67,51 +67,51 @@ class ToolExecutionMiddleware(BaseHTTPMiddleware):
                         module_id = service.module_id
             except Exception as e:
                 em_logger.warning(f"查询服务关联模块时出错: {str(e)}")        
-        try:
-            # 尝试获取请求参数
-            if request.method in ["POST", "PUT"]:
-                try:
-                    body = json.loads(body_bytes)
-                    em_logger.info(f"{path} 请求体: {body}")
-                    
-                    method = body.get("method")
-                    if method == "tools/call":
-                        params = body.get("params", {})
-                        tool_name = params.get("name")
-                        parameters = params.get("arguments", {})
-                except Exception as e:
-                    em_logger.warning(f"解析请求体时出错: {str(e)}")            
-            # 处理请求
-            return await call_next(request)       
-        except Exception as e:
-            em_logger.error(f"处理MCP工具执行时出错: {str(e)}")
-            status = "error"
-            # 继续处理请求，不中断
-            return await call_next(request)        
-        finally:
-            # 计算执行时间
-            execution_time = int((time.time() - start_time) * 1000)  # 转换为毫秒
-            
-            # 记录工具执行
-            if tool_name:
-                try:
-                    self.history_service.record_tool_execution(
-                        tool_name=tool_name,
-                        service_id=service_id,
-                        module_id=module_id,
-                        description=f"执行工具 {tool_name}",
-                        parameters=parameters,
-                        result=None,
-                        status=status,
-                        execution_time=execution_time
-                    )
-                    em_logger.info(
-                        f"记录工具执行: {tool_name}, 服务: {service_id}, "
-                        f"模块: {module_id}, 状态: {status}, "
-                        f"执行时间: {execution_time}ms"
-                    )
-                except Exception as e:
-                    em_logger.error(f"记录工具执行时出错: {str(e)}")
+            try:
+                # 尝试获取请求参数
+                if request.method in ["POST", "PUT"]:
+                    try:
+                        body = json.loads(body_bytes)
+                        em_logger.info(f"{path} 请求体: {body}")
+                        
+                        method = body.get("method")
+                        if method == "tools/call":
+                            params = body.get("params", {})
+                            tool_name = params.get("name")
+                            parameters = params.get("arguments", {})
+                    except Exception as e:
+                        em_logger.warning(f"解析请求体时出错: {str(e)}")            
+                # 处理请求
+                return await call_next(request)       
+            except Exception as e:
+                em_logger.error(f"处理MCP工具执行时出错: {str(e)}")
+                status = "error"
+                # 继续处理请求，不中断
+                return await call_next(request)        
+            finally:
+                # 计算执行时间
+                execution_time = int((time.time() - start_time) * 1000)  # 转换为毫秒
+                
+                # 记录工具执行
+                if tool_name:
+                    try:
+                        self.history_service.record_tool_execution(
+                            tool_name=tool_name,
+                            service_id=service_id,
+                            module_id=module_id,
+                            description=f"执行工具 {tool_name}",
+                            parameters=parameters,
+                            result=None,
+                            status=status,
+                            execution_time=execution_time
+                        )
+                        em_logger.info(
+                            f"记录工具执行: {tool_name}, 服务: {service_id}, "
+                            f"模块: {module_id}, 状态: {status}, "
+                            f"执行时间: {execution_time}ms"
+                        )
+                    except Exception as e:
+                        em_logger.error(f"记录工具执行时出错: {str(e)}")
     
     def _is_tool_execution_path(self, path: str, body_bytes: bytes) -> bool:
         """检查路径是否为MCP工具执行路径"""
