@@ -250,9 +250,17 @@
                     </div>
                   </div>
                   <div class="code-editor-wrapper">
-                    <Codemirror v-model="codeContent" :extensions="extensions" class="code-editor"
-                      :indent-with-tab="true" :tab-size="4" @ready="handleEditorCreated"
-                      style="overflow: auto; height: 100%;" :readonly="!hasEditPermission" />
+                    <Codemirror 
+                      v-model="codeContent" 
+                      :extensions="extensions" 
+                      class="code-editor"
+                      :indent-with-tab="true" 
+                      :tab-size="4" 
+                      @ready="handleEditorCreated"
+                      style="overflow: auto; height: 100%;" 
+                      :readonly="!hasEditPermission" 
+                      basic
+                    />
                   </div>
                 </div>
               </div>
@@ -317,7 +325,7 @@
             <el-table v-else :data="configParams" style="width: 100%" border>
               <el-table-column type="index" label="#" width="60" align="center" />
 
-              <el-table-column label="基本信息" width="380">
+              <el-table-column label="基本信息" width="280">
                 <template #default="scope">
                   <div class="param-base-info">
                     <el-form-item label="参数名称" class="mb-2">
@@ -509,6 +517,11 @@ import { lintGutter, linter } from '@codemirror/lint';
 import { indentUnit } from '@codemirror/language';
 import { indentWithTab } from '@codemirror/commands';
 import { EditorView } from '@codemirror/view';
+import { basicSetup } from 'codemirror';
+import { lineNumbers, highlightActiveLineGutter } from '@codemirror/view';
+import { searchKeymap, search } from '@codemirror/search';
+import { history, historyKeymap } from '@codemirror/commands';
+import { bracketMatching, indentOnInput, foldGutter } from '@codemirror/language';
 import { Document, DocumentCopy, Search, Delete, Plus, Connection } from '@element-plus/icons-vue';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 
@@ -534,13 +547,39 @@ const hasCodeChanged = computed(() => {
 
 // CodeMirror 扩展配置
 const extensions = [
+  // 使用基础设置，提供基本编辑功能
+  basicSetup,
+  // 添加Python语言支持
   python(),
+  // 使用暗色主题
   oneDark,
+  // 添加基本键盘映射
   keymap.of(defaultKeymap),
+  // 支持Tab键缩进
   keymap.of([indentWithTab]),
+  // 设置缩进单位为4个空格
   indentUnit.of('    '),
+  // 添加搜索快捷键
+  keymap.of(searchKeymap),
+  // 添加历史记录快捷键（撤销/重做）
+  keymap.of(historyKeymap),
+  // 开启历史记录功能
+  history(),
+  // 开启搜索功能
+  search(),
+  // 开启代码括号匹配
+  bracketMatching(),
+  // 开启输入自动缩进
+  indentOnInput(),
+  // 开启代码折叠
+  foldGutter(),
+  // 显示行号
+  lineNumbers(),
+  // 高亮当前行的行号
+  highlightActiveLineGutter(),
+  // 语法检查器
   lintGutter(),
-  // 启用滚动条
+  // 自定义编辑器视图样式
   EditorView.theme({
     ".cm-scroller": { overflow: "auto" }
   })
@@ -800,18 +839,10 @@ async function saveModuleCode() {
 }
 
 // 在代码编辑页面中添加编辑器扩展配置
-function handleEditorCreated(editor: any) {
-  // 设置编辑器选项
-  console.log('编辑器已创建');
-
-  // 确保编辑器显示滚动条
-  if (editor && editor.view) {
-    const scroller = editor.view.scrollDOM;
-    if (scroller) {
-      scroller.style.overflow = 'auto';
-      scroller.style.maxHeight = '100%';
-    }
-  }
+function handleEditorCreated(payload: { view: EditorView }) {
+  const { view } = payload;
+  // 可以在这里对编辑器进行其他初始化设置
+  console.log('CodeMirror editor created', view);
 }
 
 // 格式化Python代码
