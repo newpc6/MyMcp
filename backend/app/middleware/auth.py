@@ -4,18 +4,27 @@
 使用Starlette实现的身份验证中间件
 """
 from fastapi import Request
+import requests
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-from starlette.responses import Response
 from app.services.users import UserService
 from app.utils.response import error_response
 from app.utils.logging import em_logger
 from app.core.config import settings
+from app.utils.cache import memory_cache
 # 重命名以确保使用正确的PyJWT库
 import jwt as pyjwt
-import os
 import time
 from typing import Optional, Tuple, Dict, Any
+from datetime import datetime, timedelta
+
+
+# JWT令牌过期时间（分钟）
+ACCESS_TOKEN_EXPIRE_MINUTES = 1440  # 24小时
+
+# 缓存键前缀
+EGOVAKB_TOKEN_CACHE_PREFIX = "egovakb_token:"
+USER_TOKEN_CACHE_PREFIX = "user_token:"
 
 
 class AuthMiddleware(BaseHTTPMiddleware):
@@ -106,13 +115,48 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if not token:
             return error_response(http_status_code=401, message="无效的认证令牌格式")
             
-        # 验证令牌
-        user_data, is_valid = self._validate_token(token)
+        # 尝试从缓存获取用户数据
+        cache_key = USER_TOKEN_CACHE_PREFIX + token
+        cached_user_data = memory_cache.get(cache_key)
+        
+        if cached_user_data:
+            # 使用缓存的用户数据
+            user_data = cached_user_data
+            is_valid = True
+        else:
+            # 首先尝试验证JWT令牌
+            user_data, is_valid = self._validate_token(token)
+            
+            if not is_valid:
+                # 如果JWT验证失败，尝试验证EGova KB令牌
+                user_data = self._validate_egova_kb_token(token)
+                is_valid = user_data is not None
+                
+                if is_valid:
+                    # 生成JWT令牌并缓存用户数据
+                    jwt_token = self._generate_jwt_token(user_data)
+                    # 使用新生成的JWT令牌缓存用户数据
+                    memory_cache.set(
+                        USER_TOKEN_CACHE_PREFIX + jwt_token,
+                        user_data,
+                        expire_seconds=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+                    )
+            
+            # 缓存用户数据
+            if is_valid:
+                memory_cache.set(
+                    cache_key, 
+                    user_data,
+                    expire_seconds=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+                )
+        
         if not is_valid:
             return error_response(http_status_code=401, message="认证令牌无效或已过期")
             
         # 检查权限
-        if self._requires_admin(request.url.path) and not user_data.get("is_admin", False):
+        admin_required = self._requires_admin(request.url.path)
+        is_admin = user_data.get("is_admin", False)
+        if admin_required and not is_admin:
             return error_response(http_status_code=403, message="需要管理员权限")
             
         # 将用户数据添加到请求中
@@ -200,4 +244,147 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return payload, True
         except Exception as e:
             em_logger.error(f"令牌验证失败: {str(e)}")
-            return None, False 
+            return None, False
+    
+    def _validate_egova_kb_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """
+        验证EGova KB令牌
+        
+        Args:
+            token: EGova KB令牌
+            
+        Returns:
+            验证成功返回用户数据，否则返回None
+        """
+        try:
+            # 首先从缓存中查找，避免重复调用接口
+            cache_key = EGOVAKB_TOKEN_CACHE_PREFIX + token
+            cached_user_data = memory_cache.get(cache_key)
+            
+            if cached_user_data:
+                em_logger.debug("使用缓存的EGova KB令牌数据")
+                return cached_user_data
+            
+            # 调用egovakb接口获取用户信息
+            url = f"{settings.PLATFORM_EGOVA_KB}/api/callback/auth"
+            headers = {
+                "Authorization": token,
+                "Content-Type": "application/json"
+            }
+            
+            response = requests.post(
+                url, headers=headers, timeout=10.0
+            )
+            
+            if response.status_code != 200:
+                error_msg = f"调用egovakb接口失败: {response.status_code} {response.text}"
+                em_logger.error(error_msg)
+                return None
+            
+            data = response.json()
+            
+            if data.get("code") != 200 or "data" not in data:
+                em_logger.error(f"egovakb返回错误: {data}")
+                return None
+            
+            user_data = data["data"]
+            external_id = user_data.get("user_id")
+            username = user_data.get("username")
+            email = user_data.get("email")
+            
+            if not external_id or not username:
+                em_logger.error(f"egovakb返回的用户数据不完整: {user_data}")
+                return None
+            
+            # 检查用户是否已存在(根据外部ID)
+            existing_user = UserService.get_user_by_external_id(
+                external_id, "egovakb"
+            )
+            
+            if existing_user:
+                # 用户已存在，更新email信息
+                UserService.update_user(
+                    user_id=existing_user.id,
+                    email=email
+                )
+                
+                # 构建用户数据
+                result_data = {
+                    "user_id": existing_user.id,
+                    "username": existing_user.username,
+                    "fullname": existing_user.fullname,
+                    "email": existing_user.email,
+                    "is_admin": existing_user.is_admin,
+                    "external_id": external_id
+                }
+            else:
+                # 创建新用户
+                password = settings.DEFAULT_PASSWORD
+                new_user = UserService.create_user(
+                    username=username,
+                    password=password,
+                    email=email,
+                    fullname=username,
+                    is_admin=False,
+                    external_id=external_id,
+                    platform_type="egovakb"
+                )
+                
+                if not new_user:
+                    em_logger.error(f"创建导入用户失败: {username}")
+                    return None
+                
+                # 构建用户数据
+                result_data = {
+                    "user_id": new_user.id,
+                    "username": new_user.username,
+                    "fullname": new_user.fullname,
+                    "email": new_user.email,
+                    "is_admin": new_user.is_admin,
+                    "external_id": external_id
+                }
+            
+            # 缓存用户数据
+            memory_cache.set(
+                cache_key, 
+                result_data,
+                expire_seconds=ACCESS_TOKEN_EXPIRE_MINUTES * 60
+            )
+            
+            return result_data
+            
+        except Exception as e:
+            em_logger.error(f"验证EGova KB令牌失败: {str(e)}")
+            return None
+    
+    def _generate_jwt_token(self, user_data: Dict[str, Any]) -> str:
+        """
+        生成JWT令牌
+        
+        Args:
+            user_data: 用户数据
+            
+        Returns:
+            生成的JWT令牌
+        """
+        # 设置过期时间
+        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        
+        # 准备payload
+        payload = {
+            "sub": str(user_data["user_id"]),
+            "user_id": user_data["user_id"],
+            "username": user_data["username"],
+            "is_admin": user_data["is_admin"],
+            "exp": expire
+        }
+        
+        # 生成令牌
+        token = pyjwt.encode(
+            payload, 
+            settings.JWT_SECRET_KEY, 
+            algorithm="HS256"
+        )
+        
+        return token
+

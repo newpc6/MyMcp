@@ -14,6 +14,11 @@ from app.models.engine import get_db
 from app.models.modules.users import User, Tenant, UserTenant
 from app.utils.logging import em_logger
 from app.core.config import settings
+from app.utils.cache import memory_cache
+
+
+# 缓存键前缀
+EGOVAKB_TOKEN_CACHE_PREFIX = "egovakb_token:"
 
 
 class UserService:
@@ -287,7 +292,10 @@ class UserService:
             return None
             
     @staticmethod
-    def import_user_from_egovakb(authorization: str, tenant_ids: Optional[List[int]] = None) -> Optional[Dict]:
+    def import_user_from_egovakb(
+        authorization: str, 
+        tenant_ids: Optional[List[int]] = None
+    ) -> Optional[Dict]:
         """从egovakb平台导入用户
         
         Args:
@@ -298,6 +306,32 @@ class UserService:
             导入成功返回用户信息，失败返回None
         """
         try:
+            # 首先从缓存中查找，避免重复调用API
+            cache_key = EGOVAKB_TOKEN_CACHE_PREFIX + authorization
+            cached_user_data = memory_cache.get(cache_key)
+            
+            if cached_user_data:
+                em_logger.debug("使用缓存的EGova KB用户数据")
+                # 如果指定了租户ID，则更新用户租户关联
+                if tenant_ids and "id" in cached_user_data:
+                    UserService.update_user_tenants(
+                        cached_user_data["id"], tenant_ids
+                    )
+                    # 重新获取租户信息以返回最新数据
+                    tenants = TenantService.get_user_tenants(
+                        cached_user_data["id"]
+                    )
+                    tenant_list = [
+                        {"id": t.id, "name": t.name, "code": t.code} 
+                        for t in tenants
+                    ]
+                    cached_user_data["tenants"] = tenant_list
+                    cached_user_data["message"] = "已更新用户租户关联"
+                else:
+                    cached_user_data["message"] = "使用已缓存的用户数据"
+                
+                return cached_user_data
+                
             # 调用egovakb接口获取用户信息
             url = f"{settings.PLATFORM_EGOVA_KB}/api/callback/auth"
             headers = {
@@ -308,7 +342,11 @@ class UserService:
             response = httpx.post(url, headers=headers, timeout=10.0)
             
             if response.status_code != 200:
-                em_logger.error(f"调用egovakb接口失败: {response.status_code} {response.text}")
+                error_msg = (
+                    f"调用egovakb接口失败: {response.status_code} "
+                    f"{response.text}"
+                )
+                em_logger.error(error_msg)
                 return None
             
             data = response.json()
@@ -327,7 +365,9 @@ class UserService:
                 return None
             
             # 检查用户是否已存在(根据外部ID)
-            existing_user = UserService.get_user_by_external_id(external_id, "egovakb")
+            existing_user = UserService.get_user_by_external_id(
+                external_id, "egovakb"
+            )
             
             if existing_user:
                 # 更新已存在的用户
@@ -338,13 +378,18 @@ class UserService:
                 
                 # 更新租户关联
                 if tenant_ids:
-                    UserService.update_user_tenants(existing_user.id, tenant_ids)
+                    UserService.update_user_tenants(
+                        existing_user.id, tenant_ids
+                    )
                 
                 # 获取用户关联的租户
                 tenants = TenantService.get_user_tenants(existing_user.id)
-                tenant_list = [{"id": t.id, "name": t.name, "code": t.code} for t in tenants]
+                tenant_list = [
+                    {"id": t.id, "name": t.name, "code": t.code} 
+                    for t in tenants
+                ]
                 
-                return {
+                result = {
                     "id": existing_user.id,
                     "username": existing_user.username,
                     "fullname": existing_user.fullname,
@@ -356,6 +401,15 @@ class UserService:
                     "tenants": tenant_list,
                     "message": "用户已存在，已更新信息"
                 }
+                
+                # 缓存用户数据
+                memory_cache.set(
+                    cache_key, 
+                    result,
+                    expire_seconds=86400  # 24小时
+                )
+                
+                return result
             
             # 生成密码
             password = settings.DEFAULT_PASSWORD
@@ -377,9 +431,12 @@ class UserService:
             
             # 获取用户关联的租户
             tenants = TenantService.get_user_tenants(new_user.id)
-            tenant_list = [{"id": t.id, "name": t.name, "code": t.code} for t in tenants]
+            tenant_list = [
+                {"id": t.id, "name": t.name, "code": t.code} 
+                for t in tenants
+            ]
             
-            return {
+            result = {
                 "id": new_user.id,
                 "username": new_user.username,
                 "fullname": new_user.fullname,
@@ -391,6 +448,15 @@ class UserService:
                 "tenants": tenant_list,
                 "message": "用户导入成功"
             }
+            
+            # 缓存用户数据
+            memory_cache.set(
+                cache_key, 
+                result,
+                expire_seconds=86400  # 24小时
+            )
+            
+            return result
             
         except Exception as e:
             em_logger.error(f"导入用户失败: {str(e)}")

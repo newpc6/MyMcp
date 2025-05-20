@@ -598,7 +598,10 @@ async def import_platform_user(request: Request):
         if not user_data:
             return error_response("导入用户失败", code=500, http_status_code=500)
         
-        return success_response(user_data, user_data.get("message", "用户导入成功"))
+        # 获取成功消息或默认消息
+        message = user_data.get("message", "用户导入成功") 
+        
+        return success_response(user_data, message)
         
     except Exception as e:
         em_logger.error(f"导入用户失败: {str(e)}")

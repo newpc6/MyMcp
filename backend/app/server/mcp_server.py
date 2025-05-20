@@ -316,6 +316,14 @@ def start_mcp_server():
     except Exception as e:
         em_logger.error(f"启动统计数据定时任务时出错: {str(e)}")
 
+    # 启动缓存清理定时任务
+    try:
+        from app.services.schedule_service import start_cache_clean_scheduler
+        start_cache_clean_scheduler()
+        em_logger.info("缓存清理定时任务已启动")
+    except Exception as e:
+        em_logger.error(f"启动缓存清理定时任务时出错: {str(e)}")
+
     # 启动服务器
     if threading.current_thread() is not threading.main_thread():
         import time
