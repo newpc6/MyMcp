@@ -566,6 +566,45 @@ async def delete_tenant(request: Request):
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
+async def import_platform_user(request: Request):
+    """导入第三方平台用户（仅管理员）"""
+    # 检查管理员权限
+    if not hasattr(request.state, 'user'):
+        return error_response("未登录", code=401, http_status_code=401)
+    
+    is_admin = request.state.user.get("is_admin", False)
+    if not is_admin:
+        return error_response("需要管理员权限", code=403, http_status_code=403)
+    
+    try:
+        data = await request.json()
+        
+        if not data:
+            return error_response("无效的请求数据")
+        
+        platform_type = data.get('platform_type')
+        authorization = data.get('authorization')
+        tenant_ids = data.get('tenant_ids', [])
+        
+        if not platform_type or not authorization:
+            return error_response("平台类型和认证信息不能为空")
+        
+        if platform_type != "egovakb":
+            return error_response("暂不支持该平台类型", code=400, http_status_code=400)
+        
+        # 导入用户
+        user_data = UserService.import_user_from_egovakb(authorization, tenant_ids)
+        
+        if not user_data:
+            return error_response("导入用户失败", code=500, http_status_code=500)
+        
+        return success_response(user_data, user_data.get("message", "用户导入成功"))
+        
+    except Exception as e:
+        em_logger.error(f"导入用户失败: {str(e)}")
+        return error_response("处理请求时发生错误", code=500, http_status_code=500)
+
+
 # JWT验证中间件已被AuthMiddleware替代，不再需要
 # async def auth_middleware(request: Request, call_next):
 #     """认证中间件，验证用户身份并设置scope信息"""
@@ -589,6 +628,7 @@ def get_router():
         Route("/tenants", create_tenant, methods=["POST"]),
         Route("/tenants/{tenant_id:int}", update_tenant, methods=["PUT"]),
         Route("/tenants/{tenant_id:int}", delete_tenant, methods=["DELETE"]),
+        Route("/import-platform-user", import_platform_user, methods=["POST"]),
     ]
     
     return routes 

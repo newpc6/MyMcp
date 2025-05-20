@@ -5,11 +5,15 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy import select, update, delete
 from sqlalchemy.exc import IntegrityError
 from datetime import datetime
+import httpx
+import secrets
+import string
 from pytz import timezone
 
 from app.models.engine import get_db
 from app.models.modules.users import User, Tenant, UserTenant
 from app.utils.logging import em_logger
+from app.core.config import settings
 
 
 class UserService:
@@ -22,7 +26,9 @@ class UserService:
         fullname: Optional[str] = None,
         email: Optional[str] = None,
         is_admin: bool = False,
-        tenant_ids: Optional[List[int]] = None
+        tenant_ids: Optional[List[int]] = None,
+        external_id: Optional[str] = None,
+        platform_type: Optional[str] = None
     ) -> Optional[User]:
         """创建新用户"""
         try:
@@ -41,6 +47,8 @@ class UserService:
                     fullname=fullname,
                     email=email,
                     is_admin=is_admin,
+                    external_id=external_id,
+                    platform_type=platform_type,
                     created_at=now,
                     updated_at=now
                 )
@@ -96,6 +104,20 @@ class UserService:
             return None
     
     @staticmethod
+    def get_user_by_external_id(external_id: str, platform_type: str) -> Optional[User]:
+        """根据外部ID和平台类型获取用户"""
+        try:
+            with get_db() as db:
+                query = select(User).where(
+                    User.external_id == external_id,
+                    User.platform_type == platform_type
+                )
+                return db.execute(query).scalar_one_or_none()
+        except Exception as e:
+            em_logger.error(f"获取用户失败: {str(e)}")
+            return None
+    
+    @staticmethod
     def update_user(
         user_id: int,
         username: Optional[str] = None,
@@ -103,7 +125,9 @@ class UserService:
         email: Optional[str] = None,
         password: Optional[str] = None,
         is_admin: Optional[bool] = None,
-        status: Optional[str] = None
+        status: Optional[str] = None,
+        external_id: Optional[str] = None,
+        platform_type: Optional[str] = None
     ) -> bool:
         """更新用户信息"""
         try:
@@ -129,6 +153,10 @@ class UserService:
                     update_values["is_admin"] = is_admin
                 if status is not None:
                     update_values["status"] = status
+                if external_id is not None:
+                    update_values["external_id"] = external_id
+                if platform_type is not None:
+                    update_values["platform_type"] = platform_type
                 
                 # 更新密码
                 if password is not None:
@@ -256,6 +284,116 @@ class UserService:
                 return None
         except Exception as e:
             em_logger.error(f"用户登录验证失败: {str(e)}")
+            return None
+            
+    @staticmethod
+    def import_user_from_egovakb(authorization: str, tenant_ids: Optional[List[int]] = None) -> Optional[Dict]:
+        """从egovakb平台导入用户
+        
+        Args:
+            authorization: 认证token
+            tenant_ids: 要关联的租户ID列表
+            
+        Returns:
+            导入成功返回用户信息，失败返回None
+        """
+        try:
+            # 调用egovakb接口获取用户信息
+            url = f"{settings.PLATFORM_EGOVA_KB}/api/callback/auth"
+            headers = {
+                "Authorization": authorization,
+                "Content-Type": "application/json"
+            }
+            
+            response = httpx.post(url, headers=headers, timeout=10.0)
+            
+            if response.status_code != 200:
+                em_logger.error(f"调用egovakb接口失败: {response.status_code} {response.text}")
+                return None
+            
+            data = response.json()
+            
+            if data.get("code") != 200 or "data" not in data:
+                em_logger.error(f"egovakb返回错误: {data}")
+                return None
+            
+            user_data = data["data"]
+            external_id = user_data.get("user_id")
+            username = user_data.get("username")
+            email = user_data.get("email")
+            
+            if not external_id or not username:
+                em_logger.error(f"egovakb返回的用户数据不完整: {user_data}")
+                return None
+            
+            # 检查用户是否已存在(根据外部ID)
+            existing_user = UserService.get_user_by_external_id(external_id, "egovakb")
+            
+            if existing_user:
+                # 更新已存在的用户
+                UserService.update_user(
+                    user_id=existing_user.id,
+                    email=email
+                )
+                
+                # 更新租户关联
+                if tenant_ids:
+                    UserService.update_user_tenants(existing_user.id, tenant_ids)
+                
+                # 获取用户关联的租户
+                tenants = TenantService.get_user_tenants(existing_user.id)
+                tenant_list = [{"id": t.id, "name": t.name, "code": t.code} for t in tenants]
+                
+                return {
+                    "id": existing_user.id,
+                    "username": existing_user.username,
+                    "fullname": existing_user.fullname,
+                    "email": existing_user.email,
+                    "is_admin": existing_user.is_admin,
+                    "status": existing_user.status,
+                    "external_id": existing_user.external_id,
+                    "platform_type": existing_user.platform_type,
+                    "tenants": tenant_list,
+                    "message": "用户已存在，已更新信息"
+                }
+            
+            # 生成密码
+            password = settings.DEFAULT_PASSWORD
+            # 创建新用户
+            new_user = UserService.create_user(
+                username=username,
+                password=password,
+                email=email,
+                fullname=username,
+                is_admin=False,
+                tenant_ids=tenant_ids,
+                external_id=external_id,
+                platform_type="egovakb"
+            )
+            
+            if not new_user:
+                em_logger.error(f"创建导入用户失败: {username}")
+                return None
+            
+            # 获取用户关联的租户
+            tenants = TenantService.get_user_tenants(new_user.id)
+            tenant_list = [{"id": t.id, "name": t.name, "code": t.code} for t in tenants]
+            
+            return {
+                "id": new_user.id,
+                "username": new_user.username,
+                "fullname": new_user.fullname,
+                "email": new_user.email,
+                "is_admin": new_user.is_admin,
+                "status": new_user.status,
+                "external_id": new_user.external_id,
+                "platform_type": new_user.platform_type,
+                "tenants": tenant_list,
+                "message": "用户导入成功"
+            }
+            
+        except Exception as e:
+            em_logger.error(f"导入用户失败: {str(e)}")
             return None
 
 

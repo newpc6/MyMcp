@@ -72,6 +72,16 @@ export async function deleteUser(userId: number) {
   return response.data;
 }
 
+// 导入平台用户 (仅管理员)
+export async function importPlatformUser(importData: {
+  platform_type: string;
+  authorization: string;
+  tenant_ids?: number[];
+}) {
+  const response = await api.post(`${apiPrefix}/auth/import-platform-user`, importData);
+  return response.data;
+}
+
 // ============= 租户管理 =============
 
 // 获取所有租户 (仅管理员)

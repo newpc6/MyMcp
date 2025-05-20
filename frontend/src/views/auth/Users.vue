@@ -2,11 +2,18 @@
   <div class="users-container">
     <div class="users-header">
       <h2>用户管理</h2>
-      <el-button type="primary" @click="handleAddUser">
-        <el-icon>
-          <Plus />
-        </el-icon> 新增用户
-      </el-button>
+      <div>
+        <el-button type="primary" @click="handleAddUser" style="margin-right: 10px;">
+          <el-icon>
+            <Plus />
+          </el-icon> 新增用户
+        </el-button>
+        <el-button type="success" @click="handleImportUser">
+          <el-icon>
+            <Download />
+          </el-icon> 导入用户
+        </el-button>
+      </div>
     </div>
 
     <el-table :data="users" v-loading="loading" border style="width: 100%">
@@ -26,6 +33,14 @@
           <el-tag :type="scope.row.status === 'active' ? 'success' : 'warning'">
             {{ scope.row.status === 'active' ? '启用' : '禁用' }}
           </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column label="来源" width="120">
+        <template #default="scope">
+          <el-tag v-if="scope.row.platform_type" type="primary">
+            {{ getPlatformName(scope.row.platform_type) }}
+          </el-tag>
+          <el-tag v-else type="info">本地</el-tag>
         </template>
       </el-table-column>
       <el-table-column label="所属租户" min-width="200">
@@ -92,19 +107,45 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 导入用户对话框 -->
+    <el-dialog v-model="importDialogVisible" title="导入用户" width="500px">
+      <el-form ref="importFormRef" :model="importForm" :rules="importRules" label-width="100px">
+        <el-form-item label="平台类型" prop="platform_type">
+          <el-select v-model="importForm.platform_type" style="width: 100%">
+            <el-option label="E-GOVA KB" value="egovakb" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="认证信息" prop="authorization">
+          <el-input v-model="importForm.authorization" type="password" show-password placeholder="请输入认证Token" />
+        </el-form-item>
+        <el-form-item label="所属租户" prop="tenant_ids">
+          <el-select v-model="importForm.tenant_ids" multiple collapse-tags style="width: 100%">
+            <el-option v-for="tenant in tenants" :key="tenant.id" :label="tenant.name" :value="tenant.id" />
+          </el-select>
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="importDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="importUser" :loading="importLoading">
+          导入
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script lang="ts" setup>
 import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox, FormInstance } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, Download } from '@element-plus/icons-vue';
 import {
   getAllUsers,
   createUser,
   updateUser,
   deleteUser,
-  getAllTenants
+  getAllTenants,
+  importPlatformUser
 } from '@/api/auth';
 
 // 状态
@@ -112,8 +153,10 @@ const loading = ref(false);
 const users = ref<any[]>([]);
 const tenants = ref<any[]>([]);
 const dialogVisible = ref(false);
+const importDialogVisible = ref(false);
 const isEdit = ref(false);
 const saveLoading = ref(false);
+const importLoading = ref(false);
 const currentUser = reactive<any>({
   user_id: null,
   username: '',
@@ -143,6 +186,14 @@ const userForm = reactive({
   email: '',
   is_admin: false,
   status: 'active',
+  tenant_ids: [] as number[]
+});
+
+// 导入表单
+const importFormRef = ref<FormInstance>();
+const importForm = reactive({
+  platform_type: 'egovakb',
+  authorization: '',
   tenant_ids: [] as number[]
 });
 
@@ -191,6 +242,16 @@ const userRules = {
   ]
 };
 
+// 导入验证规则
+const importRules = {
+  platform_type: [
+    { required: true, message: '请选择平台类型', trigger: 'change' }
+  ],
+  authorization: [
+    { required: true, message: '请输入认证信息', trigger: 'blur' }
+  ]
+};
+
 // 初始化
 onMounted(async () => {
   await Promise.all([fetchUsers(), fetchTenants()]);
@@ -218,6 +279,14 @@ const fetchTenants = async () => {
   } catch (error) {
     ElMessage.error('获取租户列表失败');
   }
+};
+
+// 获取平台名称
+const getPlatformName = (type: string) => {
+  const platformMap: Record<string, string> = {
+    'egovakb': 'E-GOVA KB'
+  };
+  return platformMap[type] || type;
 };
 
 // 新增用户
@@ -262,7 +331,7 @@ const handleDeleteUser = (row: any) => {
   ).then(async () => {
     try {
       const data = await deleteUser(row.id);
-      if (data.code === 200) {
+      if (data.code === 0) {
         ElMessage.success('删除成功');
         await fetchUsers();
       } else {
@@ -324,6 +393,47 @@ const saveUser = async () => {
     }
   } finally {
     saveLoading.value = false;
+  }
+};
+
+// 导入用户
+const handleImportUser = () => {
+  importForm.platform_type = 'egovakb';
+  importForm.authorization = '';
+  importForm.tenant_ids = [];
+  importDialogVisible.value = true;
+};
+
+// 执行导入
+const importUser = async () => {
+  if (!importFormRef.value) return;
+
+  try {
+    await importFormRef.value.validate();
+
+    importLoading.value = true;
+
+    const data = await importPlatformUser({
+      platform_type: importForm.platform_type,
+      authorization: importForm.authorization,
+      tenant_ids: importForm.tenant_ids
+    });
+
+    if (data.code === 0) {
+      ElMessage.success(data.message || '导入成功');
+      importDialogVisible.value = false;
+      await fetchUsers();
+    } else {
+      ElMessage.error(data.message || '导入失败');
+    }
+  } catch (error: any) {
+    if (error.response) {
+      ElMessage.error(error.response.data.error || '导入失败');
+    } else {
+      ElMessage.error('导入失败: ' + (error.message || '未知错误'));
+    }
+  } finally {
+    importLoading.value = false;
   }
 };
 </script>

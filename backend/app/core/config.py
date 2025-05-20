@@ -82,6 +82,11 @@ class Settings:
         self.PLATFORM_EGOVA_KB: str = config.get("platform", {}).get(
             "egova-kb", "http://127.0.0.1:8080"
         )
+        
+        # 用户设置
+        self.DEFAULT_PASSWORD: str = config.get("user", {}).get(
+            "default_password", "mcp@12345"
+        )
 
     def get_database_url(self) -> str:
         """获取数据库连接URL"""

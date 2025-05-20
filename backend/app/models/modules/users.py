@@ -43,6 +43,8 @@ class User(Base):
     email = Column(String(100))
     is_admin = Column(Boolean, default=False)
     status = Column(String(20), default="active")
+    external_id = Column(String(100))
+    platform_type = Column(String(50))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone('Asia/Shanghai')))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone('Asia/Shanghai')), 
                         onupdate=lambda: datetime.now(timezone('Asia/Shanghai')))
