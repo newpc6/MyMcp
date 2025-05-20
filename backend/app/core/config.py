@@ -72,6 +72,16 @@ class Settings:
         self.JWT_SECRET_KEY: str = config.get("jwt", {}).get(
             "secret_key", secrets.token_hex(32)
         )
+        
+        # 统计设置
+        self.STATISTICS_INTERVAL: int = config.get("schedule", {}).get(
+            "statistics_interval", 10
+        )
+
+        # 平台设置
+        self.PLATFORM_EGOVA_KB: str = config.get("platform", {}).get(
+            "egova-kb", "http://127.0.0.1:8080"
+        )
 
     def get_database_url(self) -> str:
         """获取数据库连接URL"""

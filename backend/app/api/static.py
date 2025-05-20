@@ -49,6 +49,38 @@ async def index(request):
     em_logger.debug(f"提供前端首页: {request.url.path}")
     return FileResponse(os.path.join(DIST_DIR, "index.html"))
 
+def get_media_type(file_path):
+    """根据文件扩展名获取适当的媒体类型"""
+    if file_path.endswith('.js'):
+        return 'application/javascript'
+    elif file_path.endswith('.mjs'):
+        return 'application/javascript'
+    elif file_path.endswith('.css'):
+        return 'text/css'
+    elif file_path.endswith('.html'):
+        return 'text/html'
+    elif file_path.endswith('.json'):
+        return 'application/json'
+    elif file_path.endswith('.png'):
+        return 'image/png'
+    elif file_path.endswith('.jpg') or file_path.endswith('.jpeg'):
+        return 'image/jpeg'
+    elif file_path.endswith('.gif'):
+        return 'image/gif'
+    elif file_path.endswith('.svg'):
+        return 'image/svg+xml'
+    elif file_path.endswith('.woff'):
+        return 'font/woff'
+    elif file_path.endswith('.woff2'):
+        return 'font/woff2'
+    elif file_path.endswith('.ttf'):
+        return 'font/ttf'
+    elif file_path.endswith('.eot'):
+        return 'application/vnd.ms-fontobject'
+    elif file_path.endswith('.ico'):
+        return 'image/x-icon'
+    return None
+
 async def spa_routing(request):
     """
     处理SPA路由，返回index.html
@@ -56,14 +88,19 @@ async def spa_routing(request):
     这个函数用于处理前端路由，使得刷新页面时不会返回404
     """
     path = request.path_params.get("path", "")
-    em_logger.debug(f"SPA路由处理: {path}")
+    full_path = request.url.path
+    em_logger.debug(f"SPA路由处理: {path}, 完整路径: {full_path}")
     
-    # 如果是/api开头的路径，不进行处理，直接返回404
-    # 这样可以避免干扰API调用
-    if path.startswith("api/"):
-        em_logger.debug(f"API路径不由SPA处理: {path}")
-        from starlette.responses import Response
-        return Response(status_code=404, content="Not Found")
+    # API请求不应该由SPA路由处理器捕获
+    # 如果配置正确，这里应该永远不会接收到API请求
+    # 但如果API请求到达这里，说明API路由没有捕获它，应该返回404
+    if full_path.startswith("/api") or path.startswith("api"):
+        em_logger.warning(f"API路径未被API路由捕获: {full_path}")
+        from starlette.responses import PlainTextResponse
+        return PlainTextResponse(
+            "API路径未找到。此请求不应由SPA路由处理。",
+            status_code=404
+        )
     
     # 检查是否为静态资源路径
     if path.startswith("assets/"):
@@ -71,7 +108,8 @@ async def spa_routing(request):
         file_path = os.path.join(ASSETS_DIR, asset_path)
         if os.path.exists(file_path) and os.path.isfile(file_path):
             em_logger.debug(f"直接提供静态资源: {file_path}")
-            return FileResponse(file_path)
+            media_type = get_media_type(file_path)            
+            return FileResponse(file_path, media_type=media_type)
     
     # 否则返回index.html
     return FileResponse(os.path.join(DIST_DIR, "index.html"))
@@ -83,7 +121,8 @@ async def asset_file(request):
     file_path = os.path.join(ASSETS_DIR, path)
     
     if os.path.exists(file_path) and os.path.isfile(file_path):
-        return FileResponse(file_path)
+        media_type = get_media_type(file_path)
+        return FileResponse(file_path, media_type=media_type)
     
     # 如果文件不存在，返回404
     return FileResponse(
@@ -122,11 +161,11 @@ def get_router():
             "endpoint": asset_file,
             "methods": ["GET"],
             "name": "asset_file"
+        },
+        {
+            "path": "/{path:path}",
+            "endpoint": spa_routing,
+            "methods": ["GET"],
+            "name": "spa_routing"
         }
-        # {
-        #     "path": "/{path:path}",
-        #     "endpoint": spa_routing,
-        #     "methods": ["GET"],
-        #     "name": "spa_routing"
-        # }
     ]

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { ElMessage } from 'element-plus';
 import router from '../router';
-
+export const apiPrefix = '/api/v1/mcp'
 // 创建axios实例
 const api = axios.create({
     // baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002',

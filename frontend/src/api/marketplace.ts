@@ -2,13 +2,14 @@
  * MCP广场相关API
  */
 import api from './index'
+import { apiPrefix } from './index'
 import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo, McpServiceInfo, ApiResponse } from '../types/marketplace'
 
 /**
  * 获取所有MCP模块列表
  */
 export async function listModules(categoryId?: string | null): Promise<ApiResponse<McpModuleInfo[]>> {
-  let url = '/api/marketplace/modules'
+  let url = `${apiPrefix}/marketplace/modules`
   if (categoryId) {
     url += `?category_id=${categoryId}`
   }
@@ -21,7 +22,7 @@ export async function listModules(categoryId?: string | null): Promise<ApiRespon
  * @param moduleId - 模块ID
  */
 export async function getModule(moduleId: number): Promise<ApiResponse<McpModuleInfo>> {
-  const response = await api.get(`/api/marketplace/modules/${moduleId}`)
+  const response = await api.get(`${apiPrefix}/marketplace/modules/${moduleId}`)
   return response.data
 }
 
@@ -30,7 +31,7 @@ export async function getModule(moduleId: number): Promise<ApiResponse<McpModule
  * @param data - 模块数据
  */
 export async function createModule(data: Partial<McpModuleInfo>): Promise<ApiResponse<McpModuleInfo>> {
-  const response = await api.post('/api/marketplace/modules', data)
+  const response = await api.post(`${apiPrefix}/marketplace/modules`, data)
   return response.data
 }
 
@@ -39,7 +40,7 @@ export async function createModule(data: Partial<McpModuleInfo>): Promise<ApiRes
  * @param moduleId - 模块ID
  */
 export async function getModuleTools(moduleId: number): Promise<ApiResponse<McpToolInfo[]>> {
-  const response = await api.get(`/api/marketplace/modules/${moduleId}/tools`)
+  const response = await api.get(`${apiPrefix}/marketplace/modules/${moduleId}/tools`)
   return response.data
 }
 
@@ -48,7 +49,7 @@ export async function getModuleTools(moduleId: number): Promise<ApiResponse<McpT
  * @param toolId - 工具ID
  */
 export async function getTool(toolId: number): Promise<ApiResponse<McpToolInfo>> {
-  const response = await api.get(`/api/marketplace/tools/${toolId}`)
+  const response = await api.get(`${apiPrefix}/marketplace/tools/${toolId}`)
   return response.data
 }
 
@@ -56,7 +57,7 @@ export async function getTool(toolId: number): Promise<ApiResponse<McpToolInfo>>
  * 扫描仓库中的MCP模块并更新数据库
  */
 export async function scanModules(): Promise<ApiResponse<ScanResult>> {
-  const response = await api.post('/api/marketplace/modules/scan')
+  const response = await api.post(`${apiPrefix}/marketplace/modules/scan`)
   return response.data
 }
 
@@ -64,7 +65,7 @@ export async function scanModules(): Promise<ApiResponse<ScanResult>> {
  * 获取所有MCP分组
  */
 export async function listCategories(): Promise<ApiResponse<McpCategoryInfo[]>> {
-  const response = await api.get('/api/marketplace/categories')
+  const response = await api.get(`${apiPrefix}/marketplace/categories`)
   return response.data
 }
 
@@ -72,7 +73,7 @@ export async function listCategories(): Promise<ApiResponse<McpCategoryInfo[]>> 
  * 获取分组详情
  */
 export async function getCategory(categoryId: number): Promise<ApiResponse<McpCategoryInfo>> {
-  const response = await api.get(`/api/marketplace/categories/${categoryId}`)
+  const response = await api.get(`${apiPrefix}/marketplace/categories/${categoryId}`)
   return response.data
 }
 
@@ -80,7 +81,7 @@ export async function getCategory(categoryId: number): Promise<ApiResponse<McpCa
  * 创建MCP分组
  */
 export async function createCategory(data: Partial<McpCategoryInfo>): Promise<ApiResponse<McpCategoryInfo>> {
-  const response = await api.post('/api/marketplace/categories', data)
+  const response = await api.post(`${apiPrefix}/marketplace/categories`, data)
   return response.data
 }
 
@@ -88,7 +89,7 @@ export async function createCategory(data: Partial<McpCategoryInfo>): Promise<Ap
  * 更新MCP分组
  */
 export async function updateCategory(categoryId: number, data: Partial<McpCategoryInfo>): Promise<ApiResponse<McpCategoryInfo>> {
-  const response = await api.put(`/api/marketplace/categories/${categoryId}`, data)
+  const response = await api.put(`${apiPrefix}/marketplace/categories/${categoryId}`, data)
   return response.data
 }
 
@@ -96,7 +97,7 @@ export async function updateCategory(categoryId: number, data: Partial<McpCatego
  * 删除MCP分组
  */
 export async function deleteCategory(categoryId: number): Promise<ApiResponse<boolean>> {
-  const response = await api.delete(`/api/marketplace/categories/${categoryId}`)
+  const response = await api.delete(`${apiPrefix}/marketplace/categories/${categoryId}`)
   return response.data
 }
 
@@ -104,7 +105,7 @@ export async function deleteCategory(categoryId: number): Promise<ApiResponse<bo
  * 更新模块所属分组
  */
 export async function updateModuleCategory(moduleId: number, categoryId: number | null): Promise<ApiResponse<McpModuleInfo>> {
-  const response = await api.put(`/api/marketplace/modules/${moduleId}/category`, { category_id: categoryId })
+  const response = await api.put(`${apiPrefix}/marketplace/modules/${moduleId}/category`, { category_id: categoryId })
   return response.data
 }
 
@@ -114,7 +115,7 @@ export async function updateModuleCategory(moduleId: number, categoryId: number 
  * @param data - 要更新的模块数据
  */
 export async function updateModule(moduleId: number, data: Partial<McpModuleInfo>): Promise<ApiResponse<McpModuleInfo>> {
-  const response = await api.put(`/api/marketplace/modules/${moduleId}`, data)
+  const response = await api.put(`${apiPrefix}/marketplace/modules/${moduleId}`, data)
   return response.data
 }
 
@@ -124,7 +125,7 @@ export async function updateModule(moduleId: number, data: Partial<McpModuleInfo
  * @param params - 工具参数
  */
 export async function testModuleTool(toolId: number, params: any): Promise<ApiResponse<any>> {
-  const response = await api.post(`/api/execute/tool/${toolId}`, params)
+  const response = await api.post(`${apiPrefix}/execute/tool/${toolId}`, params)
   return response.data
 }
 
@@ -135,7 +136,7 @@ export async function testModuleTool(toolId: number, params: any): Promise<ApiRe
  * @param params - 工具参数
  */
 export async function testModuleFunction(moduleId: number, functionName: string, params: any): Promise<ApiResponse<any>> {
-  const response = await api.post(`/api/execute/module/${moduleId}/function/${functionName}`, params)
+  const response = await api.post(`${apiPrefix}/execute/module/${moduleId}/function/${functionName}`, params)
   return response.data
 }
 
@@ -144,7 +145,7 @@ export async function testModuleFunction(moduleId: number, functionName: string,
  * @param moduleId - 可选的模块ID
  */
 export async function listServices(moduleId?: number): Promise<ApiResponse<McpServiceInfo[]>> {
-  let url = '/api/marketplace/services'
+  let url = `${apiPrefix}/marketplace/services`
   if (moduleId) {
     url += `?module_id=${moduleId}`
   }
@@ -166,7 +167,7 @@ export async function publishModule(
     service: McpServiceInfo
   }>
 > {
-  const response = await api.post(`/api/marketplace/modules/${moduleId}/publish`, configParams || {})
+  const response = await api.post(`${apiPrefix}/marketplace/modules/${moduleId}/publish`, configParams || {})
   return response.data
 }
 
@@ -179,7 +180,7 @@ export async function stopService(serviceUuid: string): Promise<
     message: string
   }>
 > {
-  const response = await api.post(`/api/marketplace/services/${serviceUuid}/stop`)
+  const response = await api.post(`${apiPrefix}/marketplace/services/${serviceUuid}/stop`)
   return response.data
 }
 
@@ -192,7 +193,7 @@ export async function startService(serviceUuid: string): Promise<
     message: string
   }>
 > {
-  const response = await api.post(`/api/marketplace/services/${serviceUuid}/start`)
+  const response = await api.post(`${apiPrefix}/marketplace/services/${serviceUuid}/start`)
   return response.data
 }
 
@@ -205,7 +206,7 @@ export async function uninstallService(serviceUuid: string): Promise<
     message: string
   }>
 > {
-  const response = await api.post(`/api/marketplace/services/${serviceUuid}/uninstall`)
+  const response = await api.post(`${apiPrefix}/marketplace/services/${serviceUuid}/uninstall`)
   return response.data
 }
 
@@ -214,7 +215,7 @@ export async function uninstallService(serviceUuid: string): Promise<
  * @param moduleId - 模块ID
  */
 export async function deleteModule(moduleId: number): Promise<ApiResponse<{ message: string }>> {
-  const response = await api.delete(`/api/marketplace/modules/${moduleId}`)
+  const response = await api.delete(`${apiPrefix}/marketplace/modules/${moduleId}`)
   return response.data
 }
 
@@ -223,7 +224,7 @@ export async function deleteModule(moduleId: number): Promise<ApiResponse<{ mess
  * @param serviceUuid - 服务UUID
  */
 export async function getService(serviceUuid: string): Promise<ApiResponse<McpServiceInfo>> {
-  const response = await api.get(`/api/marketplace/services/${serviceUuid}`)
+  const response = await api.get(`${apiPrefix}/marketplace/services/${serviceUuid}`)
   return response.data
 }
 
@@ -231,7 +232,7 @@ export async function getService(serviceUuid: string): Promise<ApiResponse<McpSe
  * 获取MCP服务状态
  */
 export async function getOnlineServices(): Promise<ApiResponse<string[]>> {
-  const response = await api.get(`/api/marketplace/services/online`)
+  const response = await api.get(`${apiPrefix}/marketplace/services/online`)
   return response.data
 }
 
@@ -241,6 +242,6 @@ export async function getOnlineServices(): Promise<ApiResponse<string[]>> {
  * @param data - 新模块的自定义数据
  */
 export async function cloneModule(moduleId: number, data: Partial<McpModuleInfo>): Promise<ApiResponse<McpModuleInfo>> {
-  const response = await api.post(`/api/marketplace/modules/${moduleId}/clone`, data)
+  const response = await api.post(`${apiPrefix}/marketplace/modules/${moduleId}/clone`, data)
   return response.data
 }

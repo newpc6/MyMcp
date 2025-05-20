@@ -32,20 +32,6 @@ def get_router(app) -> None:
     # 添加API根路由
     app.add_route(f"{settings.API_PREFIX}", api_root)
     
-    # 添加静态资源路由
-    try:
-        # 添加静态文件路由
-        for route in static.get_router():
-            app.add_route(
-                route["path"],
-                route["endpoint"],
-                methods=route["methods"],
-                name=route["name"]
-            )
-            em_logger.info(f"添加静态文件路由: {route['path']}")
-    except Exception as e:
-        em_logger.error(f"配置静态资源路由时出错: {str(e)}")
-    
     # 添加认证中间件
     from app.middleware.auth import AuthMiddleware
     app.add_middleware(AuthMiddleware)
@@ -120,5 +106,19 @@ def get_router(app) -> None:
             methods=route.methods, 
             name=route.name
         )
+    
+    # 添加静态资源路由 - 移到最后注册，确保API路由优先匹配
+    try:
+        # 添加静态文件路由
+        for route in static.get_router():
+            app.add_route(
+                route["path"],
+                route["endpoint"],
+                methods=route["methods"],
+                name=route["name"]
+            )
+            em_logger.info(f"添加静态文件路由: {route['path']}")
+    except Exception as e:
+        em_logger.error(f"配置静态资源路由时出错: {str(e)}")
 
     return app

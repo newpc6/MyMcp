@@ -2,6 +2,7 @@
  * 统计相关API
  */
 import api from './index';
+import { apiPrefix } from './index';
 import type { ApiResponse } from '../types/marketplace';
 
 /**
@@ -106,7 +107,7 @@ export interface ToolExecutionsResponse {
  * 获取服务统计数据
  */
 export async function getServiceStats(): Promise<ApiResponse<ServiceStats>> {
-  const response = await api.get('/api/statistics/services');
+  const response = await api.get(`${apiPrefix}/statistics/services`);
   return response.data;
 }
 
@@ -119,7 +120,7 @@ export async function getModuleRankings(
   size: number = 10, 
   page: number = 1
 ): Promise<ApiResponse<RankingPaginationResponse<ModuleRanking>>> {
-  const response = await api.get('/api/statistics/modules/rankings', {
+  const response = await api.get(`${apiPrefix}/statistics/modules/rankings`, {
     params: { size, page }
   });
   return response.data;
@@ -134,7 +135,7 @@ export async function getToolRankings(
   size: number = 10,
   page: number = 1
 ): Promise<ApiResponse<RankingPaginationResponse<ToolRanking>>> {
-  const response = await api.get('/api/statistics/tools/rankings', {
+  const response = await api.get(`${apiPrefix}/statistics/tools/rankings`, {
     params: { size, page }
   });
   return response.data;
@@ -149,7 +150,7 @@ export async function getServiceRankings(
   size: number = 10,
   page: number = 1
 ): Promise<ApiResponse<RankingPaginationResponse<ServiceRanking>>> {
-  const response = await api.get('/api/statistics/services/rankings', {
+  const response = await api.get(`${apiPrefix}/statistics/services/rankings`, {
     params: { size, page }
   });
   return response.data;
@@ -175,7 +176,7 @@ export async function getToolExecutions(
     params.tool_name = toolName;
   }
   
-  const response = await api.get('/api/statistics/tools/executions', { params });
+  const response = await api.get(`${apiPrefix}/statistics/tools/executions`, { params });
   return response.data;
 }
 
@@ -183,6 +184,6 @@ export async function getToolExecutions(
  * 刷新统计数据
  */
 export async function refreshStatistics(): Promise<ApiResponse<{ message: string }>> {
-  const response = await api.post('/api/statistics/refresh');
+  const response = await api.post(`${apiPrefix}/statistics/refresh`);
   return response.data;
 } 

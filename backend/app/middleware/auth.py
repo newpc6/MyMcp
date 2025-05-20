@@ -25,8 +25,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         super().__init__(app)
         # API相关公开路径
         self.public_api_paths = [
-            "/api/auth/login", 
-            "/api/auth/register",
+            "/auth/login", 
+            "/auth/register",
             "/docs",
             "/redoc",
             "/openapi.json"
@@ -124,7 +124,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def _is_public_api_path(self, path: str) -> bool:
         """检查路径是否为公开API路径"""
         return any(
-            path.startswith(public_path) 
+            path.startswith(public_path) or path.endswith(public_path)
             for public_path in self.public_api_paths
         )
     

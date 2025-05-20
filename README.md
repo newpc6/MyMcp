@@ -89,7 +89,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```json
 "api": {
     "prefix": "/api",           // API路径前缀
-    "title": "Egova AI MCP Server", // API标题
+    "title": "MCP Server", // API标题
     "version": "1.0.0"          // API版本号
 }
 ```
@@ -104,15 +104,7 @@ pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 }
 ```
 
-### 4. mcp（MCP 特定配置）
-
-```json
-"mcp": {
-    "port": 8002,               // MCP服务端口
-    "sse_url": "http://10.4.1.132:8002/sse", // 服务器发送事件(SSE)URL
-    "enabled_tools": []         // 启用的工具列表
-}
-```
+### 4. mcp（废弃）
 
 ### 5. logging（日志配置）
 

@@ -14,7 +14,7 @@ export default defineConfig({
     port: 3005,
     host: '0.0.0.0',
     proxy: {
-      '/api': {
+      '/api/v1/mcp': {
         target: 'http://127.0.0.1:8002',
         changeOrigin: true,
         secure: false,

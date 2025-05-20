@@ -16,16 +16,14 @@ from app.utils.logging import em_logger
 
 
 # 默认统计任务间隔（分钟）
-DEFAULT_STATISTICS_INTERVAL = 1
+DEFAULT_STATISTICS_INTERVAL = 60
 
 
 # 从配置中获取统计任务间隔，如果没有配置则使用默认值
 def get_statistics_interval():
     """获取统计任务间隔时间（分钟）"""
     try:
-        return settings.get("schedule", {}).get(
-            "statistics_interval", DEFAULT_STATISTICS_INTERVAL
-        )
+        return settings.STATISTICS_INTERVAL
     except Exception:
         return DEFAULT_STATISTICS_INTERVAL
 
