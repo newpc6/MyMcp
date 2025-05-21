@@ -1,10 +1,12 @@
 <template>
   <el-card class="module-info-card" shadow="never">
     <div class="flex items-start">
-      <el-avatar :icon="getModuleIcon(moduleInfo)" :size="64" class="mr-6"></el-avatar>
       <div class="flex-1">
         <div class="flex justify-between">
-          <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
+          <div class="flex">
+            <el-avatar :icon="getModuleIcon(moduleInfo)" :size="32" class="mr-6"></el-avatar>
+            <h2 class="text-xl font-bold mb-2">{{ moduleInfo.name }}</h2>
+          </div>
           <div>
             <el-button type="primary" @click="$emit('edit')" class="mr-2" v-if="hasEditPermission">编辑</el-button>
             <el-button type="danger" @click="$emit('delete')" class="mr-2" v-if="hasEditPermission">删除</el-button>
