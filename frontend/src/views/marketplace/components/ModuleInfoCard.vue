@@ -12,11 +12,13 @@
           </div>
         </div>
 
-        <div class="flex justify-between">
-          <div class="flex-1 mr-6">
-            <p class="text-gray-600 mb-4">{{ moduleInfo.description }}</p>
-
-            <div class="flex flex-wrap mb-3">
+        <el-descriptions :column="2" border size="small" class="module-info-descriptions">
+          <el-descriptions-item label="描述" :span="2" label-class-name="info-label" content-class-name="info-content">
+            {{ moduleInfo.description }}
+          </el-descriptions-item>
+          
+          <el-descriptions-item label="标签" :span="2" label-class-name="info-label" content-class-name="info-content">
+            <div class="flex flex-wrap">
               <el-tag v-for="tag in tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag }}</el-tag>
               <el-tag size="small" :type="moduleInfo.is_hosted ? 'success' : 'primary'" class="tag-item">
                 {{ moduleInfo.is_hosted ? '托管' : '本地' }}
@@ -25,22 +27,29 @@
                 {{ moduleInfo.tools_count }} 个工具
               </el-tag>
             </div>
-          </div>
-
-          <div class="module-info-meta">
-            <div v-if="moduleInfo.author" class="module-meta-item"><strong>作者:</strong> {{ moduleInfo.author }}</div>
-            <div v-if="moduleInfo.version" class="module-meta-item"><strong>版本:</strong> {{ moduleInfo.version }}</div>
-            <div v-if="moduleInfo.creator_name" class="module-meta-item"><strong>创建者:</strong> {{ moduleInfo.creator_name }}</div>
-            <div class="module-meta-item">
-              <strong>状态:</strong>
-              <el-tag size="small" :type="moduleInfo.is_public ? 'success' : 'danger'" class="ml-1">
-                {{ moduleInfo.is_public ? '公开' : '私有' }}
-              </el-tag>
-            </div>
-            <div class="module-meta-item"><strong>创建时间:</strong> {{ moduleInfo.created_at }}</div>
-            <div class="module-meta-item"><strong>更新时间:</strong> {{ moduleInfo.updated_at }}</div>
-          </div>
-        </div>
+          </el-descriptions-item>
+          
+          <el-descriptions-item v-if="moduleInfo.author" label="作者" label-class-name="info-label" content-class-name="info-content">
+            {{ moduleInfo.author }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="moduleInfo.version" label="版本" label-class-name="info-label" content-class-name="info-content">
+            {{ moduleInfo.version }}
+          </el-descriptions-item>
+          <el-descriptions-item v-if="moduleInfo.creator_name" label="创建者" label-class-name="info-label" content-class-name="info-content">
+            {{ moduleInfo.creator_name }}
+          </el-descriptions-item>
+          <el-descriptions-item label="状态" label-class-name="info-label" content-class-name="info-content">
+            <el-tag size="small" :type="moduleInfo.is_public ? 'success' : 'danger'">
+              {{ moduleInfo.is_public ? '公开' : '私有' }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间" label-class-name="info-label" content-class-name="info-content">
+            {{ moduleInfo.created_at }}
+          </el-descriptions-item>
+          <el-descriptions-item label="更新时间" label-class-name="info-label" content-class-name="info-content">
+            {{ moduleInfo.updated_at }}
+          </el-descriptions-item>
+        </el-descriptions>
       </div>
     </div>
   </el-card>
@@ -102,23 +111,18 @@ function getModuleIcon(module: McpModuleInfo) {
   transform: translateY(-2px);
 }
 
-.module-info-meta {
+.module-info-descriptions {
+  margin-top: 10px;
+}
+
+:deep(.info-label) {
   background: rgba(245, 250, 255, 0.7);
-  padding: 12px 16px;
-  border-radius: 12px;
-  min-width: 220px;
-  border: 1px solid rgba(220, 240, 255, 0.8);
-}
-
-.module-meta-item {
-  margin-bottom: 8px;
-  color: #606266;
-  font-size: 14px;
-}
-
-.module-meta-item strong {
   color: #303133;
-  margin-right: 4px;
+  font-weight: 600;
+}
+
+:deep(.info-content) {
+  color: #606266;
 }
 
 .return-btn {
