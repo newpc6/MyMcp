@@ -55,7 +55,16 @@
             </div>
 
             <div class="service-info">
-              <h2 class="service-name">{{ service.module_name || '未命名服务' }}</h2>
+              <h2 class="service-name">
+                <el-text truncated>
+                  模板：{{ service.module_name || '未命名服务' }}
+                </el-text>
+              </h2>
+              <h2 class="service-name">
+                <el-text truncated>
+                  名称：{{ service.name }}
+                </el-text>
+              </h2>
               <el-text truncated>
                 {{ service.description || '暂无描述' }}
               </el-text>
@@ -326,7 +335,7 @@ const copyToClipboard = (url: string) => {
 const copyAsEgovakbUrl = (url: string) => {
   // 阻止事件冒泡
   event?.stopPropagation();
-  
+
   // 创建egovakb格式的JSON
   const egovakbFormat = JSON.stringify({
     "在线搜索": {
@@ -334,7 +343,7 @@ const copyAsEgovakbUrl = (url: string) => {
       "transport": "sse"
     }
   }, null, 2);
-  
+
   // 复制到剪贴板
   copyTextToClipboard(egovakbFormat, 'egovakb格式URL已复制到剪贴板');
 };

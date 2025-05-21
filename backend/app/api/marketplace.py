@@ -190,7 +190,13 @@ async def publish_module(request: Request):
 
     try:
         # 获取配置参数
-        config_params = await request.json()
+        data = await request.json()
+        config_params = data
+        
+        # 提取服务名称，如果配置中包含name字段则使用，否则提示错误
+        name = data.pop("service_name", None)
+        if not name:
+            return error_response("服务名称不能为空", code=400, http_status_code=400)
 
         from app.services.mcp_service.service_manager import service_manager
 
@@ -199,7 +205,8 @@ async def publish_module(request: Request):
             module_id,
             user_id=user_id,
             is_admin=is_admin,
-            config_params=config_params
+            config_params=config_params,
+            name=name
         )
         return success_response({
             "message": "服务发布成功",

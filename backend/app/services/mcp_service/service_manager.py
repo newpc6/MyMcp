@@ -89,7 +89,7 @@ class McpServiceManager:
         """获取SSE URL"""
         return f"/mcp-{service_uuid}"
 
-    def publish_service(self, module_id: int, user_id: Optional[int] = None, is_admin: bool = False, config_params: Optional[Dict] = None) -> McpService:
+    def publish_service(self, module_id: int, user_id: Optional[int] = None, is_admin: bool = False, config_params: Optional[Dict] = None, name: Optional[str] = None) -> McpService:
         """发布一个MCP模块服务
 
         Args:
@@ -97,6 +97,7 @@ class McpServiceManager:
             user_id: 当前用户ID，可选
             is_admin: 是否为管理员用户
             config_params: 配置参数，包括秘钥等信息
+            name: 服务名称
 
         Returns:
             McpService: 创建的服务记录
@@ -104,7 +105,10 @@ class McpServiceManager:
         if not self._main_app:
             raise ValueError("主应用程序未初始化，无法发布服务")
 
-        # 检查是否已经发布
+        # 检查参数
+        if not name:
+            raise ValueError("服务名称不能为空")
+
         with get_db() as db:
             # 检查模块是否存在
             module = db.query(McpModule).filter(
@@ -133,56 +137,32 @@ class McpServiceManager:
                 if not module.is_public and module.user_id != user_id:
                     raise ValueError("没有权限发布此模块")
 
-            # 检查用户是否已发布此模块的服务
-            query = db.query(McpService).filter(
-                McpService.module_id == module_id
-            )
-            if user_id is not None:
-                query = query.filter(McpService.user_id == user_id)
-            existing = query.first()
-            if existing and existing.status == "running":
-                # 对于已发布的服务，检查是否为同一用户或管理员
-                if not is_admin and user_id is not None and existing.user_id != user_id:
-                    raise ValueError(f"此模块已被其他用户发布服务")
-                raise ValueError(f"模块 {module_id} 已经发布服务")
-
             # 生成唯一ID
-            service_uuid = str(
-                uuid.uuid4()) if not existing else existing.service_uuid
+            service_uuid = str(uuid.uuid4())
 
             # 构建SSE URL (只存储相对路径)
             sse_path = f"{self._get_sse_path(service_uuid)}/sse"
 
-            if existing:
-                # 检查是否为同一用户或管理员
-                if not is_admin and user_id is not None and existing.user_id != user_id:
-                    raise ValueError("没有权限更新此服务")
-
-                # 更新现有服务
-                existing.sse_url = sse_path
-                existing.status = "running"
-                existing.error_message = ""
-                existing.config_params = config_params
-                service_record = existing
-            else:
-                params = config_params
-                if isinstance(config_params, dict):
-                    if len(config_params) > 0:
-                        params = json.dumps(config_params)
-                    else:
-                        params = ""
-                # 创建新的服务记录
-                service_record = McpService(
-                    module_id=module_id,
-                    service_uuid=service_uuid,
-                    sse_url=sse_path,
-                    status="running",
-                    enabled=True,
-                    user_id=user_id,
-                    config_params=params
-                )
-                db.add(service_record)
-
+            # 处理配置参数
+            params = config_params
+            if isinstance(config_params, dict):
+                if len(config_params) > 0:
+                    params = json.dumps(config_params)
+                else:
+                    params = ""
+                
+            # 创建新的服务记录
+            service_record = McpService(
+                module_id=module_id,
+                service_uuid=service_uuid,
+                name=name,
+                sse_url=sse_path,
+                status="running",
+                enabled=True,
+                user_id=user_id,
+                config_params=params
+            )
+            db.add(service_record)
             db.commit()
             db.refresh(service_record)
 
@@ -196,7 +176,6 @@ class McpServiceManager:
                 db.commit()
                 em_logger.error(f"发布服务失败: {str(e)}")
                 raise e
-
 
     def stop_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """停止MCP服务
@@ -507,6 +486,7 @@ class McpServiceManager:
                     "status": service.status,
                     "sse_url": sse_url,
                     "user_id": service.user_id,
+                    "name": service.name,
                     "error_message": service.error_message,
                     "user_name": service.get_user_name(),
                     "created_at": service.created_at.strftime("%Y-%m-%d %H:%M:%S")

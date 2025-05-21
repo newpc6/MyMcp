@@ -12,6 +12,7 @@ class McpService(Base):
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, nullable=False, index=True)  # 模块ID
     service_uuid = Column(String(64), unique=True, index=True, nullable=False)
+    name = Column(String(100), nullable=False)  # 服务名称
     status = Column(String(20), default="stopped")  # running, stopped, error
     error_message = Column(Text, nullable=True)  # 错误信息
     sse_url = Column(String(255), nullable=False)
@@ -52,6 +53,7 @@ class McpService(Base):
             "module_id": self.module_id,
             "module_name": module_name,
             "service_uuid": self.service_uuid,
+            "name": self.name,
             "status": self.status,
             "sse_url": self.sse_url,
             "enabled": self.enabled,

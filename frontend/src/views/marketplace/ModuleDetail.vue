@@ -67,12 +67,8 @@
               <div class="card-header">
                 <h3 class="text-lg font-bold">服务发布</h3>
                 <div class="service-actions" v-if="!loadingServices">
-                  <el-button v-if="services.length === 0" type="primary" size="small" @click="handlePublishService()">
+                  <el-button type="primary" size="small" @click="handlePublishService()">
                     发布服务
-                  </el-button>
-                  <el-button v-else type="danger" size="small"
-                    @click="handleUninstallService(services[0].service_uuid)">
-                    卸载服务
                   </el-button>
                 </div>
               </div>
@@ -98,6 +94,7 @@
                     </el-tag>
                   </template>
                 </el-table-column>
+                <el-table-column prop="name" label="服务名称" min-width="120"></el-table-column>
                 <el-table-column prop="sse_url" label="SSE URL" min-width="220">
                   <template #default="scope">
                     <div class="flex items-center">
@@ -110,7 +107,8 @@
                           <DocumentCopy />
                         </el-icon>
                       </el-button>
-                      <el-button type="success" circle size="small" @click="copyAsEgovakbUrl(scope.row.sse_url)" title="复制为egovakb格式">
+                      <el-button type="success" circle size="small" @click="copyAsEgovakbUrl(scope.row.sse_url)"
+                        title="复制为egovakb格式">
                         <el-icon>
                           <Connection />
                         </el-icon>
@@ -119,9 +117,9 @@
                   </template>
                 </el-table-column>
                 <el-table-column prop="created_at" label="创建时间" width="140" />
-                <el-table-column fixed="right" label="操作" width="160">
+                <el-table-column fixed="right" label="操作" width="200">
                   <template #default="scope">
-                    <el-button v-if="scope.row.status === 'running'" type="danger" size="small"
+                    <el-button v-if="scope.row.status === 'running'" type="info" size="small"
                       @click="handleStopService(scope.row.service_uuid)">
                       停止
                     </el-button>
@@ -135,6 +133,9 @@
                     </el-button>
                     <el-button type="primary" size="small" @click="viewServiceParams(scope.row)" title="查看参数">
                       参数
+                    </el-button>
+                    <el-button type="danger" size="small" @click="handleUninstallService(services[0].service_uuid)">
+                      卸载
                     </el-button>
                   </template>
                 </el-table-column>
@@ -250,17 +251,9 @@
                     </div>
                   </div>
                   <div class="code-editor-wrapper">
-                    <Codemirror 
-                      v-model="codeContent" 
-                      :extensions="extensions" 
-                      class="code-editor"
-                      :indent-with-tab="true" 
-                      :tab-size="4" 
-                      @ready="handleEditorCreated"
-                      style="overflow: auto; height: 100%;" 
-                      :readonly="!hasEditPermission" 
-                      basic
-                    />
+                    <Codemirror v-model="codeContent" :extensions="extensions" class="code-editor"
+                      :indent-with-tab="true" :tab-size="4" @ready="handleEditorCreated"
+                      style="overflow: auto; height: 100%;" :readonly="!hasEditPermission" basic />
                   </div>
                 </div>
               </div>
@@ -414,6 +407,10 @@
     <!-- 发布服务对话框 -->
     <el-dialog v-model="publishDialogVisible" title="配置并发布服务" width="50%" :destroy-on-close="true">
       <el-form ref="configFormRef" :model="configForm" :rules="configRules" label-width="100px" label-position="top">
+        <el-form-item label="服务名称" prop="service_name" :rules="[{ required: true, message: '请输入服务名称', trigger: 'blur' }]">
+          <el-input v-model="configForm.service_name" placeholder="请输入服务名称"></el-input>
+        </el-form-item>
+
         <div v-if="!hasConfigSchema">
           <el-alert type="info" :closable="false" show-icon title="此模块没有需要配置的参数，可以直接发布。" class="mb-4" />
         </div>
@@ -779,7 +776,6 @@ function switchToToolTest(tool: McpToolInfo) {
   testParams.value = {};
   testResult.value = null;
   testError.value = null;
-  activeTab.value = 'tool-test';
 }
 
 // 返回列表页
@@ -891,8 +887,12 @@ const hasConfigSchema = computed(() => {
 
 // 初始化配置表单
 function initConfigForm() {
-  configForm.value = {};
-  configRules.value = {};
+  configForm.value = {
+    service_name: `${moduleInfo.value.name}-实例-${new Date().getTime().toString().slice(-6)}` // 默认服务名称
+  };
+  configRules.value = {
+    service_name: [{ required: true, message: '请输入服务名称', trigger: 'blur' }]
+  };
 
   if (moduleInfo.value.config_schema) {
     Object.entries(moduleInfo.value.config_schema).forEach(([key, schema]: [string, any]) => {
@@ -911,11 +911,12 @@ const handlePublishService = () => {
   // 如果有配置参数，则显示配置对话框
   if (hasConfigSchema.value) {
     initConfigForm();
-    publishDialogVisible.value = true;
-  } else {
-    // 否则直接发布
-    publishServiceWithConfig({});
   }
+  publishDialogVisible.value = true;
+  //  else {
+  //   // 否则直接发布
+  //   publishServiceWithConfig({});
+  // }
 };
 
 // 提交配置表单
@@ -1015,7 +1016,7 @@ const copyAsEgovakbUrl = (url: string) => {
       "transport": "sse"
     }
   }, null, 2);
-  
+
   // 复制到剪贴板
   copyTextToClipboard(egovakbFormat, 'egovakb格式URL已复制到剪贴板');
 };
