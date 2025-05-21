@@ -53,11 +53,15 @@
           </el-space>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="280" fixed="right">
         <template #default="scope">
           <el-button size="small" @click="handleEditUser(scope.row)"
             :disabled="scope.row.username === 'admin' && currentUser.username !== 'admin'">
             编辑
+          </el-button>
+          <el-button size="small" type="warning" @click="handleChangePassword(scope.row)"
+            :disabled="scope.row.username === 'admin' && currentUser.username !== 'admin'">
+            修改密码
           </el-button>
           <el-button size="small" type="danger" @click="handleDeleteUser(scope.row)"
             :disabled="scope.row.username === 'admin' || scope.row.id === currentUser.user_id">
@@ -75,9 +79,6 @@
         </el-form-item>
         <el-form-item label="密码" prop="password" v-if="!isEdit">
           <el-input v-model="userForm.password" type="password" show-password />
-        </el-form-item>
-        <el-form-item label="新密码" prop="password" v-else>
-          <el-input v-model="userForm.password" type="password" show-password placeholder="不修改请留空" />
         </el-form-item>
         <el-form-item label="姓名" prop="fullname">
           <el-input v-model="userForm.fullname" />
@@ -132,6 +133,24 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 修改密码对话框 -->
+    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="500px">
+      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="80px">
+        <el-form-item label="用户名" prop="username">
+          <el-input v-model="passwordForm.username" disabled />
+        </el-form-item>
+        <el-form-item label="新密码" prop="password">
+          <el-input v-model="passwordForm.password" type="password" show-password placeholder="请输入新密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="passwordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="savePassword" :loading="passwordLoading">
+          保存
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -154,9 +173,11 @@ const users = ref<any[]>([]);
 const tenants = ref<any[]>([]);
 const dialogVisible = ref(false);
 const importDialogVisible = ref(false);
+const passwordDialogVisible = ref(false);
 const isEdit = ref(false);
 const saveLoading = ref(false);
 const importLoading = ref(false);
+const passwordLoading = ref(false);
 const currentUser = reactive<any>({
   user_id: null,
   username: '',
@@ -189,6 +210,14 @@ const userForm = reactive({
   tenant_ids: [] as number[]
 });
 
+// 密码修改表单
+const passwordFormRef = ref<FormInstance>();
+const passwordForm = reactive({
+  id: null as number | null,
+  username: '',
+  password: ''
+});
+
 // 导入表单
 const importFormRef = ref<FormInstance>();
 const importForm = reactive({
@@ -204,31 +233,11 @@ const userRules = {
     { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
   ],
   password: [
-    {
-      required: (form: any) => !isEdit.value,
-      message: '请输入密码',
-      trigger: 'blur'
-    },
-    {
-      min: 6,
-      message: '密码长度至少为 6 个字符',
-      trigger: 'blur',
-      validator: (rule: any, value: string, callback: Function) => {
-        if (isEdit.value && !value) {
-          callback(); // 编辑模式下，密码可以为空
-        } else if (value.length < 6) {
-          callback(new Error('密码长度至少为 6 个字符'));
-        } else {
-          callback();
-        }
-      }
-    }
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 6, message: '密码长度至少为 6 个字符', trigger: 'blur' }
   ],
   email: [
     {
-      type: 'email',
-      message: '请输入正确的邮箱地址',
-      trigger: 'blur',
       validator: (rule: any, value: string, callback: Function) => {
         if (!value) {
           callback(); // 邮箱可以为空
@@ -237,8 +246,17 @@ const userRules = {
         } else {
           callback();
         }
-      }
+      },
+      trigger: 'blur'
     }
+  ]
+};
+
+// 密码修改验证规则
+const passwordRules = {
+  password: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, message: '密码长度至少为 6 个字符', trigger: 'blur' }
   ]
 };
 
@@ -261,7 +279,7 @@ onMounted(async () => {
 const fetchUsers = async () => {
   loading.value = true;
   try {
-    const data  = await getAllUsers();
+    const data = await getAllUsers();
     console.log(data);
     users.value = data.data;
   } catch (error: any) {
@@ -308,7 +326,7 @@ const handleEditUser = (row: any) => {
   isEdit.value = true;
   userForm.id = row.id;
   userForm.username = row.username;
-  userForm.password = ''; // 编辑时密码为空
+  userForm.password = ''; // 编辑时不关心密码
   userForm.fullname = row.fullname || '';
   userForm.email = row.email || '';
   userForm.is_admin = row.is_admin;
@@ -316,6 +334,14 @@ const handleEditUser = (row: any) => {
   // 设置用户所属租户
   userForm.tenant_ids = row.tenants.map((t: any) => t.id);
   dialogVisible.value = true;
+};
+
+// 修改密码
+const handleChangePassword = (row: any) => {
+  passwordForm.id = row.id;
+  passwordForm.username = row.username;
+  passwordForm.password = '';
+  passwordDialogVisible.value = true;
 };
 
 // 删除用户
@@ -331,7 +357,7 @@ const handleDeleteUser = (row: any) => {
   ).then(async () => {
     try {
       const data = await deleteUser(row.id);
-      if (data.code === 0) {
+      if (data.code === 0 || data.code === 200) {
         ElMessage.success('删除成功');
         await fetchUsers();
       } else {
@@ -348,8 +374,12 @@ const saveUser = async () => {
   if (!userFormRef.value) return;
 
   try {
+    // 打印表单内容以便调试
+    console.log('Form data before validation:', JSON.stringify(userForm));
+    console.log('Is edit mode:', isEdit.value);
+    
     await userFormRef.value.validate();
-
+    
     saveLoading.value = true;
 
     // 准备提交的数据
@@ -361,8 +391,8 @@ const saveUser = async () => {
       tenant_ids: userForm.tenant_ids
     };
 
-    // 如果设置了密码，则加入密码字段
-    if (userForm.password) {
+    // 如果是新建用户，则需要密码
+    if (!isEdit.value) {
       userData.password = userForm.password;
     }
 
@@ -371,28 +401,75 @@ const saveUser = async () => {
       userData.status = userForm.status;
     }
 
+    console.log('User data to submit:', JSON.stringify(userData));
+
     let data;
     if (isEdit.value) {
+      console.log(`Updating user with ID: ${userForm.id}`);
       data = await updateUser(userForm.id!, userData);
+      console.log('Update response:', data);
     } else {
+      console.log('Creating new user');
       data = await createUser(userData);
+      console.log('Create response:', data);
     }
 
-    if (data.code === 0) {
+    if (data.code === 0 || data.code === 200) {
       ElMessage.success(isEdit.value ? '更新成功' : '创建成功');
       dialogVisible.value = false;
       await fetchUsers();
     } else {
       ElMessage.error(data.message || (isEdit.value ? '更新失败' : '创建失败'));
+      console.error('API返回错误:', data);
     }
   } catch (error: any) {
+    console.error('操作失败:', error);
     if (error.response) {
-      ElMessage.error(error.response.data.error || '操作失败');
+      console.error('Response error:', error.response);
+      ElMessage.error(error.response.data?.error || '操作失败');
     } else {
       ElMessage.error('操作失败: ' + (error.message || '未知错误'));
     }
   } finally {
     saveLoading.value = false;
+  }
+};
+
+// 保存密码
+const savePassword = async () => {
+  if (!passwordFormRef.value) return;
+  
+  try {
+    await passwordFormRef.value.validate();
+    
+    passwordLoading.value = true;
+    
+    // 准备提交的数据
+    const userData = {
+      password: passwordForm.password
+    };
+    
+    console.log(`Updating password for user ID: ${passwordForm.id}`);
+    const data = await updateUser(passwordForm.id!, userData);
+    console.log('Update password response:', data);
+    
+    if (data.code === 0 || data.code === 200) {
+      ElMessage.success('密码修改成功');
+      passwordDialogVisible.value = false;
+    } else {
+      ElMessage.error(data.message || '密码修改失败');
+      console.error('API返回错误:', data);
+    }
+  } catch (error: any) {
+    console.error('密码修改失败:', error);
+    if (error.response) {
+      console.error('Response error:', error.response);
+      ElMessage.error(error.response.data?.error || '密码修改失败');
+    } else {
+      ElMessage.error('密码修改失败: ' + (error.message || '未知错误'));
+    }
+  } finally {
+    passwordLoading.value = false;
   }
 };
 
@@ -419,7 +496,7 @@ const importUser = async () => {
       tenant_ids: importForm.tenant_ids
     });
 
-    if (data.code === 0) {
+    if (data.code === 0 || data.code === 200) {
       ElMessage.success(data.message || '导入成功');
       importDialogVisible.value = false;
       await fetchUsers();
