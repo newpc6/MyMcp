@@ -4,11 +4,18 @@
     <el-aside width="280px" class="pr-4">
       <el-card shadow="never" class="mb-4">
         <template #header>
-          <div class="flex items-center">
-            <el-icon class="mr-2">
-              <Menu />
-            </el-icon>
-            <span class="text-lg font-semibold">MCP 分类</span>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <el-icon class="mr-2">
+                <Menu />
+              </el-icon>
+              <span class="text-lg font-semibold">MCP 分类</span>
+            </div>
+            <div>
+              <el-button type="primary" text size="small" @click="showCreateCategoryDialog">
+                <el-icon><Plus /></el-icon>
+              </el-button>
+            </div>
           </div>
         </template>
 
@@ -28,6 +35,15 @@
             </el-icon>
             <span class="category-name">{{ category.name }}</span>
             <el-tag size="small" class="ml-auto">{{ category.modules_count || 0 }}</el-tag>
+            <el-dropdown v-if="hasAdminPermission" trigger="click" @click.stop>
+              <el-icon class="ml-2"><MoreFilled /></el-icon>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item @click="handleEditCategory(category)">编辑</el-dropdown-item>
+                  <el-dropdown-item @click="handleDeleteCategory(category)">删除</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
           </el-menu-item>
         </el-menu>
       </el-card>
@@ -202,6 +218,41 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 创建分类对话框 -->
+    <el-dialog v-model="categoryDialogVisible" :title="editingCategory ? '编辑分类' : '创建分类'" width="40%" :destroy-on-close="true">
+      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px" label-position="top">
+        <el-form-item label="分类名称" prop="name">
+          <el-input v-model.trim="categoryForm.name" placeholder="请输入分类名称" clearable></el-input>
+        </el-form-item>
+
+        <el-form-item label="分类描述" prop="description">
+          <el-input v-model.trim="categoryForm.description" placeholder="请输入分类描述" clearable></el-input>
+        </el-form-item>
+
+        <el-form-item label="图标" prop="icon">
+          <el-select v-model="categoryForm.icon" placeholder="请选择图标" style="width: 100%">
+            <el-option v-for="icon in iconOptions" :key="icon" :label="icon" :value="icon">
+              <div class="flex items-center">
+                <el-icon class="mr-2">
+                  <component :is="icon" />
+                </el-icon>
+                <span>{{ icon }}</span>
+              </div>
+            </el-option>
+          </el-select>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="categoryDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitCategoryForm" :loading="submitting">
+            {{ editingCategory ? '保存' : '创建' }}
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
@@ -209,8 +260,8 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification, ElMessageBox } from 'element-plus';
-import { Tools, Menu, Collection } from '@element-plus/icons-vue';
-import { listModules, listCategories, createModule, deleteModule, cloneModule } from '../../api/marketplace';
+import { Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit, Star, Box, Monitor, Setting, Document } from '@element-plus/icons-vue';
+import { listModules, listCategories, createModule, deleteModule, cloneModule, createCategory, updateCategory, deleteCategory } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 
 const router = useRouter();
@@ -573,12 +624,18 @@ function handleCloneModule(module: McpModuleInfo) {
   // 阻止事件冒泡，避免触发卡片点击事件
   event?.stopPropagation();
 
+  // 处理标签，确保类型正确
+  let tagArray: string[] = [];
+  if (module.tags) {
+    tagArray = typeof module.tags === 'string' ? module.tags.split(',') : module.tags;
+  }
+
   // 设置复制表单的初始数据
   cloneForm.value = {
     name: `${module.name}_copy`,
     description: module.description || '',
     version: module.version || '1.0.0',
-    tags: module.tags ? module.tags.split(',') : [],
+    tags: tagArray,
     category_id: module.category_id || null,
     is_public: module.is_public !== undefined ? module.is_public : true,
     source_module_id: module.id
@@ -639,6 +696,203 @@ async function submitCloneForm() {
   } finally {
     submitting.value = false;
   }
+}
+
+// 检查是否有管理员权限
+const hasAdminPermission = computed(() => {
+  return currentUser.value.is_admin;
+});
+
+// 分类管理相关
+const categoryDialogVisible = ref(false);
+const categoryFormRef = ref<any>();
+const editingCategory = ref<McpCategoryInfo | null>(null);
+const categoryForm = ref<{
+  name: string;
+  description: string;
+  icon: string;
+}>({
+  name: '',
+  description: '',
+  icon: 'Folder'
+});
+
+const categoryRules = {
+  name: [
+    { required: true, message: '请输入分类名称', trigger: 'blur' },
+    { min: 2, max: 20, message: '长度在 2 到 20 个字符', trigger: 'blur' }
+  ]
+};
+
+// 图标选项
+const iconOptions = [
+  'Folder', 'Document', 'Tools', 'Setting', 'Monitor', 'Box', 'Star'
+];
+
+// 显示创建分类对话框
+function showCreateCategoryDialog() {
+  // 检查用户是否有管理员权限
+  if (!hasAdminPermission.value) {
+    ElMessageBox.alert(
+      '只有管理员可以创建分类。',
+      '权限不足',
+      { type: 'warning' }
+    );
+    return;
+  }
+
+  // 重置表单数据
+  editingCategory.value = null;
+  categoryForm.value = {
+    name: '',
+    description: '',
+    icon: 'Folder'
+  };
+  nextTick(() => {
+    categoryDialogVisible.value = true;
+  });
+}
+
+// 处理编辑分类
+function handleEditCategory(category: McpCategoryInfo) {
+  // 检查用户是否有管理员权限
+  if (!hasAdminPermission.value) {
+    ElMessageBox.alert(
+      '只有管理员可以编辑分类。',
+      '权限不足',
+      { type: 'warning' }
+    );
+    return;
+  }
+
+  // 阻止事件冒泡
+  event?.stopPropagation();
+  
+  // 设置编辑表单的初始数据
+  editingCategory.value = category;
+  categoryForm.value = {
+    name: category.name,
+    description: category.description || '',
+    icon: category.icon || 'Folder'
+  };
+  
+  nextTick(() => {
+    categoryDialogVisible.value = true;
+  });
+}
+
+// 处理删除分类
+async function handleDeleteCategory(category: McpCategoryInfo) {
+  // 检查用户是否有管理员权限
+  if (!hasAdminPermission.value) {
+    ElMessageBox.alert(
+      '只有管理员可以删除分类。',
+      '权限不足',
+      { type: 'warning' }
+    );
+    return;
+  }
+  
+  // 阻止事件冒泡
+  event?.stopPropagation();
+
+  try {
+    // 弹出确认框
+    await ElMessageBox.confirm(
+      `确定要删除"${category.name}"分类吗？删除后该分类下的MCP服务将被重置为无分类状态。`,
+      '确认删除',
+      {
+        confirmButtonText: '确认删除',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+    
+    const response = await deleteCategory(category.id);
+    
+    if (response && response.code === 0) {
+      ElNotification({
+        title: '成功',
+        message: '分类已删除',
+        type: 'success'
+      });
+      // 重新加载分类列表
+      await loadCategories();
+      // 如果当前选中的是被删除的分类，则切换到全部
+      if (selectedCategoryId.value === category.id.toString()) {
+        selectedCategoryId.value = 'all';
+        await loadModules();
+      }
+    } else {
+      ElNotification({
+        title: '错误',
+        message: `删除分类失败: ${response?.message || '未知错误'}`,
+        type: 'error'
+      });
+      await loadCategories();
+    }
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElNotification({
+        title: '错误',
+        message: `删除分类失败: ${error.message || '未知错误'}`,
+        type: 'error'
+      });
+    }
+  }
+}
+
+// 提交分类表单
+async function submitCategoryForm() {
+  await categoryFormRef.value?.validate(async (valid: boolean) => {
+    if (!valid) return;
+    
+    submitting.value = true;
+    try {
+      // 构建分类数据
+      const categoryData = {
+        name: categoryForm.value.name,
+        description: categoryForm.value.description,
+        icon: categoryForm.value.icon
+      };
+      
+      let response;
+      
+      if (editingCategory.value) {
+        // 更新分类
+        response = await updateCategory(editingCategory.value.id, categoryData);
+      } else {
+        // 创建分类
+        response = await createCategory(categoryData);
+      }
+      
+      if (response && response.code === 0) {
+        ElNotification({
+          title: '成功',
+          message: editingCategory.value ? '分类已更新' : '分类已创建',
+          type: 'success'
+        });
+        categoryDialogVisible.value = false;
+        // 重新加载分类列表
+        await loadCategories();
+      } else {
+        ElNotification({
+          title: '错误',
+          message: response?.message || (editingCategory.value ? '更新分类失败' : '创建分类失败'),
+          type: 'error'
+        });
+      }
+    } catch (error) {
+      console.error(editingCategory.value ? '更新分类失败' : '创建分类失败', error);
+      ElNotification({
+        title: '错误',
+        message: editingCategory.value ? '更新分类失败' : '创建分类失败',
+        type: 'error'
+      });
+    } finally {
+      submitting.value = false;
+    }
+  });
 }
 
 // 页面加载时获取模块列表和分组列表
@@ -834,5 +1088,19 @@ onMounted(async () => {
 
 :deep(.el-select .el-input__wrapper) {
   border-radius: 12px;
+}
+
+/* 添加新样式 */
+.el-dropdown-menu {
+  border-radius: 8px;
+}
+
+.el-dropdown {
+  margin-left: 4px;
+}
+
+.el-select-dropdown__item {
+  display: flex;
+  align-items: center;
 }
 </style>

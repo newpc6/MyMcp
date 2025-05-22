@@ -320,14 +320,16 @@ class AuthMiddleware(BaseHTTPMiddleware):
             else:
                 # 创建新用户
                 password = settings.DEFAULT_PASSWORD
+                platform_type = "egovakb"
+                create_username = f"{platform_type}-{username}"
                 new_user = UserService.create_user(
-                    username=username,
+                    username=create_username,
                     password=password,
                     email=email,
                     fullname=username,
                     is_admin=False,
                     external_id=external_id,
-                    platform_type="egovakb"
+                    platform_type=platform_type
                 )
                 
                 if not new_user:

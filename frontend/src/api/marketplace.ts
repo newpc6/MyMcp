@@ -78,27 +78,31 @@ export async function getCategory(categoryId: number): Promise<ApiResponse<McpCa
 }
 
 /**
- * 创建MCP分组
+ * 创建MCP分类
+ * @param categoryData 分类数据
+ * @returns 
  */
-export async function createCategory(data: Partial<McpCategoryInfo>): Promise<ApiResponse<McpCategoryInfo>> {
-  const response = await api.post(`${apiPrefix}/marketplace/categories`, data)
-  return response.data
+export const createCategory = (categoryData: any) => {
+  return api.post(`${apiPrefix}/marketplace/categories`, categoryData)
 }
 
 /**
- * 更新MCP分组
+ * 更新MCP分类
+ * @param categoryId 分类ID
+ * @param categoryData 分类数据
+ * @returns 
  */
-export async function updateCategory(categoryId: number, data: Partial<McpCategoryInfo>): Promise<ApiResponse<McpCategoryInfo>> {
-  const response = await api.put(`${apiPrefix}/marketplace/categories/${categoryId}`, data)
-  return response.data
+export const updateCategory = (categoryId: number, categoryData: any) => {
+  return api.put(`${apiPrefix}/marketplace/categories/${categoryId}`, categoryData)
 }
 
 /**
- * 删除MCP分组
+ * 删除MCP分类
+ * @param categoryId 分类ID
+ * @returns 
  */
-export async function deleteCategory(categoryId: number): Promise<ApiResponse<boolean>> {
-  const response = await api.delete(`${apiPrefix}/marketplace/categories/${categoryId}`)
-  return response.data
+export async function deleteCategory(categoryId: number) {
+  return await api.delete(`${apiPrefix}/marketplace/categories/${categoryId}`)
 }
 
 /**

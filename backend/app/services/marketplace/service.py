@@ -394,9 +394,9 @@ class MarketplaceService:
             )
             max_order_category = db.execute(
                 max_order_query
-            ).scalar_one_or_none()
+            ).first()
             if max_order_category:
-                max_order = max_order_category.order + 10
+                max_order = max_order_category[0].order + 10
             else:
                 max_order = 0
             

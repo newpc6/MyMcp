@@ -83,7 +83,7 @@ async def create_module(request: Request):
         data["user_id"] = user.get("user_id")
 
     result = marketplace_service.create_module(data)
-    return success_response(result, code=0, http_status_code=201)
+    return success_response(result, code=0, http_status_code=200)
 
 
 async def update_module(request: Request):
@@ -145,7 +145,7 @@ async def create_category(request: Request):
     """创建新的MCP分组"""
     data = await request.json()
     result = marketplace_service.create_category(data)
-    return success_response(result, code=0, http_status_code=201)
+    return success_response(result, code=0, http_status_code=200)
 
 
 async def update_category(request: Request):
