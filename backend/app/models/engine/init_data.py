@@ -6,7 +6,8 @@
 from sqlalchemy import select
 from datetime import datetime
 from app.models.engine import get_db
-from app.models.modules.mcp_marketplace import McpCategory, McpModule
+from app.models.modules.mcp_marketplace import McpModule
+from app.models.group.group import McpGroup
 from app.utils.logging import em_logger
 from pytz import timezone
 from app.models.modules.users import Tenant, User
@@ -70,7 +71,7 @@ def init_category_data():
     with get_db() as db:
         try:
             # 检查是否已有分类数据
-            existing = db.execute(select(McpCategory)).scalars().all()
+            existing = db.execute(select(McpGroup)).scalars().all()
             if existing:
                 em_logger.info(f"已存在 {len(existing)} 个MCP分类，跳过初始化")
                 return
@@ -78,7 +79,7 @@ def init_category_data():
             # 添加分类数据
             now = datetime.now(timezone('Asia/Shanghai'))  # 使用原生datetime对象
             for category_data in categories:
-                category = McpCategory(
+                category = McpGroup(
                     name=category_data["name"],
                     icon=category_data["icon"],
                     order=category_data["order"],
@@ -111,7 +112,7 @@ def auto_categorize_modules():
                 return
 
             # 获取所有分类
-            categories = db.execute(select(McpCategory)).scalars().all()
+            categories = db.execute(select(McpGroup)).scalars().all()
             if not categories:
                 em_logger.info("没有可用的分类")
                 return
@@ -191,20 +192,20 @@ def init_demo_modules():
             # 如果没有模块，添加演示模块
             if modules_count == 0:
                 # 获取分类ID
-                cat_query = select(McpCategory).where(
-                    McpCategory.name == "开发者工具"
+                cat_query = select(McpGroup).where(
+                    McpGroup.name == "开发者工具"
                 )
                 dev_cat = db.execute(cat_query).scalar_one_or_none()
                 dev_cat_id = dev_cat.id if dev_cat else None
 
-                cat_query = select(McpCategory).where(
-                    McpCategory.name == "搜索工具"
+                cat_query = select(McpGroup).where(
+                    McpGroup.name == "搜索工具"
                 )
                 search_cat = db.execute(cat_query).scalar_one_or_none()
                 search_cat_id = search_cat.id if search_cat else None
 
-                cat_query = select(McpCategory).where(
-                    McpCategory.name == "数据库工具"
+                cat_query = select(McpGroup).where(
+                    McpGroup.name == "数据库工具"
                 )
                 db_cat = db.execute(cat_query).scalar_one_or_none()
                 db_cat_id = db_cat.id if db_cat else search_cat_id

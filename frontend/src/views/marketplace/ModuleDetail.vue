@@ -296,7 +296,7 @@ import {
   getModule, getModuleTools, testModuleTool, updateModule,
   listServices, publishModule, stopService, startService, uninstallService,
   testModuleFunction,
-  listCategories,
+  listGroup,
   deleteModule,
   getService
 } from '../../api/marketplace';
@@ -703,7 +703,7 @@ function generateConfigSchema(): Record<string, any> {
 // 加载分类列表
 async function loadCategories() {
   try {
-    const response = await listCategories();
+    const response = await listGroup();
     if (response && response.data) {
       categories.value = response.data;
     } else {

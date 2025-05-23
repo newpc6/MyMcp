@@ -13,7 +13,9 @@
             </div>
             <div>
               <el-button type="primary" text size="small" @click="showCreateCategoryDialog">
-                <el-icon><Plus /></el-icon>
+                <el-icon>
+                  <Plus />
+                </el-icon>
               </el-button>
             </div>
           </div>
@@ -36,11 +38,13 @@
             <span class="category-name">{{ category.name }}</span>
             <el-tag size="small" class="ml-auto">{{ category.modules_count || 0 }}</el-tag>
             <el-dropdown v-if="hasAdminPermission" trigger="click" @click.stop>
-              <el-icon class="ml-2"><MoreFilled /></el-icon>
+              <el-icon class="ml-2">
+                <MoreFilled />
+              </el-icon>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item @click="handleEditCategory(category)">编辑</el-dropdown-item>
-                  <el-dropdown-item @click="handleDeleteCategory(category)">删除</el-dropdown-item>
+                  <el-dropdown-item @click.stop="handleEditCategory(category)">编辑</el-dropdown-item>
+                  <el-dropdown-item @click.stop="handleDeleteCategory(category)">删除</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -220,8 +224,10 @@
     </el-dialog>
 
     <!-- 创建分类对话框 -->
-    <el-dialog v-model="categoryDialogVisible" :title="editingCategory ? '编辑分类' : '创建分类'" width="40%" :destroy-on-close="true">
-      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px" label-position="top">
+    <el-dialog v-model="categoryDialogVisible" :title="editingCategory ? '编辑分类' : '创建分类'" width="40%"
+      :destroy-on-close="true">
+      <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px"
+        label-position="top">
         <el-form-item label="分类名称" prop="name">
           <el-input v-model.trim="categoryForm.name" placeholder="请输入分类名称" clearable></el-input>
         </el-form-item>
@@ -260,8 +266,14 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification, ElMessageBox } from 'element-plus';
-import { Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit, Star, Box, Monitor, Setting, Document } from '@element-plus/icons-vue';
-import { listModules, listCategories, createModule, deleteModule, cloneModule, createCategory, updateCategory, deleteCategory } from '../../api/marketplace';
+import {
+  Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit,
+  Star, Box, Monitor, Setting, Document
+} from '@element-plus/icons-vue';
+import {
+  listModules, listGroup, createModule, deleteModule, cloneModule,
+  createGroup, updateGroup, deleteGroup
+} from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 
 const router = useRouter();
@@ -484,7 +496,7 @@ async function loadModules() {
 // 加载分组列表
 async function loadCategories() {
   try {
-    const response = await listCategories();
+    const response = await listGroup();
     // 处理API响应格式
     if (response && response.data) {
       categories.value = response.data;
@@ -574,15 +586,15 @@ async function handleDeleteModule(module: McpModuleInfo) {
       type: 'info',
       duration: 0
     });
-    
+
     const response = await deleteModule(module.id);
-    
+
     // 关闭所有通知
     const notifications = document.querySelectorAll('.el-notification');
     notifications.forEach(notification => {
       (notification as any).__vue__?.close();
     });
-    
+
     if (response && response.code === 0) {
       ElNotification({
         title: '成功',
@@ -640,7 +652,7 @@ function handleCloneModule(module: McpModuleInfo) {
     is_public: module.is_public !== undefined ? module.is_public : true,
     source_module_id: module.id
   };
-  
+
   nextTick(() => {
     cloneDialogVisible.value = true;
   });
@@ -767,7 +779,7 @@ function handleEditCategory(category: McpCategoryInfo) {
 
   // 阻止事件冒泡
   event?.stopPropagation();
-  
+
   // 设置编辑表单的初始数据
   editingCategory.value = category;
   categoryForm.value = {
@@ -775,7 +787,7 @@ function handleEditCategory(category: McpCategoryInfo) {
     description: category.description || '',
     icon: category.icon || 'Folder'
   };
-  
+
   nextTick(() => {
     categoryDialogVisible.value = true;
   });
@@ -792,7 +804,7 @@ async function handleDeleteCategory(category: McpCategoryInfo) {
     );
     return;
   }
-  
+
   // 阻止事件冒泡
   event?.stopPropagation();
 
@@ -807,10 +819,10 @@ async function handleDeleteCategory(category: McpCategoryInfo) {
         type: 'warning',
       }
     );
-    
-    const response = await deleteCategory(category.id);
-    
-    if (response && response.code === 0) {
+
+    const response = await deleteGroup(category.id);
+
+    if (response && response.data.code === 0) {
       ElNotification({
         title: '成功',
         message: '分类已删除',
@@ -826,7 +838,7 @@ async function handleDeleteCategory(category: McpCategoryInfo) {
     } else {
       ElNotification({
         title: '错误',
-        message: `删除分类失败: ${response?.message || '未知错误'}`,
+        message: `删除分类失败: ${response?.data?.message || '未知错误'}`,
         type: 'error'
       });
       await loadCategories();
@@ -846,7 +858,7 @@ async function handleDeleteCategory(category: McpCategoryInfo) {
 async function submitCategoryForm() {
   await categoryFormRef.value?.validate(async (valid: boolean) => {
     if (!valid) return;
-    
+
     submitting.value = true;
     try {
       // 构建分类数据
@@ -855,18 +867,18 @@ async function submitCategoryForm() {
         description: categoryForm.value.description,
         icon: categoryForm.value.icon
       };
-      
+
       let response;
-      
+
       if (editingCategory.value) {
         // 更新分类
-        response = await updateCategory(editingCategory.value.id, categoryData);
+        response = await updateGroup(editingCategory.value.id, categoryData);
       } else {
         // 创建分类
-        response = await createCategory(categoryData);
+        response = await createGroup(categoryData);
       }
-      
-      if (response && response.code === 0) {
+      console.log(response);
+      if (response && response.data.code === 0) {
         ElNotification({
           title: '成功',
           message: editingCategory.value ? '分类已更新' : '分类已创建',
@@ -878,7 +890,7 @@ async function submitCategoryForm() {
       } else {
         ElNotification({
           title: '错误',
-          message: response?.message || (editingCategory.value ? '更新分类失败' : '创建分类失败'),
+          message: response?.data?.message || (editingCategory.value ? '更新分类失败' : '创建分类失败'),
           type: 'error'
         });
       }

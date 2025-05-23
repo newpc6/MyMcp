@@ -64,16 +64,16 @@ export async function scanModules(): Promise<ApiResponse<ScanResult>> {
 /**
  * 获取所有MCP分组
  */
-export async function listCategories(): Promise<ApiResponse<McpCategoryInfo[]>> {
-  const response = await api.get(`${apiPrefix}/marketplace/categories`)
+export async function listGroup(): Promise<ApiResponse<McpCategoryInfo[]>> {
+  const response = await api.get(`${apiPrefix}/group`)
   return response.data
 }
 
 /**
  * 获取分组详情
  */
-export async function getCategory(categoryId: number): Promise<ApiResponse<McpCategoryInfo>> {
-  const response = await api.get(`${apiPrefix}/marketplace/categories/${categoryId}`)
+export async function getGroup(groupId: number): Promise<ApiResponse<McpCategoryInfo>> {
+  const response = await api.get(`${apiPrefix}/group/${groupId}`)
   return response.data
 }
 
@@ -82,8 +82,8 @@ export async function getCategory(categoryId: number): Promise<ApiResponse<McpCa
  * @param categoryData 分类数据
  * @returns 
  */
-export const createCategory = (categoryData: any) => {
-  return api.post(`${apiPrefix}/marketplace/categories`, categoryData)
+export const createGroup = (groupData: any) => {
+  return api.post(`${apiPrefix}/group`, groupData)
 }
 
 /**
@@ -92,8 +92,8 @@ export const createCategory = (categoryData: any) => {
  * @param categoryData 分类数据
  * @returns 
  */
-export const updateCategory = (categoryId: number, categoryData: any) => {
-  return api.put(`${apiPrefix}/marketplace/categories/${categoryId}`, categoryData)
+export const updateGroup = (groupId: number, groupData: any) => {
+  return api.put(`${apiPrefix}/group/${groupId}`, groupData)
 }
 
 /**
@@ -101,15 +101,15 @@ export const updateCategory = (categoryId: number, categoryData: any) => {
  * @param categoryId 分类ID
  * @returns 
  */
-export async function deleteCategory(categoryId: number) {
-  return await api.delete(`${apiPrefix}/marketplace/categories/${categoryId}`)
+export async function deleteGroup(groupId: number) {
+  return await api.delete(`${apiPrefix}/group/${groupId}`)
 }
 
 /**
  * 更新模块所属分组
  */
-export async function updateModuleCategory(moduleId: number, categoryId: number | null): Promise<ApiResponse<McpModuleInfo>> {
-  const response = await api.put(`${apiPrefix}/marketplace/modules/${moduleId}/category`, { category_id: categoryId })
+export async function updateModuleGroup(moduleId: number, groupId: number | null): Promise<ApiResponse<McpModuleInfo>> {
+  const response = await api.put(`${apiPrefix}/modules/${moduleId}/group`, { group_id: groupId })
   return response.data
 }
 

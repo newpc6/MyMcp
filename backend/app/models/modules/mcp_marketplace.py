@@ -9,40 +9,7 @@ from sqlalchemy.sql import text
 
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
-
-
-class McpCategory(Base):
-    """MCP分组信息模型"""
-    __tablename__ = "mcp_categories"
-
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(100), index=True, unique=True)  # 分组名称
-    description = Column(Text, nullable=True)  # 分组描述
-    icon = Column(String(200), nullable=True)  # 分组图标
-    order = Column(Integer, default=0)  # 排序序号
-    created_at = Column(DateTime, default=now_beijing())
-    updated_at = Column(DateTime, default=now_beijing())
-    
-    def to_dict(self):
-        """转换为字典格式"""
-        # 获取模块数量通过直接查询
-        with get_db() as db:
-            # 使用原生SQL查询避免循环导入
-            query = "SELECT COUNT(*) FROM mcp_modules WHERE category_id = :id"
-            sql = text(query).bindparams(id=self.id)
-            modules_count = db.execute(sql).scalar()
-            
-        return {
-            "id": self.id,
-            "name": self.name,
-            "description": self.description,
-            "icon": self.icon,
-            "order": self.order,
-            "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "modules_count": modules_count
-        }
-
+from app.models.group.group import McpGroup
 
 class McpModule(Base):
     """MCP模块信息模型"""
@@ -78,7 +45,7 @@ class McpModule(Base):
         with get_db() as db:
             # 获取分类名称
             if self.category_id:
-                query = "SELECT name FROM mcp_categories WHERE id = :id"
+                query = f"SELECT name FROM {McpGroup.__tablename__} WHERE id = :id"
                 sql = text(query).bindparams(id=self.category_id)
                 result = db.execute(sql).first()
                 category_name = result[0] if result else None

@@ -10,7 +10,7 @@ from starlette.responses import FileResponse
 import os
 from . import (
     auth, tools, mcp_service, history,
-    execution, log, marketplace, statistics, static
+    execution, log, marketplace, statistics, static, group
 )
 from app.utils.logging import em_logger
 
@@ -94,6 +94,15 @@ def get_router(app) -> None:
     for route in marketplace.get_router():
         app.add_route(
             f"{settings.API_PREFIX}/marketplace{route.path}", 
+            route.endpoint, 
+            methods=route.methods, 
+            name=route.name
+        )
+    
+    # 添加分组路由
+    for route in group.get_router():
+        app.add_route(
+            f"{settings.API_PREFIX}{route.path}", 
             route.endpoint, 
             methods=route.methods, 
             name=route.name
