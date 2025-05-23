@@ -99,3 +99,5 @@ start.sh
 *.db
 assests
 assests/
+mcp.service
+backend/server.log
