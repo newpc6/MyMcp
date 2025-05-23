@@ -64,143 +64,17 @@
 
     <!-- 编辑模块对话框 -->
     <el-dialog v-model="editDialogVisible" title="编辑MCP服务" width="60%" :destroy-on-close="true">
-      <el-form ref="editFormRef" :model="editForm" :rules="editRules" label-width="100px" label-position="top">
-        <el-form-item label="服务名称" prop="name">
-          <el-input v-model.trim="editForm.name" placeholder="请输入服务名称" clearable></el-input>
-        </el-form-item>
-
-        <el-form-item label="服务描述" prop="description">
-          <textarea v-model="editForm.description" rows="3" placeholder="请输入服务描述" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;" clearable></textarea>
-        </el-form-item>
-
-        <el-form-item label="版本" prop="version">
-          <el-input v-model.trim="editForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
-        </el-form-item>
-
-        <el-form-item label="标签" prop="tags">
-          <el-select v-model="editForm.tags" multiple filterable allow-create default-first-option placeholder="请输入标签"
-            style="width: 100%" clearable>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="分类" prop="category_id">
-          <el-select v-model="editForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
-            <el-option v-for="category in categories" :key="category.id" :label="category.name"
-              :value="category.id"></el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="服务详情">
-          <textarea v-model="editForm.markdown_docs" rows="5" placeholder="请输入服务详情" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
-            clearable></textarea>
-        </el-form-item>
-
-        <el-form-item label="代码" prop="code">
-          <textarea v-model="editForm.code" rows="8" placeholder="请输入Python代码" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
-            clearable></textarea>
-        </el-form-item>
-
-        <!-- 配置参数编辑区域 -->
-        <el-form-item label="配置参数">
-          <div class="config-params-container">
-            <div class="mb-4">
-              <el-button type="primary" size="default" @click="addConfigParam" :icon="Plus">新增参数</el-button>
-            </div>
-
-            <div v-if="!configParams.length" class="text-center py-8 text-gray-500 bg-gray-50 rounded-lg">
-              <el-empty description="暂无配置参数，点击上方按钮添加"></el-empty>
-            </div>
-
-            <el-table v-else :data="configParams" style="width: 100%" border>
-              <el-table-column type="index" label="#" width="60" align="center" />
-
-              <el-table-column label="基本信息" width="280">
-                <template #default="scope">
-                  <div class="param-base-info">
-                    <el-form-item label="参数名称" class="mb-2">
-                      <el-input v-model="scope.row.key" placeholder="参数键名，如 api_key" size="default" />
-                    </el-form-item>
-
-                    <el-form-item label="参数类型" class="mb-2">
-                      <el-select v-model="scope.row.type" style="width: 100%" size="default">
-                        <el-option label="文本" value="string" />
-                        <el-option label="密码" value="password" />
-                        <el-option label="数字" value="integer" />
-                        <el-option label="布尔值" value="boolean" />
-                      </el-select>
-                    </el-form-item>
-                  </div>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="显示信息" width="380">
-                <template #default="scope">
-                  <div class="param-display-info">
-                    <el-form-item label="标题" class="mb-2">
-                      <el-input v-model="scope.row.title" placeholder="参数显示名称，如 API密钥" size="default" />
-                    </el-form-item>
-
-                    <el-form-item label="描述" class="mb-2">
-                      <el-input v-model="scope.row.description" placeholder="参数描述，如 您的API访问密钥" size="default" />
-                    </el-form-item>
-                  </div>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="其他设置">
-                <template #default="scope">
-                  <div class="flex items-center">
-                    <el-form-item label="是否必填" class="mb-2 mr-4">
-                      <el-switch v-model="scope.row.required" />
-                    </el-form-item>
-
-                    <el-form-item v-if="scope.row.type === 'string' || scope.row.type === 'password'" label="占位符"
-                      class="mb-2">
-                      <el-input v-model="scope.row.placeholder" placeholder="占位提示" size="default"
-                        style="width: 160px" />
-                    </el-form-item>
-
-                    <el-form-item v-if="scope.row.type === 'integer'" label="默认值" class="mb-2">
-                      <el-input-number v-model="scope.row.default" :min="0" style="width: 160px" size="default" />
-                    </el-form-item>
-
-                    <el-form-item v-if="scope.row.type === 'boolean'" label="默认值" class="mb-2">
-                      <el-switch v-model="scope.row.default" />
-                    </el-form-item>
-                  </div>
-                </template>
-              </el-table-column>
-
-              <el-table-column label="操作" width="80" align="center">
-                <template #default="scope">
-                  <el-button type="danger" size="small" circle @click="removeConfigParam(scope.$index)" title="删除参数">
-                    <el-icon>
-                      <Delete />
-                    </el-icon>
-                  </el-button>
-                </template>
-              </el-table-column>
-            </el-table>
-          </div>
-        </el-form-item>
-
-        <el-form-item label="访问权限">
-          <el-radio-group v-model="editForm.is_public">
-            <el-radio :label="true">公开</el-radio>
-            <el-radio :label="false">私有</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <span class="dialog-footer">
+      <McpServiceForm 
+        v-model="editForm" 
+        :categories="categories"
+        :isSubmitting="updating"
+        ref="editFormRef"
+      >
+        <template #actions>
           <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitEditForm" :loading="updating">更新</el-button>
-        </span>
-      </template>
+          <el-button type="primary" @click="submitEditForm" :loading="updating">保存</el-button>
+        </template>
+      </McpServiceForm>
     </el-dialog>
 
     <!-- 发布服务对话框 -->
@@ -307,11 +181,12 @@ import { Delete, Plus, Connection } from '@element-plus/icons-vue';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 
 // 引入拆分的组件
-import ModuleInfoCard from '@/views/marketplace/components/ModuleInfoCard.vue';
-import ServicePublishCard from '@/views/marketplace/components/ServicePublishCard.vue';
-import ServiceDetailsPanel from '@/views/marketplace/components/ServiceDetailsPanel.vue';
-import ToolTestPanel from '@/views/marketplace/components/ToolTestPanel.vue';
-import CodeEditorPanel from '@/views/marketplace/components/CodeEditorPanel.vue';
+import ModuleInfoCard from './components/ModuleInfoCard.vue';
+import ServicePublishCard from './components/ServicePublishCard.vue';
+import ServiceDetailsPanel from './components/ServiceDetailsPanel.vue';
+import ToolTestPanel from './components/ToolTestPanel.vue';
+import CodeEditorPanel from './components/CodeEditorPanel.vue';
+import McpServiceForm from './components/McpServiceForm.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -358,19 +233,6 @@ const editForm = ref<{
   markdown_docs: ''
 });
 
-const editRules = {
-  name: [
-    { required: true, message: '请输入服务名称', trigger: 'blur' },
-    { min: 2, max: 50, message: '长度在 2 到 50 个字符', trigger: 'blur' }
-  ],
-  description: [
-    { required: true, message: '请输入服务描述', trigger: 'blur' }
-  ],
-  code: [
-    { required: true, message: '请输入代码', trigger: 'blur' }
-  ]
-};
-
 // 当前用户信息
 const currentUser = ref<{
   user_id: number | null;
@@ -383,13 +245,13 @@ const currentUser = ref<{
 });
 
 // 检查是否有编辑权限
-const hasEditPermission = computed(() => {
-  // 如果是管理员，有编辑权限
+const hasEditPermission = computed((): boolean => {
+  // 如果是管理员，有权限
   if (currentUser.value.is_admin) {
     return true;
   }
 
-  // 非管理员只能编辑自己创建的MCP服务
+  // 非管理员只能编辑自己创建的服务
   return moduleInfo.value.user_id === currentUser.value.user_id;
 });
 
@@ -927,6 +789,22 @@ const updateServiceParamsFunc = async () => {
     updatingParams.value = false;
   }
 };
+
+// 添加配置参数
+function addConfigParam() {
+  configParams.value.push({
+    key: '',
+    type: 'string',
+    title: '',
+    description: '',
+    required: false
+  });
+}
+
+// 移除配置参数
+function removeConfigParam(index: number) {
+  configParams.value.splice(index, 1);
+}
 
 // 页面加载时获取模块详情
 onMounted(() => {

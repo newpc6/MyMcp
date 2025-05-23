@@ -129,104 +129,32 @@
 
     <!-- 创建MCP服务对话框 -->
     <el-dialog v-model="createDialogVisible" title="创建MCP服务" width="60%" :destroy-on-close="true">
-      <el-form ref="createFormRef" :model="createForm" :rules="createRules" label-width="100px" label-position="top">
-        <el-form-item label="服务名称" prop="name">
-          <el-input v-model.trim="createForm.name" placeholder="请输入服务名称" clearable></el-input>
-        </el-form-item>
-
-        <el-form-item label="服务描述" prop="description">
-          <textarea v-model="createForm.description" rows="3" placeholder="请输入服务描述" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;" clearable></textarea>
-        </el-form-item>
-
-        <el-form-item label="版本" prop="version">
-          <el-input v-model.trim="createForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
-        </el-form-item>
-
-        <el-form-item label="标签" prop="tags">
-          <el-select v-model="createForm.tags" multiple filterable allow-create default-first-option placeholder="请输入标签"
-            style="width: 100%">
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="分类" prop="category_id">
-          <el-select v-model="createForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
-            <el-option v-for="category in categories" :key="category.id" :label="category.name"
-              :value="category.id"></el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="服务详情">
-          <textarea v-model="createForm.markdown_docs" rows="5" placeholder="请输入服务详情" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
-            clearable></textarea>
-        </el-form-item>
-
-        <el-form-item label="代码" prop="code">
-          <textarea v-model="createForm.code" rows="8" placeholder="请输入Python代码" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px; font-family: monospace;"
-            clearable></textarea>
-        </el-form-item>
-
-        <el-form-item label="访问权限">
-          <el-radio-group v-model="createForm.is_public">
-            <el-radio :label="true">公开</el-radio>
-            <el-radio :label="false">私有</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <span class="dialog-footer">
+      <McpServiceForm 
+        v-model="createForm" 
+        :categories="categories"
+        :isSubmitting="submitting"
+        ref="createFormRef"
+      >
+        <template #actions>
           <el-button @click="createDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitCreateForm" :loading="submitting">创建</el-button>
-        </span>
-      </template>
+        </template>
+      </McpServiceForm>
     </el-dialog>
 
     <!-- 复制MCP服务对话框 -->
     <el-dialog v-model="cloneDialogVisible" title="复制MCP服务" width="60%" :destroy-on-close="true">
-      <el-form ref="cloneFormRef" :model="cloneForm" :rules="cloneRules" label-width="100px" label-position="top">
-        <el-form-item label="服务名称" prop="name">
-          <el-input v-model.trim="cloneForm.name" placeholder="请输入服务名称" clearable></el-input>
-        </el-form-item>
-
-        <el-form-item label="服务描述" prop="description">
-          <textarea v-model="cloneForm.description" rows="3" placeholder="请输入服务描述" class="el-textarea__inner"
-            style="width: 100%; border-radius: 4px; border: 1px solid #DCDFE6; padding: 10px;" clearable></textarea>
-        </el-form-item>
-
-        <el-form-item label="版本" prop="version">
-          <el-input v-model.trim="cloneForm.version" placeholder="请输入版本号，例如：1.0.0" clearable></el-input>
-        </el-form-item>
-
-        <el-form-item label="标签" prop="tags">
-          <el-select v-model="cloneForm.tags" multiple filterable allow-create default-first-option placeholder="请输入标签"
-            style="width: 100%">
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="分类" prop="category_id">
-          <el-select v-model="cloneForm.category_id" placeholder="请选择分类" style="width: 100%" clearable>
-            <el-option v-for="category in categories" :key="category.id" :label="category.name"
-              :value="category.id"></el-option>
-          </el-select>
-        </el-form-item>
-
-        <el-form-item label="访问权限">
-          <el-radio-group v-model="cloneForm.is_public">
-            <el-radio :label="true">公开</el-radio>
-            <el-radio :label="false">私有</el-radio>
-          </el-radio-group>
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <span class="dialog-footer">
+      <McpServiceForm 
+        v-model="cloneForm" 
+        :categories="categories"
+        :isSubmitting="submitting"
+        ref="cloneFormRef"
+      >
+        <template #actions>
           <el-button @click="cloneDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitCloneForm" :loading="submitting">复制</el-button>
-        </span>
-      </template>
+        </template>
+      </McpServiceForm>
     </el-dialog>
 
     <!-- 创建分类对话框 -->
@@ -281,6 +209,7 @@ import {
   createGroup, updateGroup, deleteGroup
 } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
+import McpServiceForm from './components/McpServiceForm.vue';
 
 const router = useRouter();
 const modules = ref<McpModuleInfo[]>([]);
