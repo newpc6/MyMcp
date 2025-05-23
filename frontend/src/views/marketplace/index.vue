@@ -12,7 +12,7 @@
               <span class="text-lg font-semibold">MCP 分类</span>
             </div>
             <div>
-              <el-button type="primary" text size="small" @click="showCreateCategoryDialog">
+              <el-button size="small" @click="showCreateCategoryDialog">
                 <el-icon>
                   <Plus />
                 </el-icon>
@@ -89,18 +89,24 @@
               </div>
               <div class="flex flex-col items-end">
                 <div class="text-gray-500 text-xs mb-1">更新时间: {{ formatDate(module.updated_at) }}</div>
-                <div class="flex">
-                  <el-button type="danger" link size="small" @click.stop="handleDeleteModule(module)"
-                    v-if="hasEditPermission(module)">
-                    删除
+                <el-dropdown trigger="click" @click.stop>
+                  <el-button size="small" type="primary" @click.stop>
+                    <el-icon><MoreFilled /></el-icon>
                   </el-button>
-                  <el-button type="primary" link size="small" @click.stop="handleCloneModule(module)">
-                    复制
-                  </el-button>
-                  <el-button type="primary" link @click.stop="goToModuleDetail(module.id)">
-                    查看详情
-                  </el-button>
-                </div>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item @click.stop="goToModuleDetail(module.id)">
+                        <el-icon><View /></el-icon> 查看详情
+                      </el-dropdown-item>
+                      <el-dropdown-item @click.stop="handleCloneModule(module)">
+                        <el-icon><CopyDocument /></el-icon> 复制
+                      </el-dropdown-item>
+                      <el-dropdown-item v-if="hasEditPermission(module)" @click.stop="handleDeleteModule(module)" divided>
+                        <el-icon><Delete /></el-icon> 删除
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
               </div>
             </div>
           </el-card>
@@ -268,7 +274,7 @@ import { useRouter } from 'vue-router';
 import { ElNotification, ElMessageBox } from 'element-plus';
 import {
   Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit,
-  Star, Box, Monitor, Setting, Document
+  Star, Box, Monitor, Setting, Document, View, CopyDocument, Delete
 } from '@element-plus/icons-vue';
 import {
   listModules, listGroup, createModule, deleteModule, cloneModule,

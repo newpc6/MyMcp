@@ -520,6 +520,63 @@ class MarketplaceService:
         except SQLAlchemyError as e:
             em_logger.error(f"删除模块错误: {str(e)}")
             return False
+            
+    def clone_module(
+        self, module_id: int, user_id: int, data: Optional[Dict[str, Any]] = None
+    ) -> Optional[Dict[str, Any]]:
+        """复制MCP模块
+        
+        参数:
+            module_id: 要复制的模块ID
+            user_id: 当前用户ID（新模块的所有者）
+            data: 可选的自定义属性，用于覆盖默认复制的属性
+            
+        返回:
+            复制后的新模块信息，如果原模块不存在则返回None
+        """
+        try:
+            with get_db() as db:
+                # 获取源模块
+                source_module = db.query(McpModule).filter(McpModule.id == module_id).first()
+                if not source_module:
+                    return None
+                
+                # 准备新模块的默认数据
+                module_data = {
+                    "name": f"{source_module.name} - 副本",
+                    "description": source_module.description,
+                    "module_path": source_module.module_path,
+                    "author": source_module.author,
+                    "version": source_module.version,
+                    "tags": source_module.tags,
+                    "icon": source_module.icon,
+                    "is_hosted": source_module.is_hosted,
+                    "repository_url": source_module.repository_url,
+                    "category_id": source_module.category_id,
+                    "code": source_module.code,
+                    "config_schema": source_module.config_schema,
+                    "markdown_docs": source_module.markdown_docs,
+                    "user_id": user_id,  # 设置为当前用户
+                    "is_public": False   # 默认设为私有
+                }
+                
+                # 如果提供了自定义数据，覆盖默认值
+                if data:
+                    for key, value in data.items():
+                        if key in module_data and key != "user_id":  # 不允许覆盖user_id
+                            module_data[key] = value
+                
+                # 创建新模块
+                new_module = McpModule(**module_data)
+                
+                db.add(new_module)
+                db.commit()
+                db.refresh(new_module)
+                
+                return new_module.to_dict()
+        except SQLAlchemyError as e:
+            em_logger.error(f"复制模块错误: {str(e)}")
+            return None
 
 
 # 创建服务实例

@@ -252,6 +252,38 @@ async def uninstall_service(request: Request):
         return error_response(f"卸载服务失败: {str(e)}", code=500, http_status_code=500)
 
 
+async def clone_module(request: Request):
+    """复制MCP模块"""
+    module_id = int(request.path_params["module_id"])
+    
+    # 获取用户信息
+    user = request.state.user
+    if not user or not user.get("user_id"):
+        return error_response("需要登录才能复制模块", code=401, http_status_code=401)
+    
+    user_id = user.get("user_id")
+    
+    # 获取请求体中的自定义数据
+    custom_data = {}
+    try:
+        if request.headers.get("content-type") == "application/json":
+            custom_data = await request.json()
+    except Exception:
+        # 如果解析JSON失败，使用默认值
+        pass
+    
+    # 复制模块
+    result = marketplace_service.clone_module(module_id, user_id, custom_data)
+    if not result:
+        return error_response(
+            "复制模块失败，模块可能不存在", 
+            code=404, 
+            http_status_code=404
+        )
+    
+    return success_response(result, message="模块复制成功")
+
+
 async def update_service_description(request: Request):
     """更新服务描述"""
     service_uuid = request.path_params["service_uuid"]
@@ -385,5 +417,7 @@ def get_router():
               uninstall_service, methods=["POST"]),
         Route("/services/{service_uuid}/description",
               update_service_description, methods=["PUT"]),
+        Route("/modules/{module_id:int}/clone",
+              clone_module, methods=["POST"]),
     ]
     return routes
