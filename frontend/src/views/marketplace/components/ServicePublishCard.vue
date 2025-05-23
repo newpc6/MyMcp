@@ -95,8 +95,9 @@
 <script setup lang="ts">
 import { DocumentCopy, Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import type { McpServiceInfo } from '../../types/marketplace';
+import type { McpServiceInfo } from '@/types/marketplace';
 import { ref, onMounted } from 'vue';
+import { copyTextToClipboard } from '@/utils/copy';
 
 const props = defineProps<{
   services: McpServiceInfo[];
@@ -144,18 +145,7 @@ const getStatusText = (status: string) => {
 
 // 复制URL到剪贴板
 const copyUrl = (url: string) => {
-  navigator.clipboard.writeText(url).then(() => {
-    ElMessage.success('URL已复制到剪贴板');
-  }).catch(() => {
-    // 回退处理
-    const textArea = document.createElement('textarea');
-    textArea.value = url;
-    document.body.appendChild(textArea);
-    textArea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textArea);
-    ElMessage.success('URL已复制到剪贴板');
-  });
+  copyTextToClipboard(url);
 };
 
 // 复制为egovakb格式的URL
