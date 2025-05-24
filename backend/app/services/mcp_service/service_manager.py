@@ -687,8 +687,15 @@ class McpServiceManager:
             # 添加服务路由到主应用
             sse_path = f"{self._get_sse_path(service_uuid)}/sse"
             message_path = f"{self._get_sse_path(service_uuid)}/messages/"
-
-            self._main_app.add_route(sse_path, handle_sse)
+            route = Route(
+                path=sse_path,
+                endpoint=handle_sse,
+                methods=None,
+                name=None,
+                include_in_schema=True,
+            )
+            # 在所有路由之前插入，不然会被spa路由捕获
+            self._main_app.routes.insert(0, route)
             self._main_app.mount(message_path, sse.handle_post_message)
             with get_db() as db:
                 service_db = db.query(McpService).filter(
