@@ -83,8 +83,8 @@
                 <el-tag v-else size="small" type="success" class="ml-1">
                   公开
                 </el-tag>
-                <el-tag v-if="module.creator_name" size="small" type="info" class="ml-1">
-                  创建者: {{ module.creator_name }}
+                <el-tag v-if="module.username" size="small" type="info" class="ml-1">
+                  创建者: {{ module.username }}
                 </el-tag>
               </div>
               <div class="flex flex-col items-end">
