@@ -8,6 +8,7 @@ from app.utils.response import success_response, error_response
 from app.services.marketplace.service import marketplace_service
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.logging import em_logger
+from app.utils.permissions import get_user_info
 
 
 async def list_modules(request: Request):
@@ -18,10 +19,9 @@ async def list_modules(request: Request):
         category_id = int(category_id)
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
+    # 调用服务层方法，获取包含编辑权限的结果
     result = marketplace_service.list_modules(
         category_id=category_id,
         user_id=user_id,
@@ -35,10 +35,9 @@ async def get_module(request: Request):
     module_id = int(request.path_params["module_id"])
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
+    # 调用服务层方法，获取包含编辑权限的结果
     result = marketplace_service.get_module(
         module_id=module_id,
         user_id=user_id,
@@ -78,9 +77,9 @@ async def create_module(request: Request):
     data = await request.json()
 
     # 获取用户信息并添加到数据中
-    user = request.state.user
-    if user:
-        data["user_id"] = user.get("user_id")
+    user_id, is_admin = get_user_info(request)
+    if user_id:
+        data["user_id"] = user_id
 
     result = marketplace_service.create_module(data)
     return success_response(result, code=0, http_status_code=200)
@@ -92,9 +91,7 @@ async def update_module(request: Request):
     data = await request.json()
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     result = marketplace_service.update_module(
         module_id=module_id,
@@ -112,9 +109,7 @@ async def delete_module(request: Request):
     module_id = int(request.path_params["module_id"])
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     success = marketplace_service.delete_module(
         module_id=module_id,
@@ -131,9 +126,7 @@ async def publish_module(request: Request):
     module_id = int(request.path_params["module_id"])
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     try:
         # 获取配置参数
@@ -171,9 +164,7 @@ async def stop_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     try:
         from app.services.mcp_service.service_manager import service_manager
@@ -201,9 +192,7 @@ async def start_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     try:
         from app.services.mcp_service.service_manager import service_manager
@@ -230,9 +219,7 @@ async def uninstall_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     try:
         from app.services.mcp_service.service_manager import service_manager
@@ -257,11 +244,9 @@ async def clone_module(request: Request):
     module_id = int(request.path_params["module_id"])
     
     # 获取用户信息
-    user = request.state.user
-    if not user or not user.get("user_id"):
+    user_id, is_admin = get_user_info(request)
+    if not user_id:
         return error_response("需要登录才能复制模块", code=401, http_status_code=401)
-    
-    user_id = user.get("user_id")
     
     # 获取请求体中的自定义数据
     custom_data = {}
@@ -326,16 +311,14 @@ async def list_services(request: Request):
         module_id = int(module_id)
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     try:
         from app.services.mcp_service.service_manager import (
             service_manager
         )
 
-        # 获取服务列表
+        # 获取服务列表（包含编辑权限信息）
         services = service_manager.list_services(
             module_id=module_id,
             user_id=user_id,
@@ -345,8 +328,8 @@ async def list_services(request: Request):
         return success_response(services)
     except Exception as e:
         em_logger.error(f"获取服务列表失败: {str(e)}")
-        msg = f"获取服务列表失败: {str(e)}"
-        return error_response(msg, code=500, http_status_code=500)
+        err_msg = f"获取服务列表失败: {str(e)}"
+        return error_response(err_msg, code=500, http_status_code=500)
 
 
 async def get_service(request: Request):
@@ -354,19 +337,19 @@ async def get_service(request: Request):
     service_uuid = request.path_params["service_uuid"]
 
     # 获取用户信息
-    user = request.state.user
-    user_id = user.get("user_id") if user else None
-    is_admin = user.get("is_admin", False) if user else False
+    user_id, is_admin = get_user_info(request)
 
     try:
         from app.services.mcp_service.service_manager import (
             service_manager
         )
 
-        # 获取服务状态
+        # 获取服务状态（包含编辑权限信息）
         service = service_manager.get_service_status(
             service_uuid,
-            request=request  # 传递请求对象
+            request=request,  # 传递请求对象
+            user_id=user_id,
+            is_admin=is_admin
         )
         if not service:
             return error_response("服务不存在", code=404, http_status_code=404)
@@ -380,8 +363,8 @@ async def get_service(request: Request):
         return success_response(service)
     except Exception as e:
         em_logger.error(f"获取服务状态失败: {str(e)}")
-        msg = f"获取服务状态失败: {str(e)}"
-        return error_response(msg, code=500, http_status_code=500)
+        err_msg = f"获取服务状态失败: {str(e)}"
+        return error_response(err_msg, code=500, http_status_code=500)
 
 
 async def get_online_services(request: Request):

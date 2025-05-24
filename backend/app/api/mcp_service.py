@@ -7,6 +7,7 @@ from app.utils.response import success_response, error_response
 from app.server.mcp_server import (
     add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools, update_service_params
 )
+from app.utils.permissions import add_edit_permission, get_user_info
 from ..core.config import settings
 
 
@@ -100,16 +101,33 @@ async def restart_service(request: Request):
 async def get_status(request: Request):
     """获取MCP服务状态"""
     try:
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)
+        
+        # 获取服务状态
         status = check_mcp_status()
+        
+        # 添加可编辑字段
+        status = add_edit_permission(status, user_id, is_admin)
+        
         return success_response(status)
     except Exception as e:
-        return error_response(f"获取服务状态失败: {str(e)}", code=500, http_status_code=500)
+        error_msg = f"获取服务状态失败: {str(e)}"
+        return error_response(error_msg, code=500, http_status_code=500)
 
 
 async def enabled_tools(request: Request):
     """获取当前启用的工具列表"""
     try:
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)
+        
+        # 获取工具列表
         tools_list = get_enabled_tools()
+        
+        # 添加可编辑字段
+        tools_list = add_edit_permission(tools_list, user_id, is_admin)
+        
         return success_response({
             "enabled_tools": tools_list, 
             "count": len(tools_list)

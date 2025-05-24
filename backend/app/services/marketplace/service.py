@@ -19,6 +19,7 @@ from app.models.modules.mcp_marketplace import McpModule, McpTool
 from app.core.utils import now_beijing
 from app.utils.logging import em_logger
 from app.services.mcp_service.service_manager import service_manager
+from app.utils.permissions import add_edit_permission
 
 
 class MarketplaceService:
@@ -53,9 +54,12 @@ class MarketplaceService:
                 )
                 
             modules = db.execute(query).scalars().all()
-            return [m.to_dict() for m in modules]
+            result = [m.to_dict() for m in modules]
+            # 添加可编辑字段
+            return add_edit_permission(result, user_id, is_admin)
     
-    def get_module(self, module_id: int, user_id: Optional[int] = None, is_admin: bool = False) -> Optional[Dict[str, Any]]:
+    def get_module(self, module_id: int, user_id: Optional[int] = None, 
+                  is_admin: bool = False) -> Optional[Dict[str, Any]]:
         """获取指定的MCP模块信息"""
         with get_db() as db:
             query = select(McpModule).where(McpModule.id == module_id)
@@ -68,8 +72,10 @@ class MarketplaceService:
             if not is_admin and user_id is not None:
                 if not module.is_public and module.user_id != user_id:
                     return None
-                    
-            return module.to_dict()
+            
+            result = module.to_dict()
+            # 添加可编辑字段
+            return add_edit_permission(result, user_id, is_admin)
     
     def get_module_tools(
         self, module_id: int

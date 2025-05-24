@@ -10,25 +10,32 @@ from app.models.modules.mcp_marketplace import McpModule
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import em_logger
+from app.utils.permissions import add_edit_permission
 
 
 class GroupService:
     """分组服务"""
     
-    def list_group(self) -> List[Dict[str, Any]]:
+    def list_group(self, user_id: Optional[int] = None, 
+                   is_admin: bool = False) -> List[Dict[str, Any]]:
         """获取所有MCP分组"""
         with get_db() as db:
             query = select(McpGroup).order_by(McpGroup.order)
             categories = db.execute(query).scalars().all()
-            return [c.to_dict() for c in categories]
+            result = [c.to_dict() for c in categories]
+            # 添加可编辑字段
+            return add_edit_permission(result, user_id, is_admin)
     
-    def get_category(self, category_id: int) -> Optional[Dict[str, Any]]:
+    def get_category(self, category_id: int, user_id: Optional[int] = None, 
+                     is_admin: bool = False) -> Optional[Dict[str, Any]]:
         """获取指定MCP分组详情"""
         with get_db() as db:
             query = select(McpGroup).where(McpGroup.id == category_id)
             category = db.execute(query).scalar_one_or_none()
             if category:
-                return category.to_dict()
+                result = category.to_dict()
+                # 添加可编辑字段
+                return add_edit_permission(result, user_id, is_admin)
             return None
     
     def create_category(self, data: Dict[str, Any]) -> Dict[str, Any]:
@@ -53,7 +60,8 @@ class GroupService:
                 icon=data.get("icon"),
                 order=data.get("order", max_order),
                 created_at=now_beijing(),
-                updated_at=now_beijing()
+                updated_at=now_beijing(),
+                user_id=data.get("user_id")  # 保存创建者ID
             )
             
             db.add(category)
@@ -63,7 +71,8 @@ class GroupService:
             return category.to_dict()
     
     def update_category(
-        self, category_id: int, data: Dict[str, Any]
+        self, category_id: int, data: Dict[str, Any],
+        user_id: Optional[int] = None, is_admin: bool = False
     ) -> Optional[Dict[str, Any]]:
         """更新MCP分组"""
         with get_db() as db:
@@ -74,6 +83,11 @@ class GroupService:
             category = db.execute(category_query).scalar_one_or_none()
             if not category:
                 return None
+            
+            # 检查权限：非管理员只能更新自己创建的分组
+            if not is_admin and user_id is not None:
+                if category.user_id != user_id:
+                    return None
             
             # 更新分组信息
             update_data = {}
@@ -98,9 +112,12 @@ class GroupService:
             
             # 返回更新后的分组信息
             updated_category = db.execute(category_query).scalar_one()
-            return updated_category.to_dict()
+            result = updated_category.to_dict()
+            # 添加可编辑字段
+            return add_edit_permission(result, user_id, is_admin)
     
-    def delete_category(self, category_id: int) -> bool:
+    def delete_category(self, category_id: int, user_id: Optional[int] = None, 
+                        is_admin: bool = False) -> bool:
         """删除MCP分组"""
         with get_db() as db:
             try:
@@ -111,6 +128,11 @@ class GroupService:
                 category = db.execute(category_query).scalar_one_or_none()
                 if not category:
                     return False
+                
+                # 检查权限：非管理员只能删除自己创建的分组
+                if not is_admin and user_id is not None:
+                    if category.user_id != user_id:
+                        return False
                 
                 # 先将该分组下的模块解除关联
                 stmt = (
@@ -131,7 +153,8 @@ class GroupService:
                 return False
     
     def update_module_category(
-        self, module_id: int, category_id: Optional[int]
+        self, module_id: int, category_id: Optional[int],
+        user_id: Optional[int] = None, is_admin: bool = False
     ) -> Optional[Dict[str, Any]]:
         """更新模块所属分组"""
         with get_db() as db:
@@ -140,6 +163,11 @@ class GroupService:
             module = db.execute(module_query).scalar_one_or_none()
             if not module:
                 return None
+            
+            # 检查权限：非管理员只能更新自己创建的模块
+            if not is_admin and user_id is not None:
+                if module.user_id != user_id:
+                    return None
                 
             # 如果提供了分组ID，检查分组是否存在
             if category_id is not None:
@@ -161,7 +189,9 @@ class GroupService:
             
             # 返回更新后的模块信息
             updated_module = db.execute(module_query).scalar_one()
-            return updated_module.to_dict()
+            result = updated_module.to_dict()
+            # 添加可编辑字段
+            return add_edit_permission(result, user_id, is_admin)
 
 
 # 创建服务实例

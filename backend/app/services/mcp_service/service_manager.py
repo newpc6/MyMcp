@@ -29,6 +29,7 @@ import os
 import sys
 import tempfile
 from sqlalchemy import select
+from app.utils.permissions import add_edit_permission
 
 
 class McpServiceManager:
@@ -380,122 +381,123 @@ class McpServiceManager:
         # 如果既不是完整URL也没有请求对象，返回原始URL
         return sse_url
 
-    def get_service_status(self, service_uuid: str, request: Optional[Request] = None) -> Optional[Dict]:
+    def get_service_status(self, service_uuid: str, request: Optional[Request] = None, 
+                       user_id: Optional[int] = None, is_admin: bool = False) -> Optional[Dict]:
         """获取服务状态
-
+        
         Args:
             service_uuid: 服务UUID
-            request: HTTP请求对象，用于获取主机和端口信息
-
+            request: HTTP请求对象，用于构建完整URL
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+            
         Returns:
-            Dict: 服务状态信息
+            服务状态信息
         """
-        with get_db() as db:
-            service = db.query(McpService).filter(
-                McpService.service_uuid == service_uuid
-            ).first()
-            if not service:
-                return None
+        # 检查是否是正在运行的服务
+        service_info = self._running_services.get(service_uuid)
+        if service_info:
+            # 从数据库中获取服务和模块信息
+            with get_db() as db:
+                service = db.query(McpService).filter(
+                    McpService.service_uuid == service_uuid
+                ).first()
+                if not service:
+                    return None
 
-            # 获取模块名称和描述
-            module = db.query(McpModule).filter(
-                McpModule.id == service.module_id
-            ).first()
-            module_name = module.name if module else None
-            module_description = module.description if module else ""
-            config_params = json.loads(service.config_params) if service.config_params else {}
-            
-            # 获取完整URL
-            full_sse_url = self._get_full_sse_url(service.sse_url, request)
-            
-            # 转换为字典
-            return {
-                "id": service.id,
-                "module_id": service.module_id,
-                "module_name": module_name,
-                "description": module_description,
-                "service_uuid": service.service_uuid,
-                "status": service.status,
-                "sse_url": full_sse_url,
-                "created_at": service.created_at.isoformat()
-                if service.created_at else None,
-                "updated_at": service.updated_at.isoformat()
-                if service.updated_at else None,
-                "user_id": service.user_id,
-                "user_name": service.get_user_name(),
-                "config_params": config_params,
-                "error_message": service.error_message
-            }
+                module = db.query(McpModule).filter(
+                    McpModule.id == service.module_id
+                ).first()
+                module_name = module.name if module else "Unknown"
+
+                # 构建服务信息
+                service_data = service.to_dict()
+                service_data["module_name"] = module_name
+                service_data["status"] = "running"
+                
+                # 替换SSE URL为完整URL
+                sse_url = service.sse_url
+                service_data["sse_url"] = self._get_full_sse_url(sse_url, request)
+                
+                # 添加可编辑字段
+                return add_edit_permission(service_data, user_id, is_admin)
+        else:
+            # 如果不是运行中的服务，从数据库查询
+            with get_db() as db:
+                service = db.query(McpService).filter(
+                    McpService.service_uuid == service_uuid
+                ).first()
+                if not service:
+                    return None
+                    
+                module = db.query(McpModule).filter(
+                    McpModule.id == service.module_id
+                ).first()
+                module_name = module.name if module else "Unknown"
+                
+                # 构建服务信息
+                service_data = service.to_dict()
+                service_data["module_name"] = module_name
+                
+                # 替换SSE URL为完整URL
+                sse_url = service.sse_url
+                service_data["sse_url"] = self._get_full_sse_url(sse_url, request)
+                
+                # 添加可编辑字段
+                return add_edit_permission(service_data, user_id, is_admin)
+        
+        return None
 
     def list_services(self, module_id: Optional[int] = None, user_id: Optional[int] = None, 
                        is_admin: bool = False, request: Optional[Request] = None) -> List[Dict]:
-        """列出所有服务
-
+        """获取服务列表
+        
         Args:
-            module_id: 可选的模块ID筛选
+            module_id: 模块ID过滤，可选
             user_id: 当前用户ID，可选
             is_admin: 是否为管理员用户
-            request: HTTP请求对象，用于获取主机和端口信息
-
+            request: HTTP请求对象，用于构建完整URL
+            
         Returns:
-            List[Dict]: 服务列表
+            服务列表
         """
         with get_db() as db:
             query = db.query(McpService)
-            if module_id is not None:
+            
+            # 如果指定了模块ID，按模块过滤
+            if module_id:
                 query = query.filter(McpService.module_id == module_id)
-
-            # 非管理员只能看到自己创建的服务
+                
+            # 非管理员用户只能看到自己的服务
             if not is_admin and user_id is not None:
                 query = query.filter(McpService.user_id == user_id)
-
-            services = query.all()
-
-            # 获取所有使用的模块ID
-            module_ids = [service.module_id for service in services]
-
-            # 批量查询模块信息
-            modules_map = {}
-            modules_description_map = {}
-            if module_ids:
-                modules = db.query(McpModule).filter(
-                    McpModule.id.in_(module_ids)
-                ).all()
-                modules_map = {m.id: m.name for m in modules}
-                modules_description_map = {
-                    m.id: m.description for m in modules}
-
-            # 如果提供了请求对象，获取主机和端口
-            host = None
-            scheme = "http"
-            if request:
-                host = request.headers.get("host", f"{settings.HOST}:{settings.PORT}")
-                scheme = request.headers.get("x-forwarded-proto", "http")
-
-            result = []
-            for service in services:
-                # 处理SSE URL
-                sse_url = self._get_full_sse_url(service.sse_url, request)
                 
-                result.append({
-                    "id": service.id,
-                    "module_id": service.module_id,
-                    "module_name": modules_map.get(service.module_id),
-                    "description": modules_description_map.get(service.module_id, ""),
-                    "service_uuid": service.service_uuid,
-                    "status": service.status,
-                    "sse_url": sse_url,
-                    "user_id": service.user_id,
-                    "name": service.name,
-                    "error_message": service.error_message,
-                    "user_name": service.get_user_name(),
-                    "created_at": service.created_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if service.created_at else None,
-                    "updated_at": service.updated_at.strftime("%Y-%m-%d %H:%M:%S")
-                    if service.updated_at else None
-                })
+            services = query.all()
+            result = []
             
-            return result
+            # 获取每个服务的详细信息
+            for service in services:
+                service_dict = service.to_dict()
+                
+                # 获取模块名称
+                module = db.query(McpModule).filter(
+                    McpModule.id == service.module_id
+                ).first()
+                service_dict["module_name"] = module.name if module else "Unknown"
+                
+                # 替换SSE URL为完整URL
+                sse_url = service.sse_url
+                service_dict["sse_url"] = self._get_full_sse_url(sse_url, request)
+                
+                # 检查服务是否正在运行
+                running_info = self._running_services.get(service.service_uuid)
+                if running_info:
+                    service_dict["status"] = "running"
+                
+                result.append(service_dict)
+            
+            # 添加可编辑字段
+            return add_edit_permission(result, user_id, is_admin)
 
     def replace_config_params(self, code: str, config_params: Dict) -> str:
         """替换配置参数
