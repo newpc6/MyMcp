@@ -77,7 +77,9 @@ class MarketplaceService:
                 if not module.is_public and module.user_id != user_id:
                     return None
             
-            result = module.to_dict()
+            group = db.execute(select(McpGroup).where(McpGroup.id == module.category_id)).scalar_one_or_none()
+            groups = {group.id: group}
+            result = module.to_dict(groups)
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
     
