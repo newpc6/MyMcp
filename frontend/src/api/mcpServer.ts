@@ -15,6 +15,6 @@ export async function updateServiceParams(
     message: string
   }>
 > {
-  const response = await api.put(`${apiPrefix}/mcp/service/${id}/params`, configParams)
+  const response = await api.put(`${apiPrefix}/service/${id}/params`, configParams)
   return response.data
 }

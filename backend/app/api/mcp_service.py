@@ -9,7 +9,7 @@ from app.server.mcp_server import (
 )
 from app.utils.permissions import add_edit_permission, get_user_info
 from ..core.config import settings
-
+from app.utils.logging import em_logger
 
 class ToolLoadRequest(BaseModel):
     """加载工具请求模型"""
@@ -22,11 +22,6 @@ class ToolLoadRequest(BaseModel):
 class ToolRemoveRequest(BaseModel):
     """移除工具请求模型"""
     tool_name: str  # 工具名称
-
-
-class UpdateSSEUrlRequest(BaseModel):
-    """更新SSE URL请求模型"""
-    sse_url: str  # 新的SSE URL
 
 
 async def load_tool(request: Request):
@@ -137,30 +132,19 @@ async def enabled_tools(request: Request):
         return error_response(error_msg, code=500, http_status_code=500)
 
 
-async def update_sse_url(request: Request):
-    """更新MCP SSE URL"""
-    try:
-        data = await request.json()
-        request_data = UpdateSSEUrlRequest(**data)
-        # 返回更新后的状态
-        return success_response({
-        }, message="MCP SSE URL已更新")
-    except ValidationError as e:
-        return error_response(str(e), code=422, http_status_code=422)
-    except Exception as e:
-        return error_response(f"更新SSE URL失败: {str(e)}", code=500, http_status_code=500)
-
-
 async def update_params(request: Request):
     """更新服务参数"""
     try:
         data = await request.json()
         id = request.path_params["id"]
+        if data.get("config_params"):
+            if isinstance(data.get("config_params"), str):
+                data = data.get("config_params")
         # 更新服务参数
         update_service_params(id, data)
-
         return success_response(message="服务参数更新成功")
     except Exception as e:
+        em_logger.error(f"更新服务参数失败: {str(e)}")
         return error_response(f"更新服务参数失败: {str(e)}", code=500, http_status_code=500)
 
 def get_router():
@@ -171,7 +155,6 @@ def get_router():
         Route("/restart", endpoint=restart_service, methods=["POST"]),
         Route("/status", endpoint=get_status, methods=["GET"]),
         Route("/enabled_tools", endpoint=enabled_tools, methods=["GET"]),
-        Route("/sse_url", endpoint=update_sse_url, methods=["PUT"]),
         Route("/{id:int}/params", endpoint=update_params, methods=["PUT"])
     ]
     

@@ -43,6 +43,15 @@
 
                 <!-- 有权限时显示管理按钮 -->
                 <template v-else>
+                  <el-tooltip content="参数管理" v-if="hasConfigParams(service)">
+                    <el-button type="info" circle size="small" @click.stop="handleViewServiceParams(service)"
+                      class="action-button">
+                      <el-icon>
+                        <Setting />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
+
                   <el-tooltip content="启动服务" v-if="service.status !== 'running'">
                     <el-button type="success" circle size="small" @click.stop="handleStartService(service)"
                       class="action-button">
@@ -160,6 +169,27 @@
         </div>
       </el-col>
     </el-row>
+
+    <!-- 服务参数管理对话框 -->
+    <el-dialog v-model="serviceParamsDialogVisible" title="服务参数管理" width="50%" :destroy-on-close="true">
+      <ServiceParamsManager
+        v-if="currentService && currentServiceSchema"
+        :config-params="serviceParamsForm"
+        :config-schema="currentServiceSchema"
+        @update:config-params="updateServiceParamsForm"
+        ref="serviceParamsManagerRef"
+      />
+      <div v-else class="text-center py-4">
+        <el-empty description="无法加载服务参数" :image-size="60" />
+      </div>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="serviceParamsDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="updateServiceParams" :loading="updatingParams">更新参数</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -167,15 +197,20 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus';
-import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus, Connection, Lock } from '@element-plus/icons-vue';
+import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus, Connection, Lock, Setting } from '@element-plus/icons-vue';
 import {
   listServices,
   startService,
   stopService,
-  uninstallService
+  uninstallService,
+  getService,
+  getModule
 } from '../../api/marketplace';
+import { updateServiceParams as updateServiceParamsAPI } from '../../api/mcpServer';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 import type { McpServiceInfo } from '../../types/marketplace';
+// @ts-ignore
+import ServiceParamsManager from '../../components/ServiceParamsManager.vue';
 
 // 路由
 const router = useRouter();
@@ -195,6 +230,14 @@ const currentUser = ref<{
   username: '',
   is_admin: false
 });
+
+// 参数管理相关
+const serviceParamsDialogVisible = ref(false);
+const currentService = ref<McpServiceInfo | null>(null);
+const currentServiceSchema = ref<Record<string, any> | null>(null);
+const serviceParamsForm = ref<Record<string, any>>({});
+const serviceParamsManagerRef = ref();
+const updatingParams = ref(false);
 
 // 加载用户信息
 const loadUserInfo = () => {
@@ -377,6 +420,63 @@ const copyAsEgovakbUrl = (url: string) => {
 
   // 复制到剪贴板
   copyTextToClipboard(egovakbFormat, 'egovakb格式URL已复制到剪贴板');
+};
+
+// 检查服务是否有配置参数
+const hasConfigParams = (service: McpServiceInfo) => {
+  return service.config_params && Object.keys(service.config_params).length > 0;
+};
+
+// 查看服务参数
+const handleViewServiceParams = async (service: McpServiceInfo) => {
+  try {
+    // 获取最新的服务信息
+    const serviceResponse = await getService(service.service_uuid);
+    if (serviceResponse && serviceResponse.data) {
+      currentService.value = serviceResponse.data;
+      // 初始化表单
+      serviceParamsForm.value = { ...serviceResponse.data.config_params };
+      
+      // 获取模块的配置schema
+      const moduleResponse = await getModule(serviceResponse.data.module_id);
+      if (moduleResponse && moduleResponse.data && moduleResponse.data.config_schema) {
+        currentServiceSchema.value = moduleResponse.data.config_schema;
+      } else {
+        currentServiceSchema.value = null;
+      }
+      
+      serviceParamsDialogVisible.value = true;
+    }
+  } catch (error) {
+    console.error('获取服务参数失败', error);
+    ElMessage.error('获取服务参数失败');
+  }
+};
+
+// 更新服务参数表单
+const updateServiceParamsForm = (newParams: Record<string, any>) => {
+  serviceParamsForm.value = { ...newParams };
+};
+
+// 更新服务参数
+const updateServiceParams = async () => {
+  if (!currentService.value) return;
+
+  updatingParams.value = true;
+  try {
+    // 调用API更新服务参数
+    await updateServiceParamsAPI(currentService.value.id, serviceParamsForm.value);
+    ElMessage.success('服务参数更新成功');
+    serviceParamsDialogVisible.value = false;
+
+    // 重新加载服务列表
+    await loadServices();
+  } catch (error) {
+    console.error('更新服务参数失败', error);
+    ElMessage.error('更新服务参数失败');
+  } finally {
+    updatingParams.value = false;
+  }
 };
 
 // 获取服务状态样式类名

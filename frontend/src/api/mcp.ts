@@ -6,7 +6,7 @@ import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
  * 获取MCP服务状态
  */
 export async function getMcpStatus() {
-  const response = await api.get(`${apiPrefix}/mcp/service/status`);
+  const response = await api.get(`${apiPrefix}/service/status`);
   return response.data;
 }
 
@@ -14,7 +14,7 @@ export async function getMcpStatus() {
  * 获取启用的工具列表
  */
 export async function getEnabledTools() {
-  const response = await api.get(`${apiPrefix}/mcp/service/enabled_tools`);
+  const response = await api.get(`${apiPrefix}/service/enabled_tools`);
   return response.data;
 }
 
@@ -22,7 +22,7 @@ export async function getEnabledTools() {
  * 重启MCP服务
  */
 export async function restartMcpService() {
-  const response = await api.post(`${apiPrefix}/mcp/service/restart`);
+  const response = await api.post(`${apiPrefix}/service/restart`);
   return response.data;
 }
 
@@ -39,7 +39,7 @@ export async function loadTool(
   toolName?: string,
   description?: string
 ) {
-  const response = await api.post(`${apiPrefix}/mcp/service/load_tool`, {
+  const response = await api.post(`${apiPrefix}/service/load_tool`, {
     module_path: modulePath,
     function_name: functionName,
     tool_name: toolName,
@@ -53,7 +53,7 @@ export async function loadTool(
  * @param toolName 工具名称
  */
 export async function unloadTool(toolName: string) {
-  const response = await api.post(`${apiPrefix}/mcp/service/unload_tool`, {
+  const response = await api.post(`${apiPrefix}/service/unload_tool`, {
     tool_name: toolName
   });
   return response.data;
@@ -64,7 +64,7 @@ export async function unloadTool(toolName: string) {
  * @param sseUrl 新的SSE URL
  */
 export async function updateSseUrl(sseUrl: string) {
-  const response = await api.put(`${apiPrefix}/mcp/service/sse_url`, {
+  const response = await api.put(`${apiPrefix}/service/sse_url`, {
     sse_url: sseUrl
   });
   return response.data;

@@ -57,7 +57,7 @@ def get_router(app) -> None:
     # 添加MCP服务路由
     for route in mcp_service.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/mcp/service{route.path}", 
+            f"{settings.API_PREFIX}/service{route.path}", 
             route.endpoint, 
             methods=route.methods, 
             name=route.name

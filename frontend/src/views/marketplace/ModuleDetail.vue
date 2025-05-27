@@ -126,39 +126,13 @@
 
     <!-- 服务参数查看/编辑对话框 -->
     <el-dialog v-model="serviceParamsDialogVisible" title="服务参数设置" width="50%" :destroy-on-close="true">
-      <div v-if="currentService">
-        <div v-if="!currentService.config_params || Object.keys(currentService.config_params).length === 0"
-          class="text-center py-4">
-          <el-empty description="此服务没有配置参数" :image-size="60" />
-        </div>
-        <div v-else>
-          <el-form ref="serviceParamsFormRef" :model="serviceParamsForm" label-width="120px" label-position="top">
-            <div v-for="(value, key) in currentService.config_params" :key="key" class="mb-4">
-              <el-form-item :label="getParamDisplay(key)" label-position="left">
-                <!-- 显示参数描述 -->
-                <div v-if="getParamDescription(key)" class="text-sm text-gray-500 mb-2">
-                  {{ getParamDescription(key) }}
-                </div>
-                
-                <!-- 根据schema类型渲染不同的输入组件 -->
-                <div v-if="getParamType(key) === 'integer'">
-                  <el-input-number v-model="serviceParamsForm[key]" :placeholder="getParamPlaceholder(key)" />
-                </div>
-                <div v-else-if="getParamType(key) === 'boolean'">
-                  <el-switch v-model="serviceParamsForm[key]" />
-                </div>
-                <div v-else-if="getParamType(key) === 'password'">
-                  <el-input v-model="serviceParamsForm[key]" type="password" show-password 
-                    :placeholder="getParamPlaceholder(key)" />
-                </div>
-                <div v-else>
-                  <el-input v-model="serviceParamsForm[key]" :placeholder="getParamPlaceholder(key)" />
-                </div>
-              </el-form-item>
-            </div>
-          </el-form>
-        </div>
-      </div>
+      <ServiceParamsManager
+        v-if="currentService"
+        :config-params="serviceParamsForm"
+        :config-schema="moduleInfo.config_schema"
+        @update:config-params="updateServiceParamsForm"
+        ref="serviceParamsManagerRef"
+      />
       <div v-else class="text-center py-4">
         <el-empty description="无法加载服务参数" :image-size="60" />
       </div>
@@ -198,6 +172,8 @@ import ServiceDetailsPanel from './components/ServiceDetailsPanel.vue';
 import ToolTestPanel from './components/ToolTestPanel.vue';
 import CodeEditorPanel from './components/CodeEditorPanel.vue';
 import McpServiceForm from './components/McpServiceForm.vue';
+// @ts-ignore
+import ServiceParamsManager from '../../components/ServiceParamsManager.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -302,6 +278,7 @@ const hasConfigSchema = computed(() => {
 const serviceParamsDialogVisible = ref(false);
 const currentService = ref<McpServiceInfo | null>(null);
 const serviceParamsForm = ref<Record<string, any>>({});
+const serviceParamsManagerRef = ref();
 const updatingParams = ref(false);
 
 // 加载模块详情
@@ -805,11 +782,16 @@ const getParamPlaceholder = (key: string): string => {
   return '';
 };
 
+// 更新服务参数表单
+const updateServiceParamsForm = (newParams: Record<string, any>) => {
+  serviceParamsForm.value = { ...newParams };
+};
+
 // 更新服务参数
 const updateServiceParamsFunc = async () => {
   if (!currentService.value) return;
 
-  updatingParams.value = true;
+  // updatingParams.value = true;
   try {
     // 调用API更新服务参数
     await updateServiceParams(currentService.value.id, serviceParamsForm.value);
@@ -822,7 +804,7 @@ const updateServiceParamsFunc = async () => {
     console.error('更新服务参数失败', error);
     ElMessage.error('更新服务参数失败');
   } finally {
-    updatingParams.value = false;
+    // updatingParams.value = false;
   }
 };
 

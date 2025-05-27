@@ -115,20 +115,14 @@ def update_service_params(id: int, config_params: Dict[str, Any]):
         em_logger.warning("MCP服务器尚未启动，无法更新服务参数")
         return False
     
-    try:
-        from app.models.engine import get_global_db
-        db = get_global_db()
+    with get_db() as db:
         db.execute(
             update(McpService)
             .where(McpService.id == id)
             .values(config_params=json.dumps(config_params))
         )
-        db.commit()
-        
+        db.commit()        
         return True
-    except Exception as e:
-        em_logger.error(f"更新服务参数时出错: {str(e)}")
-        raise e
 
 def get_enabled_tools() -> List[str]:
     """
