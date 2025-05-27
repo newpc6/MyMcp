@@ -20,6 +20,7 @@ from app.core.utils import now_beijing
 from app.utils.logging import em_logger
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.permissions import add_edit_permission
+from app.models.group.group import McpGroup
 
 
 class MarketplaceService:
@@ -54,7 +55,10 @@ class MarketplaceService:
                 )
                 
             modules = db.execute(query).scalars().all()
-            result = [m.to_dict() for m in modules]
+            mcp_groups_ids = [m.category_id for m in modules]
+            groups = db.execute(select(McpGroup).where(McpGroup.id.in_(mcp_groups_ids))).scalars().all()
+            mcp_groups = {g.id: g for g in groups}
+            result = [m.to_dict(mcp_groups) for m in modules]
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
     

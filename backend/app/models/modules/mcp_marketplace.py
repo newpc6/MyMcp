@@ -1,15 +1,16 @@
 """
 MCP广场相关模型
 """
+from typing import Dict
 from sqlalchemy import (
     Column, Integer, String, Text, Boolean, DateTime
 )
-import json
-from sqlalchemy.sql import text
-
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
+import json
+
 from app.models.group.group import McpGroup
+
 
 class McpModule(Base):
     """MCP模块信息模型"""
@@ -35,32 +36,8 @@ class McpModule(Base):
     user_id = Column(Integer, nullable=True, index=True)  # 创建者ID
     is_public = Column(Boolean, default=True)  # 是否公开，True为公开，False为私有
 
-    def to_dict(self):
+    def to_dict(self, mcp_groups: Dict[int, 'McpGroup'] = None):
         """转换为字典格式"""
-        # 获取分类名称和工具数量通过直接查询
-        category_name = None
-        tools_count = 0
-        creator_name = None
-        
-        with get_db() as db:
-            # 获取分类名称
-            if self.category_id:
-                query = f"SELECT name FROM {McpGroup.__tablename__} WHERE id = :id"
-                sql = text(query).bindparams(id=self.category_id)
-                result = db.execute(sql).first()
-                category_name = result[0] if result else None
-            
-            # 获取工具数量
-            query = "SELECT COUNT(*) FROM mcp_tools WHERE module_id = :id"
-            sql = text(query).bindparams(id=self.id)
-            tools_count = db.execute(sql).scalar()
-            
-            # 获取创建者名称
-            if self.user_id:
-                query = "SELECT username FROM users WHERE id = :id"
-                sql = text(query).bindparams(id=self.user_id)
-                result = db.execute(sql).first()
-                creator_name = result[0] if result else None
                 
         config_dict = {}
         if self.config_schema:
@@ -81,15 +58,17 @@ class McpModule(Base):
             "is_hosted": self.is_hosted,
             "repository_url": self.repository_url,
             "category_id": self.category_id,
-            "category_name": category_name,
+            "category_name": (
+                mcp_groups.get(self.category_id).name 
+                if self.category_id and mcp_groups.get(self.category_id) 
+                else None
+            ),
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "tools_count": tools_count,
             "code": self.code,
             "config_schema": config_dict,
             "markdown_docs": self.markdown_docs,
             "user_id": self.user_id,
-            "creator_name": creator_name,
             "is_public": self.is_public
         }
 

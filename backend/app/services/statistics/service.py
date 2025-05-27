@@ -22,6 +22,7 @@ from app.models.modules.mcp_marketplace import McpModule
 from app.models.tools.tool_execution import ToolExecution
 from app.utils.logging import em_logger
 from app.utils.http import PageParams, PageResult
+from app.models.modules.users import User
 
 
 class StatisticsService:
@@ -101,6 +102,10 @@ class StatisticsService:
                 modules = db.query(McpModule).all()
                 result = []
 
+                user_ids = {module.user_id for module in modules}
+                users = db.query(User).filter(User.id.in_(user_ids)).all()
+                user_dict = {user.id: user.username for user in users}
+                
                 for module in modules:
                     # 查找或创建统计记录
                     stats = db.query(ModuleStatistics).filter(
@@ -112,7 +117,7 @@ class StatisticsService:
                             module_id=module.id,
                             module_name=module.name,
                             user_id=module.user_id,
-                            user_name=module.to_dict().get("creator_name")
+                            user_name=user_dict.get(module.user_id)
                         )
                         db.add(stats)
 
@@ -124,7 +129,7 @@ class StatisticsService:
 
                     # 更新创建者信息
                     stats.user_id = module.user_id
-                    stats.user_name = module.to_dict().get("creator_name")
+                    stats.user_name = user_dict.get(module.user_id)
 
                     # 更新时间
                     stats.updated_at = datetime.now(timezone('Asia/Shanghai'))
@@ -503,7 +508,10 @@ class StatisticsService:
                     McpService.id.in_(service_ids)
                 ).all()
                 services = {s.id: s for s in service_records}
-
+                
+            user_ids = {module.user_id for module in modules.values()}
+            users = db.query(User).filter(User.id.in_(user_ids)).all()
+            user_dict = {user.id: user.username for user in users}
             for ex in result.items:
                 # 获取关联的模块信息
                 module_info = {}
@@ -515,7 +523,7 @@ class StatisticsService:
                         "name": module.name,
                         "description": module.description
                     }
-                    creator_name = module.to_dict().get("creator_name")
+                    creator_name = user_dict.get(module.user_id)
 
                 # 获取关联的服务信息
                 service_info = {}
