@@ -21,43 +21,55 @@
               <div class="service-status">
                 <span class="status-dot" :class="getStatusClass(service.status)"></span>
                 <span class="status-text">{{ getStatusText(service.status) }}</span>
+                <!-- 公开状态标签 -->
+                <div class="public-status">
+                  <el-tag v-if="service.is_public" type="success" size="small" class="public-tag">
+                    公开
+                  </el-tag>
+                  <el-tag v-else type="info" size="small" class="public-tag">
+                    私有
+                  </el-tag>
+                </div>
               </div>
 
-              <!-- 公开状态标签 -->
-              <div class="public-status">
-                <el-tag size="small" :type="service.is_public ? 'success' : 'warning'" effect="plain">
-                  {{ service.is_public ? '公开' : '私有' }}
-                </el-tag>
-              </div>
-
-              <!-- 右上角操作按钮 -->
+              <!-- 权限状态和操作按钮 -->
               <div class="service-actions">
-                <el-tooltip content="启动服务" v-if="service.status !== 'running'">
-                  <el-button type="success" circle size="small" @click.stop="handleStartService(service)"
-                    :disabled="!canManageService(service)" class="action-button">
-                    <el-icon>
-                      <VideoPlay />
-                    </el-icon>
-                  </el-button>
+                <!-- 无权限时显示锁图标 -->
+                <el-tooltip content="无管理权限，仅可使用" v-if="!canManageService(service)">
+                  <el-icon class="lock-icon" size="16">
+                    <Lock />
+                  </el-icon>
                 </el-tooltip>
 
-                <el-tooltip content="停止服务" v-if="service.status === 'running'">
-                  <el-button type="warning" circle size="small" @click.stop="handleStopService(service)"
-                    :disabled="!canManageService(service)" class="action-button">
-                    <el-icon>
-                      <VideoPause />
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
+                <!-- 有权限时显示管理按钮 -->
+                <template v-else>
+                  <el-tooltip content="启动服务" v-if="service.status !== 'running'">
+                    <el-button type="success" circle size="small" @click.stop="handleStartService(service)"
+                      class="action-button">
+                      <el-icon>
+                        <VideoPlay />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
 
-                <el-tooltip content="删除服务">
-                  <el-button type="danger" circle size="small" @click.stop="handleUninstallService(service)"
-                    :disabled="!canManageService(service)" class="action-button">
-                    <el-icon>
-                      <Delete />
-                    </el-icon>
-                  </el-button>
-                </el-tooltip>
+                  <el-tooltip content="停止服务" v-if="service.status === 'running'">
+                    <el-button type="warning" circle size="small" @click.stop="handleStopService(service)"
+                      class="action-button">
+                      <el-icon>
+                        <VideoPause />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
+
+                  <el-tooltip content="删除服务">
+                    <el-button type="danger" circle size="small" @click.stop="handleUninstallService(service)"
+                      class="action-button">
+                      <el-icon>
+                        <Delete />
+                      </el-icon>
+                    </el-button>
+                  </el-tooltip>
+                </template>
               </div>
             </div>
 
@@ -65,15 +77,15 @@
               <!-- 模板和名称放一行 -->
               <div class="service-title-row">
                 <div class="service-title-item">
-                  <span class="title-label">模板：</span>
-                  <el-text truncated class="title-value">{{ service.module_name || '未命名服务' }}</el-text>
-                </div>
-                <div class="service-title-item">
                   <span class="title-label">名称：</span>
                   <el-text truncated class="title-value">{{ service.name || '默认' }}</el-text>
                 </div>
+                <div class="service-title-item">
+                  <span class="title-label">模板：</span>
+                  <el-text truncated class="title-value">{{ service.module_name || '未命名服务' }}</el-text>
+                </div>
               </div>
-              
+
               <!-- 描述 -->
               <div class="service-description">
                 <el-text truncated type="info" size="small">
@@ -94,7 +106,7 @@
                   <span class="detail-value">{{ formatDate(service.created_at) }}</span>
                 </div>
               </div>
-              
+
               <!-- SSE URL -->
               <div class="detail-item">
                 <span class="detail-label">SSE URL</span>
@@ -121,10 +133,6 @@
                   {{ service.error_message }}
                 </el-text>
               </div>
-            </div>
-
-            <div class="service-footer" v-if="!canManageService(service)">
-              <el-tag type="warning" size="small" effect="plain">无操作权限</el-tag>
             </div>
           </div>
         </el-card>
@@ -159,7 +167,7 @@
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus';
-import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus, Connection } from '@element-plus/icons-vue';
+import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus, Connection, Lock } from '@element-plus/icons-vue';
 import {
   listServices,
   startService,
@@ -207,6 +215,12 @@ const loadUserInfo = () => {
 
 // 检查是否有权限操作服务
 const canManageService = (service: McpServiceInfo) => {
+  // 优先使用后端返回的can_edit字段
+  if (service.can_edit !== undefined) {
+    return service.can_edit;
+  }
+
+  // 如果没有can_edit字段，使用原有逻辑作为兜底
   // 如果是管理员，可以操作所有服务
   if (currentUser.value.is_admin) {
     return true;
@@ -561,6 +575,11 @@ onMounted(() => {
   font-size: 12px;
 }
 
+.lock-icon {
+  color: #909399;
+  cursor: help;
+}
+
 .service-info {
   margin-bottom: 16px;
   padding-bottom: 16px;
@@ -648,12 +667,6 @@ onMounted(() => {
 
 .copy-button {
   padding: 2px;
-}
-
-.service-footer {
-  margin-top: 16px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 .empty-container {
