@@ -207,6 +207,7 @@ const editForm = ref<{
   code: string;
   is_public: boolean;
   markdown_docs: string;
+  config_schema?: string;
 }>({
   name: '',
   description: '',
@@ -217,7 +218,8 @@ const editForm = ref<{
   category_id: undefined,
   code: '',
   is_public: true,
-  markdown_docs: ''
+  markdown_docs: '',
+  config_schema: ''
 });
 
 // 当前用户信息
@@ -303,34 +305,6 @@ async function loadModuleInfo() {
     if (moduleInfo.value.code) {
       codeContent.value = moduleInfo.value.code;
       originalCode.value = moduleInfo.value.code;
-    }
-
-    // 处理config_schema
-    if (moduleInfo.value.config_schema) {
-      try {
-        // 先确保config_schema是对象格式
-        let schema: Record<string, any>;
-        if (typeof moduleInfo.value.config_schema === 'string') {
-          schema = JSON.parse(moduleInfo.value.config_schema);
-        } else {
-          schema = moduleInfo.value.config_schema;
-        }
-
-        Object.entries(schema).forEach(([key, config]: [string, any]) => {
-          configParams.value.push({
-            key,
-            type: config.type || 'string',
-            title: config.title || '',
-            description: config.description || '',
-            required: config.required || false,
-            placeholder: config.placeholder || '',
-            default: config.default
-          });
-        });
-      } catch (e) {
-        console.error('解析配置模式失败', e);
-        ElMessage.error('配置模式解析失败');
-      }
     }
   } catch (error) {
     console.error("加载模块详情失败", error);
@@ -529,35 +503,6 @@ const handleUninstallService = async (serviceUuid: string) => {
   }
 };
 
-// 生成config_schema对象
-function generateConfigSchema(): Record<string, any> {
-  const schema: Record<string, any> = {};
-
-  configParams.value.forEach(param => {
-    if (!param.key) return;
-
-    schema[param.key] = {
-      type: param.type,
-      description: param.description,
-      required: param.required
-    };
-
-    if (param.title) {
-      schema[param.key].title = param.title;
-    }
-
-    if (param.placeholder && (param.type === 'string' || param.type === 'password')) {
-      schema[param.key].placeholder = param.placeholder;
-    }
-
-    if (param.default !== undefined && param.default !== null) {
-      schema[param.key].default = param.default;
-    }
-  });
-
-  return schema;
-}
-
 // 加载分类列表
 async function loadCategories() {
   try {
@@ -591,7 +536,6 @@ function showEditDialog() {
 
   // 加载分类数据
   loadCategories();
-
   // 处理tags，确保是数组
   let tagsArray: string[] = [];
   if (typeof moduleInfo.value.tags === 'string') {
@@ -601,21 +545,21 @@ function showEditDialog() {
   }
 
   // 处理配置参数
-  configParams.value = [];
-  if (moduleInfo.value.config_schema) {
-    // 将配置转换为参数列表
-    Object.entries(moduleInfo.value.config_schema).forEach(([key, config]: [string, any]) => {
-      configParams.value.push({
-        key,
-        type: config.type || 'string',
-        title: config.title || '',
-        description: config.description || '',
-        required: config.required || false,
-        placeholder: config.placeholder || '',
-        default: config.default
-      });
-    });
-  }
+  // configParams.value = [];
+  // if (moduleInfo.value.config_schema) {
+  //   // 将配置转换为参数列表
+  //   Object.entries(moduleInfo.value.config_schema).forEach(([key, config]: [string, any]) => {
+  //     configParams.value.push({
+  //       key,
+  //       type: config.type || 'string',
+  //       title: config.title || '',
+  //       description: config.description || '',
+  //       required: config.required || false,
+  //       placeholder: config.placeholder || '',
+  //       default: config.default
+  //     });
+  //   });
+  // }
 
   // 填充表单数据，确保每个字段都有默认值
   editForm.value = {
@@ -628,8 +572,10 @@ function showEditDialog() {
     category_id: moduleInfo.value.category_id || undefined,
     code: moduleInfo.value.code || '',
     is_public: moduleInfo.value.is_public === false ? false : true,
-    markdown_docs: moduleInfo.value.markdown_docs || ''
+    markdown_docs: moduleInfo.value.markdown_docs || '',
+    config_schema: moduleInfo.value.config_schema ? JSON.stringify(moduleInfo.value.config_schema, null, 2) : ''
   };
+  console.log('editForm', editForm.value)
 
   nextTick(() => {
     editDialogVisible.value = true;
@@ -655,7 +601,7 @@ async function submitEditForm() {
       code: editForm.value.code,
       is_public: Boolean(editForm.value.is_public),
       markdown_docs: editForm.value.markdown_docs,
-      config_schema: generateConfigSchema()
+      config_schema: editForm.value.config_schema ? JSON.parse(editForm.value.config_schema) : undefined
     };
 
     const response = await updateModule(moduleInfo.value.id, moduleData);
@@ -807,22 +753,6 @@ const updateServiceParamsFunc = async () => {
     // updatingParams.value = false;
   }
 };
-
-// 添加配置参数
-function addConfigParam() {
-  configParams.value.push({
-    key: '',
-    type: 'string',
-    title: '',
-    description: '',
-    required: false
-  });
-}
-
-// 移除配置参数
-function removeConfigParam(index: number) {
-  configParams.value.splice(index, 1);
-}
 
 // 工具测试包装函数
 const handleToolTest = async (toolName: string, params: Record<string, any>): Promise<any> => {

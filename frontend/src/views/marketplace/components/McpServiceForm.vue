@@ -6,7 +6,7 @@
       </el-form-item>
 
       <el-form-item label="服务描述" prop="description">
-        <el-input v-model="form.description" type="textarea" rows="3" placeholder="请输入服务描述" clearable></el-input>
+        <el-input v-model="form.description" type="textarea" :rows="3" placeholder="请输入服务描述" clearable></el-input>
       </el-form-item>
 
       <el-form-item label="版本" prop="version">
@@ -26,7 +26,7 @@
             <div class="edit-header">
               <span class="edit-title">编辑</span>
             </div>
-            <el-input v-model="form.markdown_docs" type="textarea" rows="12" placeholder="请输入服务详情（支持Markdown格式）" 
+            <el-input v-model="form.markdown_docs" type="textarea" :rows="12" placeholder="请输入服务详情（支持Markdown格式）"
               class="markdown-editor" style="font-family: monospace;"></el-input>
           </div>
           <div class="markdown-preview-area">
@@ -43,15 +43,95 @@
         </div>
       </el-form-item>
 
+      <el-form-item label="参数配置模板" prop="config_schema">
+        <div class="config-schema-container">
+          <div class="config-schema-table-area">
+            <div class="table-header">
+              <span class="table-title">参数配置 ({{ configParams.length }})</span>
+              <el-button type="primary" size="small" @click="addConfigParam">
+                <el-icon>
+                  <Plus />
+                </el-icon>
+                添加参数
+              </el-button>
+            </div>
+
+            <el-table :data="configParams" border style="width: 100%" class="config-params-table">
+              <el-table-column prop="key" label="参数名" width="120">
+                <template #default="{ row }">
+                  <span>{{ row.key || '未设置' }}</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="title" label="显示名称" width="120">
+                <template #default="{ row }">
+                  <span>{{ row.title || '未设置' }}</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="type" label="类型" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="getTypeTagType(row.type)">{{ getTypeLabel(row.type) }}</el-tag>
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="required" label="必填" width="80">
+                <template #default="{ row }">
+                  <el-tag v-if="row.required" type="danger" size="small">是</el-tag>
+                  <el-tag v-else type="info" size="small">否</el-tag>
+                </template>
+              </el-table-column>
+
+              <el-table-column prop="description" label="描述" min-width="150">
+                <template #default="{ row }">
+                  <span>{{ row.description || '无描述' }}</span>
+                </template>
+              </el-table-column>
+
+              <el-table-column label="操作" width="160" fixed="right">
+                <template #default="{ $index }">
+                  <el-button type="primary" size="small" @click="editConfigParam($index)">
+                    编辑
+                  </el-button>
+                  <el-button type="danger" size="small" @click="removeConfigParam($index)">
+                    删除
+                  </el-button>
+                </template>
+              </el-table-column>
+            </el-table>
+
+            <div v-if="configParams.length === 0" class="empty-params">
+              <el-empty description="暂无参数配置" :image-size="60">
+                <el-button type="primary" @click="addConfigParam">添加第一个参数</el-button>
+              </el-empty>
+            </div>
+          </div>
+
+          <!-- <div class="config-schema-preview-area">
+            <div class="preview-header">
+              <span class="preview-title">JSON Schema 预览</span>
+            </div>
+            <div class="config-schema-preview">
+              <div v-if="generatedConfigSchema && Object.keys(generatedConfigSchema).length > 0" class="json-preview">
+                <pre>{{ JSON.stringify(generatedConfigSchema, null, 2) }}</pre>
+              </div>
+              <div v-else class="preview-empty">
+                <el-empty description="暂无配置参数" :image-size="60" />
+              </div>
+            </div>
+          </div> -->
+        </div>
+      </el-form-item>
+
       <el-form-item label="代码" prop="code">
-        <Codemirror v-model="form.code" :extensions="extensions" class="code-editor" 
-          :indent-with-tab="true" :tab-size="4" style="height: 400px;" />
+        <Codemirror v-model="form.code" :extensions="extensions" class="code-editor" :indent-with-tab="true"
+          :tab-size="4" style="height: 400px;" />
       </el-form-item>
 
       <el-form-item label="访问权限">
         <el-radio-group v-model="form.is_public">
-          <el-radio :label="true">公开</el-radio>
-          <el-radio :label="false">私有</el-radio>
+          <el-radio :value="true">公开</el-radio>
+          <el-radio :value="false">私有</el-radio>
         </el-radio-group>
       </el-form-item>
     </el-form>
@@ -59,11 +139,58 @@
     <div class="form-actions">
       <slot name="actions"></slot>
     </div>
+
+    <!-- 参数编辑弹窗 -->
+    <el-dialog v-model="paramDialogVisible" :title="isEditingParam ? '编辑参数' : '添加参数'" width="600px"
+      @close="resetParamForm">
+      <el-form :model="currentParam" :rules="paramRules" ref="paramFormRef" label-width="100px">
+        <el-form-item label="参数名" prop="key">
+          <el-input v-model="currentParam.key" placeholder="请输入参数名 (英文，如：api_key)" />
+        </el-form-item>
+
+        <el-form-item label="显示名称" prop="title">
+          <el-input v-model="currentParam.title" placeholder="请输入显示名称 (如：API密钥)" />
+        </el-form-item>
+
+        <el-form-item label="参数类型" prop="type">
+          <el-select v-model="currentParam.type" placeholder="请选择类型" style="width: 100%">
+            <el-option label="字符串" value="string" />
+            <el-option label="整数" value="integer" />
+            <el-option label="密码" value="password" />
+            <el-option label="布尔值" value="boolean" />
+          </el-select>
+        </el-form-item>
+
+        <el-form-item label="是否必填">
+          <el-switch v-model="currentParam.required" />
+        </el-form-item>
+
+        <el-form-item label="描述信息">
+          <el-input v-model="currentParam.description" type="textarea" :rows="3" placeholder="请输入参数描述信息" />
+        </el-form-item>
+
+        <el-form-item label="占位符">
+          <el-input v-model="currentParam.placeholder" placeholder="请输入输入提示文本" />
+        </el-form-item>
+
+        <el-form-item label="默认值">
+          <el-input v-model="currentParam.default" placeholder="请输入默认值" />
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="paramDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveParam">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, watch } from 'vue';
+import { ref, defineProps, defineEmits, watch, computed, nextTick } from 'vue';
+import { Plus, Delete } from '@element-plus/icons-vue';
 import VueMarkdownRender from 'vue-markdown-render';
 import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
@@ -93,9 +220,11 @@ const props = defineProps<{
     code: string;
     is_public: boolean;
     markdown_docs?: string;
+    config_schema?: string;
   };
   categories: McpCategoryInfo[];
   isSubmitting?: boolean;
+  configSchema?: Object | string;
 }>();
 
 const emit = defineEmits<{
@@ -108,6 +237,32 @@ const emit = defineEmits<{
 const formRef = ref();
 const form = ref({ ...props.modelValue });
 
+// 参数编辑弹窗相关
+const paramDialogVisible = ref(false);
+const paramFormRef = ref();
+const isEditingParam = ref(false);
+const editingParamIndex = ref(-1);
+const currentParam = ref({
+  key: '',
+  title: '',
+  type: 'string',
+  description: '',
+  placeholder: '',
+  default: '',
+  required: false
+});
+
+// 配置参数列表
+const configParams = ref<{
+  key: string;
+  title: string;
+  type: string;
+  description: string;
+  placeholder: string;
+  default: string;
+  required: boolean;
+}[]>([]);
+
 // 表单验证规则
 const rules = {
   name: [
@@ -119,6 +274,20 @@ const rules = {
   ],
   code: [
     { required: true, message: '请输入代码', trigger: 'blur' }
+  ]
+};
+
+// 参数表单验证规则
+const paramRules = {
+  key: [
+    { required: true, message: '请输入参数名', trigger: 'blur' },
+    { pattern: /^[a-zA-Z_][a-zA-Z0-9_]*$/, message: '参数名只能包含字母、数字和下划线，且不能以数字开头', trigger: 'blur' }
+  ],
+  title: [
+    { required: true, message: '请输入显示名称', trigger: 'blur' }
+  ],
+  type: [
+    { required: true, message: '请选择参数类型', trigger: 'change' }
   ]
 };
 
@@ -145,10 +314,182 @@ const extensions = [
   })
 ];
 
+// 生成配置 Schema
+const generatedConfigSchema = computed(() => {
+  const schema: Record<string, any> = {};
+  console.log('generatedConfigSchema', configParams.value)
+  configParams.value.forEach(param => {
+    if (!param.key) return;
+
+    schema[param.key] = {
+      type: param.type,
+      title: param.title,
+      description: param.description,
+      required: param.required
+    };
+
+    if (param.placeholder) {
+      schema[param.key].placeholder = param.placeholder;
+    }
+
+    if (param.default) {
+      schema[param.key].default = param.default;
+    }
+  });
+
+  return schema;
+});
+
+// 添加配置参数
+const addConfigParam = () => {
+  resetParamForm();
+  isEditingParam.value = false;
+  paramDialogVisible.value = true;
+};
+
+// 编辑配置参数
+const editConfigParam = (index: number) => {
+  const param = configParams.value[index];
+  currentParam.value = { ...param };
+  editingParamIndex.value = index;
+  isEditingParam.value = true;
+  paramDialogVisible.value = true;
+};
+
+// 移除配置参数
+const removeConfigParam = (index: number) => {
+  configParams.value.splice(index, 1);
+  updateConfigSchema();
+};
+
+// 保存参数
+const saveParam = async () => {
+  console.log('saveParam', currentParam.value)
+  try {
+    await paramFormRef.value?.validate();
+
+    if (isEditingParam.value) {
+      // 编辑模式
+      configParams.value[editingParamIndex.value] = { ...currentParam.value };
+    } else {
+      // 新增模式
+      configParams.value.push({ ...currentParam.value });
+    }
+
+    updateConfigSchema();
+    paramDialogVisible.value = false;
+    resetParamForm();
+  } catch (error) {
+    console.error('参数验证失败:', error);
+  }
+};
+
+// 重置参数表单
+const resetParamForm = () => {
+  currentParam.value = {
+    key: '',
+    title: '',
+    type: 'string',
+    description: '',
+    placeholder: '',
+    default: '',
+    required: false
+  };
+  editingParamIndex.value = -1;
+  paramFormRef.value?.resetFields();
+};
+
+// 获取类型标签样式
+const getTypeTagType = (type: string) => {
+  const typeMap: Record<string, string> = {
+    string: '',
+    integer: 'success',
+    password: 'warning',
+    boolean: 'info'
+  };
+  return typeMap[type] || '';
+};
+
+// 获取类型显示标签
+const getTypeLabel = (type: string) => {
+  const labelMap: Record<string, string> = {
+    string: '字符串',
+    integer: '整数',
+    password: '密码',
+    boolean: '布尔值'
+  };
+  return labelMap[type] || type;
+};
+
+// 更新配置 Schema
+const updateConfigSchema = () => {
+  const newSchema = JSON.stringify(generatedConfigSchema.value, null, 2);
+  if (form.value.config_schema !== newSchema) {
+    form.value.config_schema = newSchema;
+  }
+};
+
+// 初始化配置参数
+const initConfigParams = () => {
+  configParams.value = [];
+  console.log('initConfigParams', form.value.config_schema)
+  if (form.value.config_schema) {
+    try {
+      let schema;
+      
+      // 处理不同格式的 config_schema
+      if (typeof form.value.config_schema === 'string') {
+        // 如果是字符串，尝试解析为 JSON
+        schema = JSON.parse(form.value.config_schema);
+      } else if (typeof form.value.config_schema === 'object') {
+        // 如果已经是对象，直接使用
+        schema = form.value.config_schema;
+      } else {
+        console.warn('config_schema 格式不正确:', form.value.config_schema);
+        return;
+      }
+      
+      // 将对象转换为参数列表
+      Object.entries(schema).forEach(([key, config]: [string, any]) => {
+        configParams.value.push({
+          key,
+          title: config.title || '',
+          type: config.type || 'string',
+          description: config.description || '',
+          placeholder: config.placeholder || '',
+          default: config.default || '',
+          required: config.required || false
+        });
+      });
+      
+      console.log('initConfigParams 2', configParams.value)
+    } catch (error) {
+      console.error('解析配置 Schema 失败:', error);
+    }
+  }
+};
+
 // 监听表单数据变化，同步到父组件
 watch(form, (newVal) => {
   emit('update:modelValue', newVal);
+  console.log('form', newVal)
 }, { deep: true });
+
+// 监听 props 变化，初始化配置参数
+watch(() => props.modelValue, (newVal, oldVal) => {
+  console.log('props.modelValue', newVal)
+  
+  // 深度比较，避免不必要的更新
+  const newStr = JSON.stringify(newVal);
+  const oldStr = JSON.stringify(oldVal);
+  
+  if (newStr !== oldStr) {
+    form.value = { ...newVal };
+    nextTick(() => {
+      initConfigParams();
+    });
+  }
+}, { immediate: true });
 
 // 暴露表单验证方法给父组件
 defineExpose({
@@ -181,18 +522,19 @@ defineExpose({
   .markdown-container {
     flex-direction: column;
   }
-  
+
   .markdown-edit-area,
   .markdown-preview-area {
     width: 100%;
   }
-  
+
   .markdown-preview {
     min-height: 200px;
   }
 }
 
-.markdown-edit-area, .markdown-preview-area {
+.markdown-edit-area,
+.markdown-preview-area {
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -201,13 +543,15 @@ defineExpose({
   overflow: hidden;
 }
 
-.edit-header, .preview-header {
+.edit-header,
+.preview-header {
   padding: 8px 12px;
   background-color: #f5f7fa;
   border-bottom: 1px solid #DCDFE6;
 }
 
-.edit-title, .preview-title {
+.edit-title,
+.preview-title {
   font-weight: 500;
   font-size: 14px;
   color: #606266;
@@ -403,4 +747,150 @@ defineExpose({
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
-</style> 
+
+.config-schema-container {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  min-height: 300px;
+}
+
+/* 响应式布局 */
+@media (max-width: 992px) {
+  .config-schema-container {
+    flex-direction: column;
+  }
+
+  .config-schema-table-area,
+  .config-schema-preview-area {
+    width: 100%;
+  }
+
+  .config-schema-preview {
+    min-height: 150px;
+  }
+}
+
+.config-schema-table-area,
+.config-schema-preview-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #DCDFE6;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.table-header {
+  padding: 8px 12px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #DCDFE6;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.table-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #606266;
+}
+
+.config-params-table {
+  width: 100%;
+}
+
+.config-schema-preview {
+  min-height: 300px;
+  padding: 16px;
+  background-color: #fff;
+  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.json-preview {
+  padding: 16px;
+  background-color: #fff;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.preview-empty {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-icon {
+  margin-left: 8px;
+  color: #909399;
+  cursor: help;
+}
+
+.edit-header .info-icon {
+  margin-left: auto;
+}
+
+.edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.empty-params {
+  padding: 20px;
+  text-align: center;
+}
+
+.json-preview pre {
+  margin: 0;
+  font-family: 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #333;
+  background-color: #f8f9fa;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+:deep(.config-params-table .el-table__cell) {
+  padding: 8px 4px;
+}
+
+:deep(.config-params-table .el-input__wrapper) {
+  box-shadow: none;
+  border: 1px solid #dcdfe6;
+}
+
+:deep(.config-params-table .el-select) {
+  width: 100%;
+}
+
+:deep(.config-params-table .el-button) {
+  padding: 4px 8px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+:deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+:deep(.el-form-item__label) {
+  font-weight: 500;
+}
+
+.config-params-table .el-button+.el-button {
+  margin-left: 8px;
+}
+</style>

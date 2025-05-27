@@ -78,7 +78,10 @@ class MarketplaceService:
                     return None
             
             group = db.execute(select(McpGroup).where(McpGroup.id == module.category_id)).scalar_one_or_none()
-            groups = {group.id: group}
+            if group:
+                groups = {group.id: group}
+            else:
+                groups = {}
             result = module.to_dict(groups)
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)

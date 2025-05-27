@@ -614,10 +614,11 @@ class McpServiceManager:
                         db_service.status = "error"
                         db_service.error_message = "模块没有代码内容"
                         db.commit()
-                return
+                raise ValueError("模块没有代码内容")
+                
             if self._running_services.get(service.service_uuid):
                 em_logger.info(f"服务 {service.service_uuid} 已存在，不重复创建")
-                return
+                raise ValueError("服务已存在，不重复创建")
 
             if not self._main_app:
                 service.status = "error"

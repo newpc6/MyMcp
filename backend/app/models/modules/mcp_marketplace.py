@@ -59,9 +59,7 @@ class McpModule(Base):
             "repository_url": self.repository_url,
             "category_id": self.category_id,
             "category_name": (
-                mcp_groups.get(self.category_id).name 
-                if self.category_id and mcp_groups.get(self.category_id) 
-                else None
+                mcp_groups.get(self.category_id).name  if mcp_groups and self.category_id else None
             ),
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),

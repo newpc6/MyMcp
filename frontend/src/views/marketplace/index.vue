@@ -232,6 +232,8 @@ const createForm = ref<{
   category_id: number | null;
   code: string;
   is_public: boolean;
+  markdown_docs?: string;
+  config_schema?: string;
 }>({
   name: '',
   description: '',
@@ -241,7 +243,9 @@ const createForm = ref<{
   tags: [] as string[],
   category_id: null,
   code: '',
-  is_public: true
+  is_public: true,
+  markdown_docs: '',
+  config_schema: ''
 });
 
 const createRules = {
@@ -345,7 +349,9 @@ function showCreateDialog() {
     tags: [] as string[],
     category_id: null,
     code: '',
-    is_public: true
+    is_public: true,
+    markdown_docs: '',
+    config_schema: ''
   };
   nextTick(() => {
     createDialogVisible.value = true;
@@ -371,7 +377,9 @@ async function submitCreateForm() {
       code: createForm.value.code,
       is_public: createForm.value.is_public,
       is_hosted: true,
-      user_id: currentUser.value.user_id || undefined // 添加创建者ID
+      user_id: currentUser.value.user_id || undefined, // 添加创建者ID
+      markdown_docs: createForm.value.markdown_docs,
+      config_schema: createForm.value.config_schema ? JSON.parse(createForm.value.config_schema) : undefined
     };
 
     const response = await createModule(moduleData);

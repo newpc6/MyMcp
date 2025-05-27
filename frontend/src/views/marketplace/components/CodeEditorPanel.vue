@@ -106,7 +106,6 @@ const extensions = [
 function handleEditorCreated(payload: { view: EditorView }) {
   const { view } = payload;
   // 可以在这里对编辑器进行其他初始化设置
-  console.log('CodeMirror editor created', view);
 }
 </script>
 
