@@ -149,7 +149,7 @@ export async function testModuleFunction(moduleId: number, functionName: string,
  * @param moduleId - 可选的模块ID
  */
 export async function listServices(moduleId?: number): Promise<ApiResponse<McpServiceInfo[]>> {
-  let url = `${apiPrefix}/marketplace/services`
+  let url = `${apiPrefix}/service/list`
   if (moduleId) {
     url += `?module_id=${moduleId}`
   }
@@ -184,7 +184,7 @@ export async function stopService(serviceUuid: string): Promise<
     message: string
   }>
 > {
-  const response = await api.post(`${apiPrefix}/marketplace/services/${serviceUuid}/stop`)
+  const response = await api.post(`${apiPrefix}/service/${serviceUuid}/stop`)
   return response.data
 }
 
@@ -197,7 +197,7 @@ export async function startService(serviceUuid: string): Promise<
     message: string
   }>
 > {
-  const response = await api.post(`${apiPrefix}/marketplace/services/${serviceUuid}/start`)
+  const response = await api.post(`${apiPrefix}/service/${serviceUuid}/start`)
   return response.data
 }
 
@@ -210,7 +210,7 @@ export async function uninstallService(serviceUuid: string): Promise<
     message: string
   }>
 > {
-  const response = await api.post(`${apiPrefix}/marketplace/services/${serviceUuid}/uninstall`)
+  const response = await api.post(`${apiPrefix}/service/${serviceUuid}/uninstall`)
   return response.data
 }
 
@@ -228,7 +228,7 @@ export async function deleteModule(moduleId: number): Promise<ApiResponse<{ mess
  * @param serviceUuid - 服务UUID
  */
 export async function getService(serviceUuid: string): Promise<ApiResponse<McpServiceInfo>> {
-  const response = await api.get(`${apiPrefix}/marketplace/services/${serviceUuid}`)
+  const response = await api.get(`${apiPrefix}/service/${serviceUuid}`)
   return response.data
 }
 
@@ -236,7 +236,7 @@ export async function getService(serviceUuid: string): Promise<ApiResponse<McpSe
  * 获取MCP服务状态
  */
 export async function getOnlineServices(): Promise<ApiResponse<string[]>> {
-  const response = await api.get(`${apiPrefix}/marketplace/services/online`)
+  const response = await api.get(`${apiPrefix}/service/online`)
   return response.data
 }
 

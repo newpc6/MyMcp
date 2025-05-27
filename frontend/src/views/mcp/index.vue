@@ -275,6 +275,7 @@ const canManageService = (service: McpServiceInfo) => {
 
 // 加载服务列表
 const loadServices = async () => {
+  console.log('loadServices');
   loading.value = true;
   try {
     const response = await listServices();

@@ -6,7 +6,6 @@ from starlette.requests import Request
 from app.utils.response import success_response, error_response
 
 from app.services.marketplace.service import marketplace_service
-from app.services.mcp_service.service_manager import service_manager
 from app.utils.logging import em_logger
 from app.utils.permissions import get_user_info
 
@@ -156,86 +155,6 @@ async def publish_module(request: Request):
         return error_response(f"发布服务失败: {str(e)}", code=500, http_status_code=500)
 
 
-async def stop_service(request: Request):
-    """停止服务"""
-    service_uuid = request.path_params["service_uuid"]
-
-    # 获取用户信息
-    user_id, is_admin = get_user_info(request)
-
-    try:
-        from app.services.mcp_service.service_manager import service_manager
-
-        # 停止服务
-        result = service_manager.stop_service(
-            service_uuid,
-            user_id=user_id,
-            is_admin=is_admin
-        )
-        if not result:
-            return error_response("停止服务失败，服务可能不存在", code=400, http_status_code=400)
-
-        return success_response({"message": "服务已停止"})
-    except ValueError as e:
-        # 权限错误
-        return error_response(str(e), code=403, http_status_code=403)
-    except Exception as e:
-        em_logger.error(f"停止服务失败: {str(e)}")
-        return error_response(f"停止服务失败: {str(e)}", code=500, http_status_code=500)
-
-
-async def start_service(request: Request):
-    """启动服务"""
-    service_uuid = request.path_params["service_uuid"]
-
-    # 获取用户信息
-    user_id, is_admin = get_user_info(request)
-
-    try:
-        from app.services.mcp_service.service_manager import service_manager
-
-        # 启动服务
-        result = service_manager.start_service(
-            service_uuid,
-            user_id=user_id,
-            is_admin=is_admin
-        )
-        if not result:
-            err_msg = "启动服务失败，服务可能不存在"
-            return error_response(err_msg, code=400, http_status_code=400)
-
-        return success_response({"message": "服务已启动"})
-    except Exception as e:
-        em_logger.error(f"启动服务失败: {str(e)}")
-        err_msg = f"启动服务失败: {str(e)}"
-        return error_response(err_msg, code=500, http_status_code=500)
-
-
-async def uninstall_service(request: Request):
-    """卸载服务"""
-    service_uuid = request.path_params["service_uuid"]
-
-    # 获取用户信息
-    user_id, is_admin = get_user_info(request)
-
-    try:
-        from app.services.mcp_service.service_manager import service_manager
-
-        # 删除服务
-        result = service_manager.delete_service(
-            service_uuid,
-            user_id=user_id,
-            is_admin=is_admin
-        )
-        if not result:
-            return error_response("卸载服务失败，服务可能不存在", code=400, http_status_code=400)
-
-        return success_response({"message": "服务已卸载"})
-    except Exception as e:
-        em_logger.error(f"卸载服务失败: {str(e)}")
-        return error_response(f"卸载服务失败: {str(e)}", code=500, http_status_code=500)
-
-
 async def clone_module(request: Request):
     """复制MCP模块"""
     module_id = int(request.path_params["module_id"])
@@ -266,111 +185,6 @@ async def clone_module(request: Request):
     return success_response(result, message="模块复制成功")
 
 
-async def update_service_description(request: Request):
-    """更新服务描述"""
-    service_uuid = request.path_params["service_uuid"]
-    data = await request.json()
-    description = data.get("description", "")
-
-    try:
-        from app.models.engine import get_db
-        from app.models.modules.mcp_services import McpService
-
-        with get_db() as db:
-            service = db.query(McpService).filter(
-                McpService.service_uuid == service_uuid
-            ).first()
-
-            if not service:
-                return error_response("服务不存在", code=404, http_status_code=404)
-
-            # 获取关联的模块并更新描述
-            from app.models.modules.mcp_marketplace import McpModule
-            module = db.query(McpModule).filter(
-                McpModule.id == service.module_id
-            ).first()
-
-            if module:
-                module.description = description
-                db.commit()
-                return success_response(message="服务说明已更新")
-            else:
-                return error_response("未找到关联模块", code=404, http_status_code=404)
-    except Exception as e:
-        return error_response(f"更新服务说明失败: {str(e)}", code=500, http_status_code=500)
-
-
-async def list_services(request: Request):
-    """列出所有服务"""
-    # 获取模块ID参数
-    module_id = request.query_params.get("module_id")
-    if module_id:
-        module_id = int(module_id)
-
-    # 获取用户信息
-    user_id, is_admin = get_user_info(request)
-
-    try:
-        from app.services.mcp_service.service_manager import (
-            service_manager
-        )
-
-        # 获取服务列表（包含编辑权限信息）
-        services = service_manager.list_services(
-            module_id=module_id,
-            user_id=user_id,
-            is_admin=is_admin,
-            request=request  # 传递请求对象
-        )
-        return success_response(services)
-    except Exception as e:
-        em_logger.error(f"获取服务列表失败: {str(e)}")
-        err_msg = f"获取服务列表失败: {str(e)}"
-        return error_response(err_msg, code=500, http_status_code=500)
-
-
-async def get_service(request: Request):
-    """获取服务详情"""
-    service_uuid = request.path_params["service_uuid"]
-
-    # 获取用户信息
-    user_id, is_admin = get_user_info(request)
-
-    try:
-        from app.services.mcp_service.service_manager import (
-            service_manager
-        )
-
-        # 获取服务状态（包含编辑权限信息）
-        service = service_manager.get_service_status(
-            service_uuid,
-            request=request,  # 传递请求对象
-            user_id=user_id,
-            is_admin=is_admin
-        )
-        if not service:
-            return error_response("服务不存在", code=404, http_status_code=404)
-
-        # 非管理员只能查看自己的服务
-        if (not is_admin and user_id is not None and
-                service.get("user_id") != user_id):
-            msg = "无权访问此服务"
-            return error_response(msg, code=403, http_status_code=403)
-
-        return success_response(service)
-    except Exception as e:
-        em_logger.error(f"获取服务状态失败: {str(e)}")
-        err_msg = f"获取服务状态失败: {str(e)}"
-        return error_response(err_msg, code=500, http_status_code=500)
-
-
-async def get_online_services(request: Request):
-    """获取在线服务列表"""
-    # 获取运行中的服务UUID列表
-    online_services = list(service_manager._running_services.keys())
-    return success_response(online_services)
-
-
 def get_router():
     """获取MCP广场路由"""
     routes = [
@@ -384,19 +198,9 @@ def get_router():
         Route("/modules/{module_id:int}", update_module, methods=["PUT"]),
         Route("/modules/{module_id:int}", delete_module, methods=["DELETE"]),
 
-        # 服务相关路由
+        # 发布模块为服务
         Route("/modules/{module_id:int}/publish",
               publish_module, methods=["POST"]),
-        Route("/services", list_services, methods=["GET"]),
-        Route("/services/online", get_online_services, methods=["GET"]),
-        Route("/services/{service_uuid}", get_service, methods=["GET"]),
-        Route("/services/{service_uuid}/stop", stop_service, methods=["POST"]),
-        Route("/services/{service_uuid}/start",
-              start_service, methods=["POST"]),
-        Route("/services/{service_uuid}/uninstall",
-              uninstall_service, methods=["POST"]),
-        Route("/services/{service_uuid}/description",
-              update_service_description, methods=["PUT"]),
         Route("/modules/{module_id:int}/clone",
               clone_module, methods=["POST"]),
     ]
