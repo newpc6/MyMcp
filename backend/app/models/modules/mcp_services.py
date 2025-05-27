@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON, Text
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
 from sqlalchemy.sql import text
+import json
 
 
 class McpService(Base):
@@ -49,6 +50,17 @@ class McpService(Base):
         module_name = self.get_module_name()
         user_name = self.get_user_name()
         
+        # 解析config_params JSON字符串
+        config_params = None
+        if self.config_params:
+            try:
+                config_params = json.loads(self.config_params)
+            except (json.JSONDecodeError, TypeError):
+                # 如果解析失败，返回空字典
+                config_params = {}
+        else:
+            config_params = {}
+        
         return {
             "id": self.id,
             "module_id": self.module_id,
@@ -60,7 +72,7 @@ class McpService(Base):
             "enabled": self.enabled,
             "user_id": self.user_id,
             "user_name": user_name,
-            "config_params": self.config_params,
+            "config_params": config_params,
             "error_message": self.error_message,
             "created_at": (
                 self.created_at.isoformat() if self.created_at else None

@@ -135,15 +135,24 @@
           <el-form ref="serviceParamsFormRef" :model="serviceParamsForm" label-width="120px" label-position="top">
             <div v-for="(value, key) in currentService.config_params" :key="key" class="mb-4">
               <el-form-item :label="getParamDisplay(key)" label-position="left">
-                <div v-if="isNumeric(value)">
-                  <el-input-number v-model="serviceParamsForm[key]" />
+                <!-- 显示参数描述 -->
+                <div v-if="getParamDescription(key)" class="text-sm text-gray-500 mb-2">
+                  {{ getParamDescription(key) }}
                 </div>
-                <div v-else-if="isBoolean(value)">
+                
+                <!-- 根据schema类型渲染不同的输入组件 -->
+                <div v-if="getParamType(key) === 'integer'">
+                  <el-input-number v-model="serviceParamsForm[key]" :placeholder="getParamPlaceholder(key)" />
+                </div>
+                <div v-else-if="getParamType(key) === 'boolean'">
                   <el-switch v-model="serviceParamsForm[key]" />
                 </div>
+                <div v-else-if="getParamType(key) === 'password'">
+                  <el-input v-model="serviceParamsForm[key]" type="password" show-password 
+                    :placeholder="getParamPlaceholder(key)" />
+                </div>
                 <div v-else>
-                  <el-input v-if="isPassword(key)" v-model="serviceParamsForm[key]" type="password" show-password />
-                  <el-input v-else v-model="serviceParamsForm[key]" />
+                  <el-input v-model="serviceParamsForm[key]" :placeholder="getParamPlaceholder(key)" />
                 </div>
               </el-form-item>
             </div>
@@ -763,20 +772,37 @@ const getParamDisplay = (key: string): string => {
   return key;
 };
 
-// 判断值类型
-const isNumeric = (value: any): boolean => {
-  return typeof value === 'number';
-};
-
-const isBoolean = (value: any): boolean => {
-  return typeof value === 'boolean';
-};
-
-const isPassword = (key: string): boolean => {
-  if (!moduleInfo.value.config_schema) return false;
+// 获取参数描述
+const getParamDescription = (key: string): string => {
+  if (!moduleInfo.value.config_schema) return '';
 
   const schema = moduleInfo.value.config_schema[key];
-  return schema && schema.type === 'password';
+  if (schema && schema.description) {
+    return schema.description;
+  }
+  return '';
+};
+
+// 获取参数类型
+const getParamType = (key: string): string => {
+  if (!moduleInfo.value.config_schema) return 'string';
+
+  const schema = moduleInfo.value.config_schema[key];
+  if (schema && schema.type) {
+    return schema.type;
+  }
+  return 'string';
+};
+
+// 获取参数占位符
+const getParamPlaceholder = (key: string): string => {
+  if (!moduleInfo.value.config_schema) return '';
+
+  const schema = moduleInfo.value.config_schema[key];
+  if (schema && schema.placeholder) {
+    return schema.placeholder;
+  }
+  return '';
 };
 
 // 更新服务参数
