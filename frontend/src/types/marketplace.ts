@@ -74,6 +74,7 @@ export interface McpServiceInfo {
   id: number
   module_id: number
   module_name?: string // 模块名称
+  name?: string // 服务名称
   description?: string // 服务描述
   service_uuid: string
   status: string
@@ -85,6 +86,7 @@ export interface McpServiceInfo {
   created_at: string
   updated_at: string
   config_params?: Record<string, any> // 服务配置参数
+  is_public?: boolean // 是否公开
 }
 
 /**

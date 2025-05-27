@@ -23,6 +23,13 @@
                 <span class="status-text">{{ getStatusText(service.status) }}</span>
               </div>
 
+              <!-- 公开状态标签 -->
+              <div class="public-status">
+                <el-tag size="small" :type="service.is_public ? 'success' : 'warning'" effect="plain">
+                  {{ service.is_public ? '公开' : '私有' }}
+                </el-tag>
+              </div>
+
               <!-- 右上角操作按钮 -->
               <div class="service-actions">
                 <el-tooltip content="启动服务" v-if="service.status !== 'running'">
@@ -55,30 +62,40 @@
             </div>
 
             <div class="service-info">
-              <h2 class="service-name">
-                <el-text truncated>
-                  模板：{{ service.module_name || '未命名服务' }}
+              <!-- 模板和名称放一行 -->
+              <div class="service-title-row">
+                <div class="service-title-item">
+                  <span class="title-label">模板：</span>
+                  <el-text truncated class="title-value">{{ service.module_name || '未命名服务' }}</el-text>
+                </div>
+                <div class="service-title-item">
+                  <span class="title-label">名称：</span>
+                  <el-text truncated class="title-value">{{ service.name || '默认' }}</el-text>
+                </div>
+              </div>
+              
+              <!-- 描述 -->
+              <div class="service-description">
+                <el-text truncated type="info" size="small">
+                  {{ service.description || '暂无描述' }}
                 </el-text>
-              </h2>
-              <h2 class="service-name">
-                <el-text truncated>
-                  名称：{{ service.name }}
-                </el-text>
-              </h2>
-              <el-text truncated>
-                {{ service.description || '暂无描述' }}
-              </el-text>
+              </div>
             </div>
 
             <div class="service-details">
-              <div class="detail-item">
-                <span class="detail-label">创建者</span>
-                <span class="detail-value">{{ service.user_name || '未知' }}</span>
+              <!-- 创建者和创建时间放一行 -->
+              <div class="detail-row">
+                <div class="detail-item">
+                  <span class="detail-label">创建者</span>
+                  <span class="detail-value">{{ service.user_name || '未知' }}</span>
+                </div>
+                <div class="detail-item">
+                  <span class="detail-label">创建时间</span>
+                  <span class="detail-value">{{ formatDate(service.created_at) }}</span>
+                </div>
               </div>
-              <div class="detail-item">
-                <span class="detail-label">创建时间</span>
-                <span class="detail-value">{{ formatDate(service.created_at) }}</span>
-              </div>
+              
+              <!-- SSE URL -->
               <div class="detail-item">
                 <span class="detail-label">SSE URL</span>
                 <div class="url-container">
@@ -436,14 +453,14 @@ onMounted(() => {
 .service-card {
   height: 100%;
   border-radius: 16px;
-  transition: all 0.3s ease;
+  /* transition: all 0.3s ease; */
   overflow: hidden;
   position: relative;
   cursor: pointer;
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
+  /* transform: translateY(-4px); */
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
@@ -459,12 +476,17 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .service-status {
   display: flex;
   align-items: center;
+}
+
+.public-status {
+  margin-left: auto;
+  margin-right: 8px;
 }
 
 .status-dot {
@@ -540,28 +562,59 @@ onMounted(() => {
 }
 
 .service-info {
-  margin-bottom: 20px;
-  padding-bottom: 20px;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.service-name {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 10px;
+.service-title-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.service-title-item {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.title-label {
+  font-size: 12px;
+  color: #909399;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.title-value {
+  font-size: 14px;
   color: #303133;
+  font-weight: 500;
+}
+
+.service-description {
+  margin-bottom: 0;
 }
 
 .service-details {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  gap: 16px;
 }
 
 .detail-item {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  flex: 1;
+  min-width: 0;
 }
 
 .detail-label {
@@ -617,11 +670,11 @@ onMounted(() => {
   border: 2px dashed #dcdfe6;
   background-color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  transition: all 0.3s;
+  /* transition: all 0.3s; */
 }
 
 .add-service-card:hover {
-  transform: translateY(-4px);
+  /* transform: translateY(-4px); */
   border-color: #409eff;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
 }
