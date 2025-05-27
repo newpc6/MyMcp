@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Search } from '@element-plus/icons-vue';
-import type { McpToolInfo, McpToolParameter } from '../../types/marketplace';
+import type { McpToolInfo, McpToolParameter } from '@/types/marketplace';
 
 const props = defineProps<{
   tools: McpToolInfo[];

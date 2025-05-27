@@ -90,7 +90,8 @@ class McpServiceManager:
         """获取SSE URL"""
         return f"/mcp-{service_uuid}"
 
-    def publish_service(self, module_id: int, user_id: Optional[int] = None, is_admin: bool = False, config_params: Optional[Dict] = None, name: Optional[str] = None) -> McpService:
+    def publish_service(self, module_id: int, user_id: Optional[int] = None,
+                        is_admin: bool = False, data: Optional[Dict] = None) -> McpService:
         """发布一个MCP模块服务
 
         Args:
@@ -103,6 +104,9 @@ class McpServiceManager:
         Returns:
             McpService: 创建的服务记录
         """
+        name = data.get("service_name")
+        config_params = data.get("config_params")
+        is_public = data.get("is_public", False)
         if not self._main_app:
             raise ValueError("主应用程序未初始化，无法发布服务")
 
@@ -128,6 +132,7 @@ class McpServiceManager:
                     # 验证必填参数
                     for key, schema in config_schema.items():
                         if schema.get('required', False) and (not config_params or key not in config_params or not config_params[key]):
+                            em_logger.error(f"缺少必填参数: {key}")
                             raise ValueError(f"缺少必填参数: {key}")
                 except json.JSONDecodeError:
                     em_logger.error(f"config_schema解析失败: {module.config_schema}")
@@ -161,6 +166,7 @@ class McpServiceManager:
                 status="running",
                 enabled=True,
                 user_id=user_id,
+                is_public=is_public,
                 config_params=params
             )
             db.add(service_record)
@@ -189,68 +195,64 @@ class McpServiceManager:
         Returns:
             bool: 是否成功停止
         """
-        try:
-            # 检查服务是否存在
+        # 检查服务是否存在
+        with get_db() as db:
+            service = db.query(McpService).filter(
+                McpService.service_uuid == service_uuid
+            ).first()
+            if not service:
+                return False
+
+            # 检查权限：非管理员只能停止自己创建的服务
+            if not is_admin and user_id is not None and service.user_id != user_id:
+                raise ValueError("没有权限停止此服务")
+
+        if service_uuid not in self._running_services:
             with get_db() as db:
                 service = db.query(McpService).filter(
                     McpService.service_uuid == service_uuid
                 ).first()
                 if not service:
                     return False
-
-                # 检查权限：非管理员只能停止自己创建的服务
-                if not is_admin and user_id is not None and service.user_id != user_id:
-                    raise ValueError("没有权限停止此服务")
-
-            if service_uuid not in self._running_services:
-                with get_db() as db:
-                    service = db.query(McpService).filter(
-                        McpService.service_uuid == service_uuid
-                    ).first()
-                    if not service:
-                        return False
-                    service.status = "stopped"
-                    service.enabled = False
-                    db.commit()
-                return True
-
-            # 获取服务信息并停止服务
-            self._running_services.pop(service_uuid, None)
-            # 添加服务路由到主应用
-            sse_path = f"{self._get_sse_path(service_uuid)}/sse"
-            message_path = f"{self._get_sse_path(service_uuid)}/messages"
-
-            # 删除路由
-            routes_to_delete = []
-            for i, route in enumerate(self._main_app.routes):
-                if hasattr(route, 'path'):
-                    if route.path == sse_path:
-                        routes_to_delete.append(route)
-                    if route.path == message_path:
-                        routes_to_delete.append(route)
-
-            # 单独删除以避免迭代时修改列表
-            for route in routes_to_delete:
-                try:
-                    self._main_app.routes.remove(route)
-                    em_logger.info(f"成功删除路由: {route.path}")
-                except Exception as e:
-                    em_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
-
-            # 更新数据库状态
-            with get_db() as db:
-                service = db.query(McpService).filter(
-                    McpService.service_uuid == service_uuid
-                ).first()
-                if service:
-                    service.status = "stopped"
-                    service.enabled = False
-                    db.commit()
-
+                service.status = "stopped"
+                service.enabled = False
+                db.commit()
             return True
-        except Exception as e:
-            em_logger.error(f"停止服务失败 {service_uuid}: {str(e)}")
-            return False
+
+        # 获取服务信息并停止服务
+        self._running_services.pop(service_uuid, None)
+        # 添加服务路由到主应用
+        sse_path = f"{self._get_sse_path(service_uuid)}/sse"
+        message_path = f"{self._get_sse_path(service_uuid)}/messages"
+
+        # 删除路由
+        routes_to_delete = []
+        for i, route in enumerate(self._main_app.routes):
+            if hasattr(route, 'path'):
+                if route.path == sse_path:
+                    routes_to_delete.append(route)
+                if route.path == message_path:
+                    routes_to_delete.append(route)
+
+        # 单独删除以避免迭代时修改列表
+        for route in routes_to_delete:
+            try:
+                self._main_app.routes.remove(route)
+                em_logger.info(f"成功删除路由: {route.path}")
+            except Exception as e:
+                em_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
+
+        # 更新数据库状态
+        with get_db() as db:
+            service = db.query(McpService).filter(
+                McpService.service_uuid == service_uuid
+            ).first()
+            if service:
+                service.status = "stopped"
+                service.enabled = False
+                db.commit()
+
+        return True
 
     def start_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """启动已停止的MCP服务
@@ -468,9 +470,15 @@ class McpServiceManager:
             if module_id:
                 query = query.filter(McpService.module_id == module_id)
                 
-            # 非管理员用户只能看到自己的服务
+            # 权限控制：非管理员只能看到自己的服务或公开的服务，管理员可以看到所有服务
             if not is_admin and user_id is not None:
-                query = query.filter(McpService.user_id == user_id)
+                query = query.filter(
+                    (McpService.user_id == user_id) | (McpService.is_public == True)
+                )
+            elif is_admin:
+                pass
+            else:
+                query = query.filter(McpService.is_public == True)
                 
             services = query.all()
             result = []

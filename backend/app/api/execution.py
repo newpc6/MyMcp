@@ -15,7 +15,7 @@ from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpTool, McpModule
 from app.services.execution.executor import execute_tool_by_name
 from app.services.mcp_service.service_manager import service_manager
-
+from app.utils.logging import em_logger
 
 async def execute_tool(request: Request):
     """
@@ -122,7 +122,8 @@ async def execute_module_function(request: Request):
             if not os.path.exists(debug_dir):
                 os.makedirs(debug_dir)
             
-            temp_file = os.path.join(debug_dir, f"{module.name}-{user_id}.py")
+            module_name = f"{module.name}-{user_id}"
+            temp_file = os.path.join(debug_dir, f"{module_name}.py")
             
             try:
                 # 写入模块代码到临时文件
@@ -134,9 +135,9 @@ async def execute_module_function(request: Request):
                     sys.path.insert(0, debug_dir)
                 
                 # 动态导入模块
-                module_name = module.name
                 spec = importlib.util.find_spec(module_name)
                 if not spec:
+                    em_logger.error(f"无法加载模块: {module_name}")
                     return error_response("无法加载模块", code=500, http_status_code=500)
                 
                 imported_module = importlib.import_module(module_name)

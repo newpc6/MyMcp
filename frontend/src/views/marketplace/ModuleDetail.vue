@@ -42,7 +42,7 @@
               <ToolTestPanel 
                 :tools="moduleTools" 
                 :moduleId="moduleId"
-                @test="testModuleFunction"
+                @test="handleToolTest"
               />
             </el-tab-pane>
 
@@ -83,7 +83,9 @@
         <el-form-item label="服务名称" prop="service_name" :rules="[{ required: true, message: '请输入服务名称', trigger: 'blur' }]">
           <el-input v-model="configForm.service_name" placeholder="请输入服务名称"></el-input>
         </el-form-item>
-
+        <el-form-item label="是否公开" prop="is_public">
+          <el-switch v-model="configForm.is_public" />
+        </el-form-item>
         <div v-if="!hasConfigSchema">
           <el-alert type="info" :closable="false" show-icon title="此模块没有需要配置的参数，可以直接发布。" class="mb-4" />
         </div>
@@ -94,19 +96,19 @@
           <el-divider content-position="left">配置参数</el-divider>
 
           <div v-for="(schema, key) in moduleInfo.config_schema" :key="key" class="mb-4">
-            <el-form-item :label="schema.title || key" :prop="key" label-position="left"
+            <el-form-item :label="schema.title || key" :prop="`config_params.${key}`" label-position="left"
               :rules="[{ required: schema.required, message: `请输入${schema.title || key}`, trigger: 'blur' }]">
 
               <!-- <div class="text-sm text-gray-500 mb-1">{{ schema.description }}</div> -->
               <div v-if="schema.type === 'integer'">
-                <el-input-number v-model="configForm[key]"
+                <el-input-number v-model="configForm.config_params[key]"
                   :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
               </div>
               <div v-else>
-                <el-input v-if="schema.type === 'password'" v-model="configForm[key]"
+                <el-input v-if="schema.type === 'password'" v-model="configForm.config_params[key]"
                   :placeholder="schema.placeholder || `请输入${schema.title || key}`"
                   :type="schema.type === 'password' ? 'password' : 'text'" show-password />
-                <el-input v-else v-model="configForm[key]"
+                <el-input v-else v-model="configForm.config_params[key]"
                   :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
               </div>
             </el-form-item>
@@ -269,7 +271,15 @@ const configParams = ref<{
 // 服务发布相关
 const publishDialogVisible = ref(false);
 const configFormRef = ref<any>();
-const configForm = ref<Record<string, any>>({});
+const configForm = ref<{
+  service_name: string;
+  is_public: boolean;
+  config_params: Record<string, any>;
+}>({
+  service_name: '',
+  is_public: false,
+  config_params: {}
+});
 const configRules = ref<Record<string, any>>({});
 const publishing = ref(false);
 
@@ -419,17 +429,17 @@ function goBack() {
 
 // 处理发布服务
 const handlePublishService = () => {
-  // 如果有配置参数，则显示配置对话框
-  if (hasConfigSchema.value) {
-    initConfigForm();
-  }
+  // 初始化配置表单
+  initConfigForm();
   publishDialogVisible.value = true;
 };
 
 // 初始化配置表单
 function initConfigForm() {
   configForm.value = {
-    service_name: `${moduleInfo.value.name}-实例-${new Date().getTime().toString().slice(-6)}` // 默认服务名称
+    service_name: `${moduleInfo.value.name}-实例-${new Date().getTime().toString().slice(-6)}`, // 默认服务名称
+    is_public: false,
+    config_params: {}
   };
   configRules.value = {
     service_name: [{ required: true, message: '请输入服务名称', trigger: 'blur' }]
@@ -437,9 +447,9 @@ function initConfigForm() {
 
   if (moduleInfo.value.config_schema) {
     Object.entries(moduleInfo.value.config_schema).forEach(([key, schema]: [string, any]) => {
-      configForm.value[key] = '';
+      configForm.value.config_params[key] = '';
       if (schema.required) {
-        configRules.value[key] = [
+        configRules.value[`config_params.${key}`] = [
           { required: true, message: `请输入${schema.title || key}`, trigger: 'blur' }
         ];
       }
@@ -805,6 +815,16 @@ function addConfigParam() {
 function removeConfigParam(index: number) {
   configParams.value.splice(index, 1);
 }
+
+// 工具测试包装函数
+const handleToolTest = async (toolName: string, params: Record<string, any>): Promise<any> => {
+  try {
+    const response = await testModuleFunction(moduleId.value, toolName, params);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
 
 // 页面加载时获取模块详情
 onMounted(() => {

@@ -21,6 +21,7 @@ class McpService(Base):
     enabled = Column(Boolean, default=False)
     user_id = Column(Integer, nullable=True, index=True)  # 创建者用户ID
     config_params = Column(Text, nullable=True)  # 存储服务配置参数，包括密钥信息等
+    is_public = Column(Boolean, default=False)  # 是否公开，True为公开，False为私有
     
     def get_module_name(self):
         """获取关联的模块名称"""
@@ -66,5 +67,6 @@ class McpService(Base):
             ),
             "updated_at": (
                 self.updated_at.isoformat() if self.updated_at else None
-            )
+            ),
+            "is_public": self.is_public
         } 

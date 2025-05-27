@@ -42,7 +42,20 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="name" label="服务名称" min-width="120"></el-table-column>
+        <el-table-column prop="is_public" label="公开" width="60">
+          <template #default="scope">
+            <el-tag :type="scope.row.is_public ? 'success' : 'warning'" size="small">
+              {{ scope.row.is_public ? '是' : '否' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="name" label="服务名称" min-width="120">
+          <template #default="scope">
+            <el-text truncated>
+              {{ scope.row.name }}
+            </el-text>
+          </template>
+        </el-table-column>
         <el-table-column prop="sse_url" label="SSE URL" min-width="220">
           <template #default="scope">
             <div class="flex items-center">
@@ -67,24 +80,26 @@
         <el-table-column prop="created_at" label="创建时间" width="140" />
         <el-table-column fixed="right" label="操作" width="200">
           <template #default="scope">
-            <el-button v-if="scope.row.status === 'running'" type="info" size="small"
-              @click="$emit('stop-service', scope.row.service_uuid)">
-              停止
-            </el-button>
-            <el-button v-else-if="scope.row.status === 'stopped'" type="success" size="small"
-              @click="$emit('start-service', scope.row.service_uuid)">
-              启动
-            </el-button>
-            <el-button v-else-if="scope.row.status === 'error'" type="warning" size="small"
-              @click="$emit('start-service', scope.row.service_uuid)">
-              重启
-            </el-button>
-            <el-button type="primary" size="small" @click="$emit('view-params', scope.row)" title="查看参数">
-              参数
-            </el-button>
-            <el-button type="danger" size="small" @click="$emit('uninstall-service', services[0].service_uuid)">
-              卸载
-            </el-button>
+            <div v-if="scope.row.can_edit">
+              <el-button v-if="scope.row.status === 'running'" type="info" size="small"
+                @click="$emit('stop-service', scope.row.service_uuid)">
+                停止
+              </el-button>
+              <el-button v-else-if="scope.row.status === 'stopped'" type="success" size="small"
+                @click="$emit('start-service', scope.row.service_uuid)">
+                启动
+              </el-button>
+              <el-button v-else-if="scope.row.status === 'error'" type="warning" size="small"
+                @click="$emit('start-service', scope.row.service_uuid)">
+                重启
+              </el-button>
+              <el-button type="primary" size="small" @click="$emit('view-params', scope.row)" title="查看参数">
+                参数
+              </el-button>
+              <el-button type="danger" size="small" @click="$emit('uninstall-service', services[0].service_uuid)">
+                卸载
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
