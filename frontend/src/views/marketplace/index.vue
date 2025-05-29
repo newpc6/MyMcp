@@ -38,7 +38,7 @@
             <span class="category-name">{{ category.name }}</span>
             <el-tag size="small" class="ml-auto">{{ category.modules_count || 0 }}</el-tag>
             <el-dropdown v-if="hasAdminPermission" trigger="click" @click.stop>
-              <el-icon class="ml-2">
+              <el-icon class="ml-2" @click.stop>
                 <MoreFilled />
               </el-icon>
               <template #dropdown>
