@@ -8,10 +8,14 @@ from app.utils.response import success_response, error_response
 from app.services.marketplace.service import marketplace_service
 from app.utils.logging import mcp_logger
 from app.utils.permissions import get_user_info
+from app.utils.http.utils import get_page_params
 
 
 async def list_modules(request: Request):
-    """获取所有MCP模块列表"""
+    """获取MCP模块列表（支持分页）"""
+    # 获取分页参数
+    page_params = get_page_params(request, default_size=12, max_size=50)
+    
     # 支持按分组查询
     category_id = request.query_params.get("category_id")
     if category_id:
@@ -21,7 +25,8 @@ async def list_modules(request: Request):
     user_id, is_admin = get_user_info(request)
 
     # 调用服务层方法，获取包含编辑权限的结果
-    result = marketplace_service.list_modules(
+    result = marketplace_service.list_modules_paginated(
+        page_params=page_params,
         category_id=category_id,
         user_id=user_id,
         is_admin=is_admin
@@ -152,7 +157,11 @@ async def publish_module(request: Request):
         return error_response(str(e), code=400, http_status_code=400)
     except Exception as e:
         mcp_logger.error(f"发布服务失败: {str(e)}")
-        return error_response(f"发布服务失败: {str(e)}", code=500, http_status_code=500)
+        return error_response(
+            f"发布服务失败: {str(e)}", 
+            code=500, 
+            http_status_code=500
+        )
 
 
 async def clone_module(request: Request):

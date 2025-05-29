@@ -6,13 +6,36 @@ import { apiPrefix } from './index'
 import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo, McpServiceInfo, ApiResponse } from '../types/marketplace'
 
 /**
- * 获取所有MCP模块列表
+ * 获取MCP模块列表（支持分页）
  */
-export async function listModules(categoryId?: string | null): Promise<ApiResponse<McpModuleInfo[]>> {
+export async function listModules(
+  categoryId?: string | null,
+  page?: number,
+  size?: number
+): Promise<ApiResponse<{
+  items: McpModuleInfo[];
+  total: number;
+  page: number;
+  size: number;
+  total_pages: number;
+}>> {
   let url = `${apiPrefix}/marketplace/modules`
+  const params = new URLSearchParams()
+  
   if (categoryId) {
-    url += `?category_id=${categoryId}`
+    params.append('category_id', categoryId)
   }
+  if (page) {
+    params.append('page', page.toString())
+  }
+  if (size) {
+    params.append('size', size.toString())
+  }
+  
+  if (params.toString()) {
+    url += `?${params.toString()}`
+  }
+  
   const response = await api.get(url)
   return response.data
 }

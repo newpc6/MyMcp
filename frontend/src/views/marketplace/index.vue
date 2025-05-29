@@ -125,6 +125,22 @@
           </div>
         </div>
       </div>
+
+      <!-- 分页组件 -->
+      <div v-if="!loading && modules.length > 0" class="pagination-container">
+        <el-config-provider :locale="zhCn">
+          <el-pagination
+            :current-page="currentPage"
+            :page-size="pageSize"
+            :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
+            :background="true"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="total"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </el-config-provider>
+      </div>
     </el-main>
 
     <!-- 创建MCP服务对话框 -->
@@ -200,6 +216,7 @@
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElNotification, ElMessageBox } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import {
   Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit,
   Star, Box, Monitor, Setting, Document, View, CopyDocument, Delete
@@ -209,7 +226,7 @@ import {
   createGroup, updateGroup, deleteGroup
 } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
-import McpServiceForm from './components/McpServiceForm.vue';
+import { defineAsyncComponent } from 'vue';
 
 const router = useRouter();
 const modules = ref<McpModuleInfo[]>([]);
@@ -217,6 +234,12 @@ const categories = ref<McpCategoryInfo[]>([]);
 const loading = ref(true);
 const scanning = ref(false);
 const selectedCategoryId = ref<string | null>('all');
+
+// 分页相关状态
+const currentPage = ref(1);
+const pageSize = ref(9);
+const total = ref(0);
+const totalPages = ref(0);
 
 // 创建服务相关
 const createDialogVisible = ref(false);
@@ -417,12 +440,18 @@ async function loadModules() {
   loading.value = true;
   try {
     const categoryId = selectedCategoryId.value === 'all' ? null : selectedCategoryId.value;
-    const response = await listModules(categoryId);
+    const response = await listModules(categoryId, currentPage.value, pageSize.value);
     // 处理API响应格式
     if (response && response.data) {
-      modules.value = response.data;
+      modules.value = response.data.items || [];
+      total.value = response.data.total || 0;
+      totalPages.value = response.data.total_pages || 0;
+      currentPage.value = response.data.page || 1;
+      pageSize.value = response.data.size || 12;
     } else {
       modules.value = [];
+      total.value = 0;
+      totalPages.value = 0;
     }
   } catch (error) {
     console.error("加载模块失败", error);
@@ -434,6 +463,19 @@ async function loadModules() {
   } finally {
     loading.value = false;
   }
+}
+
+// 处理分页大小变化
+function handleSizeChange(newSize: number) {
+  pageSize.value = newSize;
+  currentPage.value = 1; // 重置到第一页
+  loadModules();
+}
+
+// 处理当前页变化
+function handleCurrentChange(newPage: number) {
+  currentPage.value = newPage;
+  loadModules();
 }
 
 // 加载分组列表
@@ -459,6 +501,7 @@ async function loadCategories() {
 // 处理分组选择
 function handleCategorySelect(categoryId: string) {
   selectedCategoryId.value = categoryId;
+  currentPage.value = 1; // 重置到第一页
   loadModules();
 }
 
@@ -856,6 +899,8 @@ onMounted(async () => {
   await loadCategories();
   await loadModules();
 });
+
+const McpServiceForm = defineAsyncComponent(() => import('./components/McpServiceForm.vue'));
 </script>
 
 <style scoped>
@@ -1057,5 +1102,29 @@ onMounted(async () => {
 .el-select-dropdown__item {
   display: flex;
   align-items: center;
+}
+
+/* 分页组件样式 */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 20px 0;
+}
+
+.el-pagination {
+  --el-pagination-bg-color: #fff;
+  --el-pagination-text-color: #606266;
+  --el-pagination-border-radius: 8px;
+}
+
+.el-pagination .btn-prev,
+.el-pagination .btn-next {
+  border-radius: 8px;
+}
+
+.el-pagination .el-pager li {
+  border-radius: 8px;
+  margin: 0 2px;
 }
 </style>

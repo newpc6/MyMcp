@@ -11,7 +11,7 @@ import importlib.util
 import importlib
 import tempfile
 
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, func
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.engine import get_db
@@ -21,10 +21,89 @@ from app.utils.logging import mcp_logger
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.permissions import add_edit_permission
 from app.models.group.group import McpGroup
+from app.utils.http.pagination import PageParams
 
 
 class MarketplaceService:
     """MCP广场服务"""
+    
+    def list_modules_paginated(
+        self, 
+        page_params: PageParams,
+        category_id: Optional[int] = None, 
+        user_id: Optional[int] = None, 
+        is_admin: bool = False
+    ) -> Dict[str, Any]:
+        """获取MCP模块列表（分页）
+        
+        参数:
+            page_params: 分页参数
+            category_id: 分类ID，可选
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+            
+        返回:
+            分页结果
+        """
+        with get_db() as db:
+            query = select(McpModule)
+            
+            # 如果指定了分组ID，按分组过滤
+            if category_id:
+                query = query.where(McpModule.category_id == category_id)
+            
+            # 非管理员用户只能看到自己创建的和公开的模块
+            if not is_admin and user_id is not None:
+                query = query.where(
+                    (McpModule.is_public is True) |
+                    (McpModule.user_id == user_id)
+                )
+            
+            # 按更新时间倒序排列
+            query = query.order_by(McpModule.updated_at.desc())
+            
+            # 获取总数
+            total_count = db.execute(
+                select(func.count()).select_from(query.subquery())
+            ).scalar()
+            
+            # 分页查询
+            modules = db.execute(
+                query.offset(page_params.offset).limit(page_params.size)
+            ).scalars().all()
+            
+            # 获取分组信息
+            mcp_groups_ids = [
+                m.category_id for m in modules if m.category_id
+            ]
+            groups = {}
+            if mcp_groups_ids:
+                group_list = db.execute(
+                    select(McpGroup).where(
+                        McpGroup.id.in_(mcp_groups_ids)
+                    )
+                ).scalars().all()
+                groups = {g.id: g for g in group_list}
+            
+            # 转换为字典并添加编辑权限
+            result_items = [m.to_dict(groups) for m in modules]
+            result_items = add_edit_permission(
+                result_items, user_id, is_admin
+            )
+            
+            # 计算总页数
+            total_pages = (
+                (total_count + page_params.size - 1) // page_params.size
+                if total_count > 0 else 0
+            )
+            
+            return {
+                "items": result_items,
+                "total": total_count,
+                "page": page_params.page,
+                "size": page_params.size,
+                "total_pages": total_pages
+            }
     
     def list_modules(
         self, category_id: Optional[int] = None, 
@@ -51,12 +130,17 @@ class MarketplaceService:
             # 非管理员用户只能看到自己创建的和公开的模块
             if not is_admin and user_id is not None:
                 query = query.where(
-                    (McpModule.is_public == True) | (McpModule.user_id == user_id)
+                    (McpModule.is_public is True) |
+                    (McpModule.user_id == user_id)
                 )
                 
             modules = db.execute(query).scalars().all()
             mcp_groups_ids = [m.category_id for m in modules]
-            groups = db.execute(select(McpGroup).where(McpGroup.id.in_(mcp_groups_ids))).scalars().all()
+            groups = db.execute(
+                select(McpGroup).where(
+                    McpGroup.id.in_(mcp_groups_ids)
+                )
+            ).scalars().all()
             mcp_groups = {g.id: g for g in groups}
             result = [m.to_dict(mcp_groups) for m in modules]
             # 添加可编辑字段
