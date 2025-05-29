@@ -56,15 +56,30 @@ api.interceptors.response.use(
     (response) => {
         return response;
     },
-    (error) => {
+    async (error) => {
         console.error('API请求错误:', error);
         
         // 处理401未授权错误
         if (error.response && error.response.status === 401) {
             console.warn('收到401未授权错误');
-            ElMessage.error('会话已过期，请重新登录');
+            
+            // 清除用户信息
             localStorage.removeItem('userInfo');
-            router.push('/login');
+            
+            // 显示提示消息
+            ElMessage.error('会话已过期，请重新登录');
+            
+            // 使用 nextTick 确保在下一个事件循环中处理路由跳转
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // 检查当前路由，避免重复跳转
+            if (router.currentRoute.value.name !== 'login') {
+                // 使用 replace 避免产生历史记录
+                await router.replace('/login');
+                
+                // 强制刷新页面以确保状态完全清理
+                window.location.reload();
+            }
         }
         return Promise.reject(error);
     }

@@ -142,7 +142,7 @@
       <!-- 分页组件 -->
       <div v-if="!loading && modules.length > 0" class="pagination-container">
         <el-config-provider :locale="zhCn">
-          <el-pagination :current-page="queryPage.paging.page" :page-size="queryPage.paging.size"
+          <el-pagination :current-page="currentPage" :page-size="pageSize"
             :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]" :background="true" layout="total, sizes, prev, pager, next, jumper"
             :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
         </el-config-provider>
@@ -211,7 +211,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElNotification, ElMessageBox } from 'element-plus';
+import { ElNotification, ElMessageBox, ElMessage } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import {
   Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit,
@@ -223,7 +223,7 @@ import {
 } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 import { defineAsyncComponent } from 'vue';
-import { Page } from '@/types/page';
+import { Page } from '../../types/page';
 
 const router = useRouter();
 const modules = ref<McpModuleInfo[]>([]);
@@ -243,8 +243,9 @@ const queryPage = ref<Page>({
 });
 
 // 分页相关状态
+const currentPage = ref(1);
+const pageSize = ref(7);
 const total = ref(0);
-const totalPages = ref(0);
 
 // 创建服务相关
 const createDialogVisible = ref(false);
@@ -449,13 +450,11 @@ async function loadModules() {
     if (response && response.data) {
       modules.value = response.data.items || [];
       total.value = response.data.total || 0;
-      totalPages.value = response.data.total_pages || 0;
-      queryPage.value.paging.page = response.data.page || 1;
-      queryPage.value.paging.size = response.data.size || 12;
+      currentPage.value = response.data.page || 1;
+      pageSize.value = response.data.size || 12;
     } else {
       modules.value = [];
       total.value = 0;
-      totalPages.value = 0;
     }
   } catch (error) {
     console.error("加载模块失败", error);
@@ -471,11 +470,13 @@ async function loadModules() {
 
 // 处理分页大小变化
 function handleSizeChange(newSize: number) {
+  queryPage.value.paging.size = newSize;
   loadModules();
 }
 
 // 处理当前页变化
 function handleCurrentChange(newPage: number) {
+  queryPage.value.paging.page = newPage;
   loadModules();
 }
 
@@ -896,9 +897,29 @@ async function submitCategoryForm() {
 
 // 页面加载时获取模块列表和分组列表
 onMounted(async () => {
-  loadUserInfo(); // 加载用户信息
-  await loadCategories();
-  await loadModules();
+  // 加载用户信息
+  loadUserInfo();
+  
+  // 检查用户认证状态
+  const userInfoStr = localStorage.getItem('userInfo');
+  if (!userInfoStr) {
+    console.warn('用户未登录，跳转到登录页');
+    ElMessage.warning('请先登录');
+    await router.replace('/login');
+    return;
+  }
+  
+  try {
+    // 并行加载分类和模块数据
+    await Promise.all([
+      loadCategories(),
+      loadModules()
+    ]);
+  } catch (error) {
+    console.error('页面初始化失败:', error);
+    // 如果是401错误，说明token已失效，这里不需要额外处理，
+    // 因为axios拦截器已经处理了401错误的情况
+  }
 });
 
 const McpServiceForm = defineAsyncComponent(() => import('./components/McpServiceForm.vue'));

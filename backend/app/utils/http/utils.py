@@ -4,7 +4,7 @@ HTTP通用工具函数
 提供HTTP相关的通用工具函数
 """
 from fastapi import Request
-from typing import Callable
+from typing import Callable, List, Any, Dict
 
 from .pagination import PageParams
 
@@ -89,3 +89,27 @@ def paginate_dependency(
         return PageParams(page=page, size=size, offset=offset)
     
     return _get_page_params 
+
+
+def build_page_response(
+    items: List[Any],
+    total: int, 
+    page_params: PageParams
+) -> Dict[str, Any]:
+    """
+    构建统一的分页响应结果
+    
+    Args:
+        items: 数据项列表
+        total: 总数量
+        page_params: 分页参数
+        
+    Returns:
+        Dict: 统一格式的分页响应
+    """    
+    return {
+        "items": items,
+        "total": total,
+        "page": page_params.page,
+        "size": page_params.size
+    }

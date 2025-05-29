@@ -31,7 +31,7 @@ import sys
 import tempfile
 from sqlalchemy import select
 from app.utils.permissions import add_edit_permission
-from app.utils.http.pagination import PageParams
+from app.utils.http import PageParams, build_page_response
 
 
 class McpServiceManager:
@@ -634,19 +634,11 @@ class McpServiceManager:
                 result_items, user_id, is_admin
             )
             
-            # 计算总页数
-            total_pages = (
-                (total_count + page_params.size - 1) // page_params.size
-                if total_count > 0 else 0
+            return build_page_response(
+                result_items,
+                total_count,
+                page_params
             )
-            
-            return {
-                "items": result_items,
-                "total": total_count,
-                "page": page_params.page,
-                "size": page_params.size,
-                "total_pages": total_pages
-            }
 
     def replace_config_params(self, code: str, config_params: Dict) -> str:
         """替换配置参数

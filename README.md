@@ -10,6 +10,9 @@
 
 ## 模块说明
 
+### 登录页面
+
+![login-v2.jpg](https://img.picui.cn/free/2025/05/29/683830b4d8b57.jpg)
 ### MCP 广场
 
 ![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/05/29/6838001fac033.jpg)

@@ -21,7 +21,7 @@ from app.models.modules.mcp_services import McpService
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.tools.tool_execution import ToolExecution
 from app.utils.logging import mcp_logger
-from app.utils.http import PageParams, PageResult
+from app.utils.http import PageParams, PageResult, build_page_response
 from app.models.modules.users import User
 
 
@@ -352,13 +352,11 @@ class StatisticsService:
                 result = PageResult.from_query(query, page_params)
 
                 # 转换为字典格式
-                return {
-                    "items": [stat.to_dict() for stat in result.items],
-                    "total": result.total,
-                    "page": result.page,
-                    "size": result.size,
-                    "pages": result.total_pages
-                }
+                return build_page_response(
+                    [stat.to_dict() for stat in result.items],
+                    result.total,
+                    page_params
+                )
             except Exception as e:
                 mcp_logger.error(f"获取模块排名数据时出错: {str(e)}")
                 raise
@@ -392,13 +390,11 @@ class StatisticsService:
                 result = PageResult.from_query(query, page_params)
 
                 # 转换为字典格式
-                return {
-                    "items": [stat.to_dict() for stat in result.items],
-                    "total": result.total,
-                    "page": result.page,
-                    "size": result.size,
-                    "pages": result.total_pages
-                }
+                return build_page_response(
+                    [stat.to_dict() for stat in result.items],
+                    result.total,
+                    page_params
+                )
             except Exception as e:
                 mcp_logger.error(f"获取工具排名数据时出错: {str(e)}")
                 raise
@@ -432,13 +428,11 @@ class StatisticsService:
                 result = PageResult.from_query(query, page_params)
 
                 # 转换为字典格式
-                return {
-                    "items": [stat.to_dict() for stat in result.items],
-                    "total": result.total,
-                    "page": result.page,
-                    "size": result.size,
-                    "pages": result.total_pages
-                }
+                return build_page_response(
+                    [stat.to_dict() for stat in result.items],
+                    result.total,
+                    page_params
+                )
             except Exception as e:
                 mcp_logger.error(f"获取服务排名数据时出错: {str(e)}")
                 raise
@@ -690,18 +684,13 @@ class StatisticsService:
                     "created_at": ex.created_at.isoformat()
                 })
 
-            # 计算总页数
-            total_pages = ((total + page_params.size - 1) // page_params.size
-                           if total > 0 else 0)
 
             # 返回分页结果
-            return {
-                "items": items,
-                "total": total,
-                "page": page_params.page,
-                "size": page_params.size,
-                "pages": total_pages
-            }
+            return build_page_response(
+                items,
+                total,
+                page_params
+            )
 
     def get_tool_executions_by_service(
         self,
@@ -824,18 +813,12 @@ class StatisticsService:
                     "created_at": ex.created_at.isoformat()
                 })
 
-            # 计算总页数
-            total_pages = ((total + page_params.size - 1) // page_params.size
-                           if total > 0 else 0)
-
             # 返回分页结果
-            return {
-                "items": items,
-                "total": total,
-                "page": page_params.page,
-                "size": page_params.size,
-                "pages": total_pages
-            }
+            return build_page_response(
+                items,
+                total,
+                page_params
+            )
 
     def get_module_tool_rankings(
         self,

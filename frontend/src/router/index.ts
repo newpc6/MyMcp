@@ -69,7 +69,20 @@ router.beforeEach((
   
   // 检查用户认证状态
   const userInfoStr = localStorage.getItem('userInfo');
-  const isAuthenticated = !!userInfoStr;
+  let isAuthenticated = false;
+  let userInfo = null;
+  
+  if (userInfoStr) {
+    try {
+      userInfo = JSON.parse(userInfoStr);
+      // 简单验证用户信息结构
+      isAuthenticated = !!(userInfo && userInfo.user_id && userInfo.token);
+    } catch (e) {
+      console.warn('用户信息格式错误，清除localStorage');
+      localStorage.removeItem('userInfo');
+      isAuthenticated = false;
+    }
+  }
   
   // 如果是公开页面，直接通过
   if (toMeta.public) {
@@ -84,6 +97,7 @@ router.beforeEach((
   
   // 如果未登录，重定向到登录页
   if (!isAuthenticated) {
+    console.warn('用户未认证，重定向到登录页');
     next({ name: 'login' });
     return;
   }
@@ -91,7 +105,6 @@ router.beforeEach((
   // 检查管理员权限
   if (toMeta.adminOnly) {
     try {
-      const userInfo = JSON.parse(userInfoStr);
       if (!userInfo.is_admin) {
         next({ name: 'home' });
         return;

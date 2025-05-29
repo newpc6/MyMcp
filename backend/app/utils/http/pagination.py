@@ -95,7 +95,6 @@ class PageResult(Generic[T], BaseModel):
     total: int
     page: int
     size: int
-    total_pages: int
     
     @classmethod
     def from_query(
@@ -119,18 +118,11 @@ class PageResult(Generic[T], BaseModel):
         if items is None:
             items = query.offset(page_params.offset).limit(page_params.size).all()
         
-        # 计算总页数
-        total_pages = (
-            (total_count + page_params.size - 1) // page_params.size
-            if total_count > 0 else 0
-        )
-        
         return cls(
             items=items,
             total=total_count,
             page=page_params.page,
-            size=page_params.size,
-            total_pages=total_pages
+            size=page_params.size
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -144,6 +136,5 @@ class PageResult(Generic[T], BaseModel):
             "items": self.items,
             "total": self.total,
             "page": self.page,
-            "size": self.size,
-            "total_pages": self.total_pages
+            "size": self.size
         } 

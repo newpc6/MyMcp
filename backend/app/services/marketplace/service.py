@@ -22,6 +22,7 @@ from app.services.mcp_service.service_manager import service_manager
 from app.utils.permissions import add_edit_permission
 from app.models.group.group import McpGroup
 from app.utils.http.pagination import PageParams
+from app.utils.http.utils import build_page_response
 
 
 class MarketplaceService:
@@ -96,19 +97,11 @@ class MarketplaceService:
                 result_items, user_id, is_admin
             )
             
-            # 计算总页数
-            total_pages = (
-                (total_count + page_params.size - 1) // page_params.size
-                if total_count > 0 else 0
+            return build_page_response(
+                result_items,
+                total_count,
+                page_params
             )
-            
-            return {
-                "items": result_items,
-                "total": total_count,
-                "page": page_params.page,
-                "size": page_params.size,
-                "total_pages": total_pages
-            }
     
     def list_modules(
         self, category_id: Optional[int] = None, 
