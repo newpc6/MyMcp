@@ -38,7 +38,7 @@
             <span class="category-name">{{ category.name }}</span>
             <el-tag size="small" class="ml-auto">{{ category.modules_count || 0 }}</el-tag>
             <el-dropdown v-if="hasAdminPermission" trigger="click" @click.stop>
-              <el-icon class="ml-2" @click.stop>
+              <el-icon class="ml-5" @click.stop>
                 <MoreFilled />
               </el-icon>
               <template #dropdown>
@@ -94,7 +94,7 @@
               <div class="flex items-end">
                 <div class="text-gray-500 text-xs mb-1 time-display">更新时间: {{ formatDate(module.updated_at) }}</div>
                 <el-dropdown trigger="click" @click.stop>
-                  <el-button size="small" type="primary" @click.stop>
+                  <el-button size="small" class="ml-10 mcp-template-morefill" @click.stop>
                     <el-icon>
                       <MoreFilled />
                     </el-icon>
@@ -1263,36 +1263,6 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
 }
 
-/* MoreFilled图标渐变色样式 */
-.card-footer .el-button--primary {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(255, 255, 255, 0.8) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.card-footer .el-button--primary .el-icon {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.card-footer .el-button--primary:hover {
-  background: rgba(255, 255, 255, 1) !important;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.2);
-}
-
-.card-footer .el-button--primary:hover .el-icon {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transform: scale(1.1);
-}
-
 .time-display {
   color: #718096 !important;
   font-size: 12px;
@@ -1351,5 +1321,10 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   justify-content: center;
   margin-top: 24px;
   padding: 20px 0;
+}
+
+.mcp-template-morefill {
+  background: linear-gradient(135deg, #a5c4fa 0%, #3575ff 100%);
+  color: #ffffff;
 }
 </style>

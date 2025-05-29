@@ -414,18 +414,6 @@ onMounted(() => {
     padding: 20px;
 }
 
-.mt-20 {
-    margin-top: 20px;
-}
-
-.mt-15 {
-    margin-top: 15px;
-}
-
-.ml-5 {
-    margin-left: 5px;
-}
-
 .card-header {
     display: flex;
     justify-content: space-between;
