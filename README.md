@@ -12,13 +12,13 @@
 
 ### 登录页面
 
-![login-v2.jpg](https://img.picui.cn/free/2025/05/29/683830b4d8b57.jpg)
-### MCP模板广场
+![login-v2.jpg](https://img.picui.cn/free/2025/05/29/6838658baf2e9.jpg)
+
+### MCP 模板广场
 
 ![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/05/29/6838001fac033.jpg)
 
-
-#### MCP模板 详情
+#### MCP 模板 详情
 
 ![detail-v2.jpg](https://img.picui.cn/free/2025/05/29/683857a0d89fd.jpg)
 
@@ -40,7 +40,11 @@
 
 ### 用户管理
 
-![user-v2.jpg](https://img.picui.cn/free/2025/05/29/68385ad42653d.jpg)
+![user-v2.jpg](https://img.picui.cn/free/2025/05/29/6838658c133f8.jpg)
+
+### 租户管理
+
+![tanants-v2.jpg](https://img.picui.cn/free/2025/05/29/6838658c11984.jpg)
 
 ## 临时体验地址
 
