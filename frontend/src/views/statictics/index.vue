@@ -1,6 +1,6 @@
 <template>
   <div class="statistics-page">
-    <h1 class="page-title">MCP统计数据</h1>
+    <!-- <h1 class="page-title">MCP统计数据</h1> -->
     
     <!-- 服务概览卡片 -->
     <el-row :gutter="20" class="stats-cards">
@@ -77,7 +77,7 @@
             >
               <el-table-column label="排名" width="60" align="center">
                 <template #default="scope">
-                  <div class="ranking-number">{{ (moduleCurrentPage - 1) * 5 + scope.$index + 1 }}</div>
+                  <div class="ranking-number">{{ (moduleCurrentPage - 1) * modulePageSize + scope.$index + 1 }}</div>
                 </template>
               </el-table-column>
               <el-table-column prop="module_name" label="模块名称" min-width="120">
@@ -96,15 +96,19 @@
             </el-table>
           </div>
           <div class="ranking-pagination">
-            <el-pagination
-              small
-              layout="prev, pager, next"
-              :total="moduleTotalItems"
-              :page-size="5"
-              :current-page="moduleCurrentPage"
-              @current-change="handleModulePageChange"
-              background
-            />
+            <el-config-provider :locale="zhCn">
+              <el-pagination
+                size="small"
+                :current-page="moduleCurrentPage"
+                :page-size="modulePageSize"
+                :page-sizes="[5, 10, 15, 20]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="moduleTotalItems"
+                @size-change="handleModuleSizeChange"
+                @current-change="handleModulePageChange"
+              />
+            </el-config-provider>
           </div>
         </el-card>
       </el-col>
@@ -131,7 +135,7 @@
             >
               <el-table-column label="排名" width="60" align="center">
                 <template #default="scope">
-                  <div class="ranking-number">{{ (toolCurrentPage - 1) * 5 + scope.$index + 1 }}</div>
+                  <div class="ranking-number">{{ (toolCurrentPage - 1) * toolPageSize + scope.$index + 1 }}</div>
                 </template>
               </el-table-column>
               <el-table-column prop="tool_name" label="工具名称" min-width="120">
@@ -158,15 +162,19 @@
             </el-table>
           </div>
           <div class="ranking-pagination">
-            <el-pagination
-              small
-              layout="prev, pager, next"
-              :total="toolTotalItems"
-              :page-size="5"
-              :current-page="toolCurrentPage"
-              @current-change="handleToolPageChange"
-              background
-            />
+            <el-config-provider :locale="zhCn">
+              <el-pagination
+                size="small"
+                :current-page="toolCurrentPage"
+                :page-size="toolPageSize"
+                :page-sizes="[5, 10, 15, 20]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="toolTotalItems"
+                @size-change="handleToolSizeChange"
+                @current-change="handleToolPageChange"
+              />
+            </el-config-provider>
           </div>
         </el-card>
       </el-col>
@@ -193,7 +201,7 @@
             >
               <el-table-column label="排名" width="60" align="center">
                 <template #default="scope">
-                  <div class="ranking-number">{{ (serviceCurrentPage - 1) * 5 + scope.$index + 1 }}</div>
+                  <div class="ranking-number">{{ (serviceCurrentPage - 1) * servicePageSize + scope.$index + 1 }}</div>
                 </template>
               </el-table-column>
               <el-table-column prop="service_name" label="服务名称" min-width="120">
@@ -227,15 +235,19 @@
             </el-table>
           </div>
           <div class="ranking-pagination">
-            <el-pagination
-              small
-              layout="prev, pager, next"
-              :total="serviceTotalItems"
-              :page-size="5"
-              :current-page="serviceCurrentPage"
-              @current-change="handleServicePageChange"
-              background
-            />
+            <el-config-provider :locale="zhCn">
+              <el-pagination
+                size="small"
+                :current-page="serviceCurrentPage"
+                :page-size="servicePageSize"
+                :page-sizes="[5, 10, 15, 20]"
+                :background="true"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="serviceTotalItems"
+                @size-change="handleServiceSizeChange"
+                @current-change="handleServicePageChange"
+              />
+            </el-config-provider>
           </div>
         </el-card>
       </el-col>
@@ -340,16 +352,18 @@
       </el-table>
       
       <div class="pagination-container">
-        <el-pagination
-          :current-page="currentPage"
-          :page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="toolExecutions.total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-          background
-        />
+        <el-config-provider :locale="zhCn">
+          <el-pagination
+            :current-page="currentPage"
+            :page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :background="true"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="toolExecutions.total"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </el-config-provider>
       </div>
     </el-card>
     
@@ -422,6 +436,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElNotification } from 'element-plus';
+import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import { 
   Promotion, 
   VideoPlay, 
@@ -452,18 +467,21 @@ const serviceStats = ref({
 const moduleRankings = ref([]);
 const loadingModules = ref(false);
 const moduleCurrentPage = ref(1);
+const modulePageSize = ref(5);
 const moduleTotalItems = ref(0);
 
 // 工具调用排名
 const toolRankings = ref([]);
 const loadingTools = ref(false);
 const toolCurrentPage = ref(1);
+const toolPageSize = ref(5);
 const toolTotalItems = ref(0);
 
 // 服务调用排名
 const serviceRankings = ref([]);
 const loadingServices = ref(false);
 const serviceCurrentPage = ref(1);
+const servicePageSize = ref(5);
 const serviceTotalItems = ref(0);
 
 // 工具调用详情
@@ -528,10 +546,12 @@ const loadServiceStats = async () => {
 const loadModuleRankings = async (page = 1) => {
   loadingModules.value = true;
   try {
-    const response = await getModuleRankings(5, page);
+    const response = await getModuleRankings(modulePageSize.value, page);
     if (response && response.code === 0) {
       moduleRankings.value = response.data.items;
+      console.log('moduel total', response.data.total)
       moduleTotalItems.value = response.data.total;
+      moduleCurrentPage.value = response.data.page || page;
     }
   } catch (error) {
     console.error('获取模块排名失败', error);
@@ -545,10 +565,11 @@ const loadModuleRankings = async (page = 1) => {
 const loadToolRankings = async (page = 1) => {
   loadingTools.value = true;
   try {
-    const response = await getToolRankings(5, page);
+    const response = await getToolRankings(toolPageSize.value, page);
     if (response && response.code === 0) {
       toolRankings.value = response.data.items;
       toolTotalItems.value = response.data.total;
+      toolCurrentPage.value = response.data.page || page;
     }
   } catch (error) {
     console.error('获取工具排名失败', error);
@@ -562,10 +583,11 @@ const loadToolRankings = async (page = 1) => {
 const loadServiceRankings = async (page = 1) => {
   loadingServices.value = true;
   try {
-    const response = await getServiceRankings(5, page);
+    const response = await getServiceRankings(servicePageSize.value, page);
     if (response && response.code === 0) {
       serviceRankings.value = response.data.items;
       serviceTotalItems.value = response.data.total;
+      serviceCurrentPage.value = response.data.page || page;
     }
   } catch (error) {
     console.error('获取服务排名失败', error);
@@ -589,6 +611,7 @@ const loadToolExecutions = async (page) => {
     
     if (response && response.code === 0) {
       toolExecutions.value = response.data;
+      currentPage.value = response.data.page || currentPage.value;
     }
   } catch (error) {
     console.error('获取工具调用详情失败', error);
@@ -622,20 +645,40 @@ const refreshAllStatistics = async () => {
   }
 };
 
-// 分页处理函数
+// 模块排名分页处理函数
 const handleModulePageChange = (page) => {
   moduleCurrentPage.value = page;
   loadModuleRankings(page);
 };
 
+const handleModuleSizeChange = (size) => {
+  modulePageSize.value = size;
+  moduleCurrentPage.value = 1;
+  loadModuleRankings(1);
+};
+
+// 工具排名分页处理函数
 const handleToolPageChange = (page) => {
   toolCurrentPage.value = page;
   loadToolRankings(page);
 };
 
+const handleToolSizeChange = (size) => {
+  toolPageSize.value = size;
+  toolCurrentPage.value = 1;
+  loadToolRankings(1);
+};
+
+// 服务排名分页处理函数
 const handleServicePageChange = (page) => {
   serviceCurrentPage.value = page;
   loadServiceRankings(page);
+};
+
+const handleServiceSizeChange = (size) => {
+  servicePageSize.value = size;
+  serviceCurrentPage.value = 1;
+  loadServiceRankings(1);
 };
 
 // 刷新模块排名
@@ -656,18 +699,15 @@ const refreshServiceRankings = () => {
   loadServiceRankings(1);
 };
 
-// 刷新工具调用
-const refreshToolExecutions = () => {
-  loadToolExecutions(1);
-};
-
-// 分页处理
+// 工具调用详情分页处理
 const handleSizeChange = (size) => {
   pageSize.value = size;
+  currentPage.value = 1;
   loadToolExecutions(1);
 };
 
 const handleCurrentChange = (page) => {
+  currentPage.value = page;
   loadToolExecutions(page);
 };
 
@@ -710,7 +750,7 @@ onMounted(() => {
 <style scoped>
 .statistics-page {
   padding: 20px;
-  max-width: 1400px;
+  /* max-width: 1400px; */
   margin: 0 auto;
 }
 
@@ -818,11 +858,11 @@ onMounted(() => {
 }
 
 .refresh-button {
-  transition: transform 0.3s;
+  /* transition: transform 0.3s; */
 }
 
 .refresh-button:hover {
-  transform: rotate(90deg);
+  /* transform: rotate(90deg); */
 }
 
 .ranking-number {
@@ -839,8 +879,8 @@ onMounted(() => {
 }
 
 .fixed-height-table {
-  height: 280px;
-  overflow: hidden;
+  max-height: 310px;
+  overflow-y: auto;
 }
 
 .ranking-pagination {
@@ -856,10 +896,11 @@ onMounted(() => {
   flex-direction: column;
   box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
   transition: all 0.3s;
+  overflow-y: auto;
 }
 
 .ranking-card:hover {
-  transform: translateY(-5px);
+  /* transform: translateY(-5px); */
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
