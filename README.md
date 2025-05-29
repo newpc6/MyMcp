@@ -18,17 +18,25 @@
 
 ![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/05/29/6838001fac033.jpg)
 
-#### MCP 模板 详情
+#### MCP 模板-详情
 
 ![detail-v2.jpg](https://img.picui.cn/free/2025/05/29/683857a0d89fd.jpg)
 
-#### MCP 工具-测试
+#### MCP 模板-工具测试
 
-[![tool1.jpg](https://img.picui.cn/free/2025/05/13/68234a4668f1d.jpg)](https://img.picui.cn/free/2025/05/13/68234a4668f1d.jpg)
+![detail-test.jpg](https://img.picui.cn/free/2025/05/29/68386974ba5ae.jpg)
 
-#### MCP 服务发布-参数配置
+#### MCP 模板-参数配置
 
-[![tool2.jpg](https://img.picui.cn/free/2025/05/13/68234a466f775.jpg)](https://img.picui.cn/free/2025/05/13/68234a466f775.jpg)
+![detail-params.jpg](https://img.picui.cn/free/2025/05/29/68386974af5ca.jpg)
+
+#### MCP 模板-发布服务
+
+![detail-publish.jpg](https://img.picui.cn/free/2025/05/29/68386a6a50340.jpg)
+
+#### MCP 模板-代码编辑
+
+![detail-code.jpg](https://img.picui.cn/free/2025/05/29/6838697497d13.jpg)
 
 ### MCP 服务
 
