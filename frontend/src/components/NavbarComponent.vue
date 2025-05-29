@@ -201,8 +201,8 @@ const changePassword = async () => {
 <style scoped>
 .navbar-container {
   border-bottom: none;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+  box-shadow: 0 4px 20px rgba(79, 142, 247, 0.15);
   position: relative;
 }
 
@@ -316,16 +316,24 @@ const changePassword = async () => {
 }
 
 :deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 :deep(.el-menu-item.is-active) {
-  background: rgba(255, 255, 255, 0.2);
-  color: white;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: #2563eb !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}
+
+:deep(.el-menu-item.is-active:hover) {
+  background: rgba(255, 255, 255, 1) !important;
+  color: #1d4ed8 !important;
+  transform: translateY(-1px);
 }
 
 :deep(.el-menu--horizontal) {
@@ -345,7 +353,7 @@ const changePassword = async () => {
 }
 
 :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   color: white;
   padding: 20px;
 }
@@ -374,7 +382,7 @@ const changePassword = async () => {
 }
 
 :deep(.el-button--primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   border: none;
 }
 </style>

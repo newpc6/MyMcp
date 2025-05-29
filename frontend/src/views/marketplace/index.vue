@@ -928,7 +928,7 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   border-radius: 16px 16px 0 0;
 }
 
@@ -940,7 +940,7 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 
 /* 分类卡片头部样式 */
 :deep(.el-card__header) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   color: white;
   padding: 20px;
   border-bottom: none;
@@ -997,16 +997,16 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 }
 
 .el-menu-item:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   color: white;
   transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
 }
 
 .el-menu-item.is-active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%) !important;
   color: white !important;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
 }
 
 .el-menu-item.is-active .el-tag {
@@ -1108,7 +1108,7 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   border-radius: 16px 16px 0 0;
 }
 
@@ -1201,7 +1201,7 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 }
 
 .el-button--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   border: none;
 }
 
@@ -1255,12 +1255,42 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 }
 
 .category-menu::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
   border-radius: 3px;
 }
 
 .category-menu::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+}
+
+/* MoreFilled图标渐变色样式 */
+.card-footer .el-button--primary {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.8) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-footer .el-button--primary .el-icon {
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.card-footer .el-button--primary:hover {
+  background: rgba(255, 255, 255, 1) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.2);
+}
+
+.card-footer .el-button--primary:hover .el-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transform: scale(1.1);
 }
 
 .time-display {
