@@ -30,19 +30,19 @@
       <el-table :data="services" style="width: 100%" size="small" class="service-table"
         :header-cell-style="{ backgroundColor: '#f5f7fa', color: '#606266', fontWeight: 'bold' }"
         :max-height="tableMaxHeight">
-        <el-table-column label="序号" width="50">
+        <el-table-column label="序号" width="60">
           <template #default="scope">
             {{ scope.$index + 1 }}
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="80">
+        <el-table-column prop="status" label="状态" width="90">
           <template #default="scope">
             <el-tag :type="getStatusType(scope.row.status)" size="small">
               {{ getStatusText(scope.row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="is_public" label="公开" width="60">
+        <el-table-column prop="is_public" label="公开" width="70">
           <template #default="scope">
             <el-tag :type="scope.row.is_public ? 'success' : 'warning'" size="small">
               {{ scope.row.is_public ? '是' : '否' }}
@@ -128,7 +128,7 @@ const emit = defineEmits<{
 }>();
 
 // 表格最大高度，设置为三行的高度（每行约51px，含表头总高约204px）
-const tableMaxHeight = ref(144);
+const tableMaxHeight = ref(214);
 
 // 获取状态类型
 const getStatusType = (status: string) => {
@@ -197,23 +197,36 @@ const copyAsEgovakbUrl = (url: string) => {
 }
 
 .service-card {
-  border-radius: 16px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06) !important;
-  border: 1px solid rgba(235, 235, 235, 0.8);
-  transition: all 0.3s ease;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(235, 235, 235, 0.6);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
-  background: linear-gradient(135deg, #ffffff, #f8f9ff);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  backdrop-filter: blur(10px);
+  position: relative;
 }
 
-.service-card:hover {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
-  transform: translateY(-2px);
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+  border-radius: 20px 20px 0 0;
 }
+
+/* .service-card:hover {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12) !important;
+  transform: translateY(-6px);
+} */
 
 :deep(.el-card__header) {
-  padding: 14px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid rgba(235, 235, 235, 0.6);
-  background: rgba(250, 252, 255, 0.7);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
 .service-actions {
@@ -221,73 +234,254 @@ const copyAsEgovakbUrl = (url: string) => {
   align-items: center;
 }
 
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
 :deep(.el-table) {
   --el-table-border-color: rgba(235, 235, 235, 0.6);
-  --el-table-header-bg-color: rgba(246, 248, 250, 0.6);
-  border-radius: 8px;
+  --el-table-header-bg-color: rgba(248, 250, 252, 0.8);
+  border-radius: 12px;
   overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 :deep(.el-table th) {
-  background-color: rgba(246, 248, 250, 0.6);
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
   font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid rgba(59, 130, 246, 0.1);
 }
 
 :deep(.el-table--enable-row-hover .el-table__body tr:hover > td) {
-  background-color: rgba(240, 247, 255, 0.6);
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05)) !important;
 }
 
 :deep(.el-table .cell) {
-  padding: 8px 12px;
+  padding: 12px 16px;
+}
+
+:deep(.el-table td) {
+  border-bottom: 1px solid rgba(235, 235, 235, 0.4);
 }
 
 .table-container {
   position: relative;
   width: 100%;
+  margin-top: 12px;
 }
 
 .service-table {
-  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
 }
 
 :deep(.el-table__body-wrapper::-webkit-scrollbar) {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 :deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
-  background: #c0c4cc;
-  border-radius: 3px;
+  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+  border-radius: 4px;
 }
 
 :deep(.el-table__body-wrapper::-webkit-scrollbar-track) {
-  background: #f1f1f1;
-  border-radius: 3px;
+  background: #f1f5f9;
+  border-radius: 4px;
 }
 
 :deep(.service-table .el-input__inner) {
-  font-family: monospace;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 12px;
-  color: #606266;
-  background-color: #f8f9fb;
+  color: #64748b;
+  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
 }
 
 :deep(.service-table .el-input__wrapper) {
-  box-shadow: none;
-  border: 1px solid #e0e3e9;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(203, 213, 225, 0.6);
+  border-radius: 8px;
+  transition: all 0.3s ease;
 }
 
 :deep(.service-table .el-input__wrapper:hover) {
-  border-color: #c0c4cc;
+  border-color: #94a3b8;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+  transform: translateY(-1px);
+}
+
+:deep(.service-table .el-input__wrapper.is-focus) {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
 .service-count {
-  border-radius: 12px;
-  padding: 0 8px;
+  border-radius: 16px;
+  padding: 0 10px;
   font-size: 12px;
-  height: 20px;
-  line-height: 20px;
-  background-color: #f0f2f5;
-  color: #606266;
+  height: 22px;
+  line-height: 22px;
+  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
+  color: #475569;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-tag) {
+  border-radius: 16px;
+  padding: 0 10px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:deep(.el-tag:hover) {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-tag--success) {
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: white;
+}
+
+:deep(.el-tag--warning) {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: white;
+}
+
+:deep(.el-tag--danger) {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+}
+
+:deep(.el-tag--info) {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  color: white;
+}
+
+:deep(.el-button--info) {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-button--info:hover) {
+  background: linear-gradient(135deg, #4b5563, #374151);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+:deep(.el-button--success) {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-button--success:hover) {
+  background: linear-gradient(135deg, #059669, #047857);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+:deep(.el-button--warning) {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-button--warning:hover) {
+  background: linear-gradient(135deg, #d97706, #b45309);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+:deep(.el-button--danger) {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+:deep(.el-button--danger:hover) {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+:deep(.el-button) {
+  margin: 0 2px;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+:deep(.el-button.is-circle) {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+h3 {
+  color: #1e293b;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* 空状态样式 */
+:deep(.el-empty) {
+  padding: 32px 20px;
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 16px;
+  border: 2px dashed rgba(203, 213, 225, 0.8);
+  margin: 16px 0;
+}
+
+:deep(.el-empty__description) {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .service-card {
+    border-radius: 16px;
+  }
+  
+  :deep(.el-card__header) {
+    padding: 16px 20px;
+  }
+  
+  :deep(.el-table .cell) {
+    padding: 10px 12px;
+  }
+  
+  :deep(.el-button) {
+    font-size: 11px;
+    padding: 5px 10px;
+  }
+  
+  h3 {
+    font-size: 16px;
+  }
 }
 </style> 

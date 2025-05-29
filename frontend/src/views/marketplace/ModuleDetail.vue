@@ -1,69 +1,81 @@
 <template>
-  <el-container class="p-4">
-    <el-main class="p-0">
-      <div v-if="loading" class="py-10">
-        <el-skeleton :rows="10" animated />
-      </div>
-
-      <div v-else>
-        <!-- 顶部信息区域 - 使用flex布局水平排列两个卡片 -->
-        <div class="flex gap-4 mb-4">
-          <!-- 模块信息卡片 -->
-          <ModuleInfoCard 
-            :moduleInfo="moduleInfo" 
-            :hasEditPermission="hasEditPermission"
-            @edit="showEditDialog"
-            @delete="handleDeleteModule"
-            @back="goBack"
-            style="width: 45%"
-          />
-
-          <!-- 服务发布卡片 -->
-          <ServicePublishCard 
-            :services="services" 
-            :loadingServices="loadingServices"
-            @publish="handlePublishService"
-            @stop-service="handleStopService"
-            @start-service="handleStartService"
-            @uninstall-service="handleUninstallService"
-            @view-params="viewServiceParams"
-            style="width: 55%"
-          />
+  <div class="module-detail-container">
+    <el-container class="detail-wrapper">
+      <el-main class="main-content">
+        <div v-if="loading" class="loading-container">
+          <el-skeleton :rows="10" animated />
         </div>
 
-        <!-- 标签页 -->
-        <el-card shadow="never" class="tabs-card">
-          <el-tabs v-model="activeTab">
-            <el-tab-pane label="服务详情" name="service-details">
-              <ServiceDetailsPanel :moduleInfo="moduleInfo" />
-            </el-tab-pane>
-
-            <el-tab-pane label="工具测试" name="tool-test">
-              <ToolTestPanel 
-                :tools="moduleTools" 
-                :moduleId="moduleId"
-                @test="handleToolTest"
-              />
-            </el-tab-pane>
-
-            <el-tab-pane label="代码查看/编辑" name="code-edit">
-              <CodeEditorPanel 
-                v-model="codeContent"
-                :originalCode="originalCode"
+        <div v-else class="content-wrapper">
+          <!-- 顶部信息区域 - 使用现代化卡片布局 -->
+          <div class="flex-between">
+            <!-- 模块信息卡片 -->
+            <div class="module-info-section" style="width: 40%;">
+              <ModuleInfoCard 
+                :moduleInfo="moduleInfo" 
                 :hasEditPermission="hasEditPermission"
-                :saving="saving"
-                :code="!!moduleInfo.code"
-                @save="saveModuleCode"
-                @format="formatPythonCode"
+                @edit="showEditDialog"
+                @delete="handleDeleteModule"
+                @back="goBack"
               />
-            </el-tab-pane>
-          </el-tabs>
-        </el-card>
-      </div>
-    </el-main>
+            </div>
+
+            <!-- 服务发布卡片 -->
+            <div class="service-publish-section" style="width: 58%;">
+              <ServicePublishCard 
+                :services="services" 
+                :loadingServices="loadingServices"
+                @publish="handlePublishService"
+                @stop-service="handleStopService"
+                @start-service="handleStartService"
+                @uninstall-service="handleUninstallService"
+                @view-params="viewServiceParams"
+              />
+            </div>
+          </div>
+
+          <!-- 主要内容标签页 -->
+          <div class="tabs-section">
+            <el-card shadow="never" class="tabs-card">
+              <el-tabs v-model="activeTab" class="detail-tabs">
+                <el-tab-pane label="服务详情" name="service-details">
+                  <div class="tab-content">
+                    <ServiceDetailsPanel :moduleInfo="moduleInfo" />
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="工具测试" name="tool-test">
+                  <div class="tab-content">
+                    <ToolTestPanel 
+                      :tools="moduleTools" 
+                      :moduleId="moduleId"
+                      @test="handleToolTest"
+                    />
+                  </div>
+                </el-tab-pane>
+
+                <el-tab-pane label="代码查看/编辑" name="code-edit">
+                  <div class="tab-content">
+                    <CodeEditorPanel 
+                      v-model="codeContent"
+                      :originalCode="originalCode"
+                      :hasEditPermission="hasEditPermission"
+                      :saving="saving"
+                      :code="!!moduleInfo.code"
+                      @save="saveModuleCode"
+                      @format="formatPythonCode"
+                    />
+                  </div>
+                </el-tab-pane>
+              </el-tabs>
+            </el-card>
+          </div>
+        </div>
+      </el-main>
+    </el-container>
 
     <!-- 编辑模块对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑MCP服务" width="60%" :destroy-on-close="true">
+    <el-dialog v-model="editDialogVisible" title="编辑MCP服务" width="60%" :destroy-on-close="true" class="edit-dialog">
       <McpServiceForm 
         v-model="editForm" 
         :categories="categories"
@@ -71,45 +83,47 @@
         ref="editFormRef"
       >
         <template #actions>
-          <el-button @click="editDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitEditForm" :loading="updating">保存</el-button>
+          <div class="dialog-actions">
+            <el-button @click="editDialogVisible = false" class="cancel-btn">取消</el-button>
+            <el-button type="primary" @click="submitEditForm" :loading="updating" class="submit-btn">保存</el-button>
+          </div>
         </template>
       </McpServiceForm>
     </el-dialog>
 
     <!-- 发布服务对话框 -->
-    <el-dialog v-model="publishDialogVisible" title="配置并发布服务" width="50%" :destroy-on-close="true">
-      <el-form ref="configFormRef" :model="configForm" :rules="configRules" label-width="100px" label-position="top">
+    <el-dialog v-model="publishDialogVisible" title="配置并发布服务" width="50%" :destroy-on-close="true" class="publish-dialog">
+      <el-form ref="configFormRef" :model="configForm" :rules="configRules" label-width="100px" label-position="top" class="config-form">
         <el-form-item label="服务名称" prop="service_name" :rules="[{ required: true, message: '请输入服务名称', trigger: 'blur' }]">
-          <el-input v-model="configForm.service_name" placeholder="请输入服务名称"></el-input>
+          <el-input v-model="configForm.service_name" placeholder="请输入服务名称" class="form-input"></el-input>
         </el-form-item>
         <el-form-item label="是否公开" prop="is_public">
-          <el-switch v-model="configForm.is_public" />
+          <el-switch v-model="configForm.is_public" class="form-switch" />
         </el-form-item>
-        <div v-if="!hasConfigSchema">
-          <el-alert type="info" :closable="false" show-icon title="此模块没有需要配置的参数，可以直接发布。" class="mb-4" />
+        
+        <div v-if="!hasConfigSchema" class="no-config-alert">
+          <el-alert type="info" :closable="false" show-icon title="此模块没有需要配置的参数，可以直接发布。" />
         </div>
 
         <template v-else>
-          <el-alert type="warning" :closable="false" show-icon title="此模块需要配置以下参数才能发布" class="mb-4" />
+          <el-alert type="warning" :closable="false" show-icon title="此模块需要配置以下参数才能发布" class="config-alert" />
 
-          <el-divider content-position="left">配置参数</el-divider>
+          <el-divider content-position="left" class="config-divider">配置参数</el-divider>
 
-          <div v-for="(schema, key) in moduleInfo.config_schema" :key="key" class="mb-4">
+          <div v-for="(schema, key) in moduleInfo.config_schema" :key="key" class="config-item">
             <el-form-item :label="schema.title || key" :prop="`config_params.${key}`" label-position="left"
               :rules="[{ required: schema.required, message: `请输入${schema.title || key}`, trigger: 'blur' }]">
 
-              <!-- <div class="text-sm text-gray-500 mb-1">{{ schema.description }}</div> -->
-              <div v-if="schema.type === 'integer'">
+              <div v-if="schema.type === 'integer'" class="form-field">
                 <el-input-number v-model="configForm.config_params[key]"
-                  :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
+                  :placeholder="schema.placeholder || `请输入${schema.title || key}`" class="form-input-number" />
               </div>
-              <div v-else>
+              <div v-else class="form-field">
                 <el-input v-if="schema.type === 'password'" v-model="configForm.config_params[key]"
                   :placeholder="schema.placeholder || `请输入${schema.title || key}`"
-                  :type="schema.type === 'password' ? 'password' : 'text'" show-password />
+                  :type="schema.type === 'password' ? 'password' : 'text'" show-password class="form-input" />
                 <el-input v-else v-model="configForm.config_params[key]"
-                  :placeholder="schema.placeholder || `请输入${schema.title || key}`" />
+                  :placeholder="schema.placeholder || `请输入${schema.title || key}`" class="form-input" />
               </div>
             </el-form-item>
           </div>
@@ -117,15 +131,15 @@
       </el-form>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="publishDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitConfigForm" :loading="publishing">发布服务</el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-button @click="publishDialogVisible = false" class="cancel-btn">取消</el-button>
+          <el-button type="primary" @click="submitConfigForm" :loading="publishing" class="submit-btn">发布服务</el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- 服务参数查看/编辑对话框 -->
-    <el-dialog v-model="serviceParamsDialogVisible" title="服务参数设置" width="50%" :destroy-on-close="true">
+    <el-dialog v-model="serviceParamsDialogVisible" title="服务参数设置" width="50%" :destroy-on-close="true" class="params-dialog">
       <ServiceParamsManager
         v-if="currentService"
         :config-params="serviceParamsForm"
@@ -133,18 +147,18 @@
         @update:config-params="updateServiceParamsForm"
         ref="serviceParamsManagerRef"
       />
-      <div v-else class="text-center py-4">
+      <div v-else class="empty-params">
         <el-empty description="无法加载服务参数" :image-size="60" />
       </div>
 
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="serviceParamsDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateServiceParamsFunc" :loading="updatingParams">更新参数</el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-button @click="serviceParamsDialogVisible = false" class="cancel-btn">取消</el-button>
+          <el-button type="primary" @click="updateServiceParamsFunc" :loading="updatingParams" class="submit-btn">更新参数</el-button>
+        </div>
       </template>
     </el-dialog>
-  </el-container>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -773,45 +787,372 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* 主容器样式 */
+.module-detail-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px;
+}
+
+.detail-wrapper {
+  max-width: calc(100% - 40px);
+  margin: 0 auto;
+}
+
+.main-content {
+  padding: 0;
+}
+
+.loading-container {
+  padding: 40px 20px;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* 顶部卡片区域 */
+.top-cards-section {
+  display: grid;
+  /* grid-template-columns: 1fr 1fr; */
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.module-info-section {
+  height: 330px;
+}
+.service-publish-section {
+  height: 330px;
+  /* transition: all 0.3s ease; */
+}
+
+/* .module-info-section:hover,
+.service-publish-section:hover {
+  transform: translateY(-4px);
+} */
+
+/* 标签页区域 */
+.tabs-section {
+  flex: 1;
+}
+
 .tabs-card {
-  border-radius: 16px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06) !important;
-  border: 1px solid rgba(235, 235, 235, 0.8);
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid rgba(235, 235, 235, 0.6);
   overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fcff 100%);
+  backdrop-filter: blur(10px);
+}
+
+.detail-tabs {
+  padding: 0 8px;
+}
+
+:deep(.el-tabs__header) {
+  margin: 0;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+  border-radius: 20px 20px 0 0;
+  padding: 0 20px;
 }
 
 :deep(.el-tabs__nav-wrap::after) {
-  height: 1px;
-  background-color: rgba(235, 235, 235, 0.8);
+  display: none;
 }
 
 :deep(.el-tabs__item) {
-  transition: all 0.3s ease;
-  padding: 0 20px;
-  height: 46px;
-  line-height: 46px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0 24px;
+  height: 56px;
+  line-height: 56px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
+  border-radius: 12px;
+  margin: 8px 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+:deep(.el-tabs__item::before) {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 197, 253, 0.1));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  border-radius: 12px;
+}
+
+:deep(.el-tabs__item:hover) {
+  color: #3b82f6;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+:deep(.el-tabs__item:hover::before) {
+  opacity: 1;
 }
 
 :deep(.el-tabs__item.is-active) {
   font-weight: 600;
-  color: #409eff;
-  transform: translateY(-2px);
+  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  transform: translateY(-3px);
+}
+
+:deep(.el-tabs__item.is-active::before) {
+  opacity: 0;
 }
 
 :deep(.el-tabs__active-bar) {
-  height: 3px;
-  border-radius: 3px;
-  background: linear-gradient(90deg, #409eff, #79bbff);
+  display: none;
 }
 
-:deep(.el-tab-pane) {
-  padding: 16px 8px;
+.tab-content {
+  padding: 24px;
+  min-height: 400px;
 }
 
-:deep(.el-empty) {
-  padding: 32px 0;
-  border-radius: 16px;
-  background: rgba(250, 250, 250, 0.5);
+/* 对话框样式 */
+.edit-dialog :deep(.el-dialog),
+.publish-dialog :deep(.el-dialog),
+.params-dialog :deep(.el-dialog) {
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fcff 100%);
+  overflow: hidden;
+}
+
+.edit-dialog :deep(.el-dialog__header),
+.publish-dialog :deep(.el-dialog__header),
+.params-dialog :deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 24px 32px;
+  border-bottom: 1px solid rgba(235, 235, 235, 0.8);
+}
+
+.edit-dialog :deep(.el-dialog__title),
+.publish-dialog :deep(.el-dialog__title),
+.params-dialog :deep(.el-dialog__title) {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.edit-dialog :deep(.el-dialog__body),
+.publish-dialog :deep(.el-dialog__body),
+.params-dialog :deep(.el-dialog__body) {
+  padding: 32px;
+}
+
+/* 表单样式 */
+.config-form {
+  padding: 0;
+}
+
+.form-input,
+.form-input-number {
+  border-radius: 12px;
   transition: all 0.3s ease;
+}
+
+.form-input :deep(.el-input__wrapper),
+.form-input-number :deep(.el-input-number__wrapper) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+.form-input :deep(.el-input__wrapper:hover),
+.form-input-number :deep(.el-input-number__wrapper:hover) {
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.form-input :deep(.el-input__wrapper.is-focus),
+.form-input-number :deep(.el-input-number__wrapper.is-focus) {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-switch :deep(.el-switch__core) {
+  border-radius: 20px;
+  transition: all 0.3s ease;
+}
+
+.form-switch :deep(.el-switch.is-checked .el-switch__core) {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+/* 警告和提示样式 */
+.no-config-alert,
+.config-alert {
+  margin: 20px 0;
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.config-divider {
+  margin: 24px 0;
+  font-weight: 600;
+  color: #374151;
+}
+
+.config-item {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 12px;
+  border: 1px solid rgba(235, 235, 235, 0.6);
+  transition: all 0.3s ease;
+}
+
+.config-item:hover {
+  background: rgba(248, 250, 252, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+  transform: translateY(-1px);
+}
+
+.form-field {
+  width: 100%;
+}
+
+/* 按钮样式 */
+.dialog-actions,
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 20px 0 0 0;
+  border-top: 1px solid rgba(235, 235, 235, 0.6);
+  margin-top: 24px;
+}
+
+.cancel-btn {
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  border: 2px solid #e5e7eb;
+  background: #ffffff;
+  color: #6b7280;
+}
+
+.cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.submit-btn {
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-weight: 600;
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+/* 空状态样式 */
+.empty-params {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(248, 250, 252, 0.5);
+  border-radius: 16px;
+  border: 2px dashed rgba(203, 213, 225, 0.8);
+}
+
+.empty-params :deep(.el-empty) {
+  padding: 20px 0;
+}
+
+.empty-params :deep(.el-empty__description) {
+  color: #64748b;
+  font-size: 14px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .top-cards-section {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .module-detail-container {
+    padding: 12px;
+  }
+  
+  .content-wrapper {
+    gap: 16px;
+  }
+  
+  .tab-content {
+    padding: 16px;
+  }
+  
+  .edit-dialog :deep(.el-dialog),
+  .publish-dialog :deep(.el-dialog),
+  .params-dialog :deep(.el-dialog) {
+    width: 95% !important;
+    margin: 0 auto;
+  }
+  
+  :deep(.el-tabs__item) {
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.content-wrapper {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.top-cards-section > div {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+.top-cards-section > div:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.tabs-section {
+  animation: fadeInUp 0.6s ease-out 0.2s both;
 }
 </style>

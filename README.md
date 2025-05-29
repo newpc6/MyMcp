@@ -13,10 +13,14 @@
 ### 登录页面
 
 ![login-v2.jpg](https://img.picui.cn/free/2025/05/29/683830b4d8b57.jpg)
-### MCP 广场
+### MCP模板广场
 
 ![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/05/29/6838001fac033.jpg)
 
+
+#### MCP模板 详情
+
+![detail-v2.jpg](https://img.picui.cn/free/2025/05/29/683857a0d89fd.jpg)
 
 #### MCP 工具-测试
 
@@ -33,6 +37,10 @@
 ### MCP 统计
 
 ![mcp-stat-v2.jpg](https://img.picui.cn/free/2025/05/29/68384779bc6c9.jpg)
+
+### 用户管理
+
+![user-v2.jpg](https://img.picui.cn/free/2025/05/29/68385ad42653d.jpg)
 
 ## 临时体验地址
 
