@@ -6,7 +6,9 @@
         <div class="header-left">
           <div class="page-title">
             <div class="title-icon">
-              <el-icon><User /></el-icon>
+              <el-icon>
+                <User />
+              </el-icon>
             </div>
             <div class="title-text">
               <h2>用户管理</h2>
@@ -16,11 +18,15 @@
         </div>
         <div class="header-actions">
           <el-button type="primary" @click="handleAddUser" class="action-btn primary-btn">
-            <el-icon><Plus /></el-icon>
+            <el-icon>
+              <Plus />
+            </el-icon>
             新增用户
           </el-button>
           <el-button type="success" @click="handleImportUser" class="action-btn success-btn">
-            <el-icon><Download /></el-icon>
+            <el-icon>
+              <Download />
+            </el-icon>
             导入用户
           </el-button>
         </div>
@@ -31,148 +37,115 @@
     <div class="table-card">
       <div class="card-header">
         <div class="card-title">
-          <el-icon><List /></el-icon>
+          <el-icon>
+            <List />
+          </el-icon>
           <span>用户列表</span>
         </div>
         <div class="card-extra">
           <span class="user-count">共 {{ users.length }} 个用户</span>
         </div>
       </div>
-      
+
       <div class="card-content">
-        <el-table 
-          :data="users" 
-          v-loading="loading" 
-          class="modern-table"
+        <el-table :data="users" v-loading="loading" class="modern-table"
           :header-cell-style="{ background: '#f8fafc', color: '#374151', fontWeight: '600' }"
-          :row-style="{ background: '#ffffff' }"
-          stripe
-        >
+          :row-style="{ background: '#ffffff' }" stripe>
           <el-table-column prop="id" label="ID" width="80" align="center">
             <template #default="scope">
               <div class="id-cell">{{ scope.row.id }}</div>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="username" label="用户名" width="250">
             <template #default="scope">
               <div class="user-info">
                 <div class="user-avatar">
-                  <el-icon><User /></el-icon>
+                  <el-icon>
+                    <User />
+                  </el-icon>
                 </div>
                 <span class="username">{{ scope.row.username }}</span>
               </div>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="fullname" label="姓名" width="150">
             <template #default="scope">
               <span class="fullname">{{ scope.row.fullname || '-' }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="email" label="邮箱" width="200">
             <template #default="scope">
               <span class="email">{{ scope.row.email || '-' }}</span>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="管理员" width="100" align="center">
             <template #default="scope">
-              <el-tag 
-                :type="scope.row.is_admin ? 'danger' : 'info'" 
-                class="status-tag admin-tag"
-                effect="light"
-              >
+              <el-tag :type="scope.row.is_admin ? 'danger' : 'info'" class="status-tag admin-tag" effect="light">
                 {{ scope.row.is_admin ? '是' : '否' }}
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="状态" width="100" align="center">
             <template #default="scope">
-              <el-tag 
-                :type="scope.row.status === 'active' ? 'success' : 'warning'" 
-                class="status-tag"
-                effect="light"
-              >
+              <el-tag :type="scope.row.status === 'active' ? 'success' : 'warning'" class="status-tag" effect="light">
                 {{ scope.row.status === 'active' ? '启用' : '禁用' }}
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="来源" width="120" align="center">
             <template #default="scope">
-              <el-tag 
-                v-if="scope.row.platform_type" 
-                type="primary" 
-                class="platform-tag"
-                effect="light"
-              >
+              <el-tag v-if="scope.row.platform_type" type="primary" class="platform-tag" effect="light">
                 {{ getPlatformName(scope.row.platform_type) }}
               </el-tag>
               <el-tag v-else type="info" class="platform-tag" effect="light">本地</el-tag>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="所属租户" min-width="200">
             <template #default="scope">
               <div class="tenant-tags">
-                <el-tag 
-                  v-for="tenant in scope.row.tenants" 
-                  :key="tenant.id" 
-                  type="info" 
-                  class="tenant-tag"
-                  effect="light"
-                >
+                <el-tag v-for="tenant in scope.row.tenants" :key="tenant.id" type="info" class="tenant-tag"
+                  effect="light">
                   {{ tenant.name }}
                 </el-tag>
-                <el-tag 
-                  v-if="scope.row.tenants.length === 0" 
-                  type="danger" 
-                  class="tenant-tag"
-                  effect="light"
-                >
+                <el-tag v-if="scope.row.tenants.length === 0" type="danger" class="tenant-tag" effect="light">
                   无租户
                 </el-tag>
               </div>
             </template>
           </el-table-column>
-          
+
           <el-table-column label="操作" width="280" fixed="right" align="center">
             <template #default="scope">
               <div class="action-buttons">
-                <el-button 
-                  size="small" 
-                  type="primary"
-                  @click="handleEditUser(scope.row)"
+                <el-button size="small" type="primary" @click="handleEditUser(scope.row)"
                   :disabled="scope.row.username === 'admin' && currentUser.username !== 'admin'"
-                  class="action-btn-small edit-btn"
-                  link
-                >
-                  <el-icon><Edit /></el-icon>
+                  class="action-btn-small edit-btn" link>
+                  <el-icon>
+                    <Edit />
+                  </el-icon>
                   编辑
                 </el-button>
-                <el-button 
-                  size="small" 
-                  type="warning" 
-                  @click="handleChangePassword(scope.row)"
+                <el-button size="small" type="warning" @click="handleChangePassword(scope.row)"
                   :disabled="scope.row.username === 'admin' && currentUser.username !== 'admin'"
-                  class="action-btn-small password-btn"
-                  link
-                >
-                  <el-icon><Key /></el-icon>
+                  class="action-btn-small password-btn" link>
+                  <el-icon>
+                    <Key />
+                  </el-icon>
                   修改密码
                 </el-button>
-                <el-button 
-                  size="small" 
-                  type="danger" 
-                  @click="handleDeleteUser(scope.row)"
+                <el-button size="small" type="danger" @click="handleDeleteUser(scope.row)"
                   :disabled="scope.row.username === 'admin' || scope.row.id === currentUser.user_id"
-                  class="action-btn-small delete-btn"
-                  link
-                >
-                  <el-icon><Delete /></el-icon>
+                  class="action-btn-small delete-btn" link>
+                  <el-icon>
+                    <Delete />
+                  </el-icon>
                   删除
                 </el-button>
               </div>
@@ -183,12 +156,7 @@
     </div>
 
     <!-- 用户表单对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      :title="isEdit ? '编辑用户' : '新增用户'" 
-      width="500px"
-      class="modern-dialog"
-    >
+    <el-dialog v-model="dialogVisible" :title="isEdit ? '编辑用户' : '新增用户'" width="500px" class="modern-dialog">
       <el-form ref="userFormRef" :model="userForm" :rules="userRules" label-width="80px" class="modern-form">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="userForm.username" :disabled="isEdit" placeholder="请输入用户名" />
@@ -203,12 +171,8 @@
           <el-input v-model="userForm.email" placeholder="请输入邮箱地址" />
         </el-form-item>
         <el-form-item label="管理员" prop="is_admin">
-          <el-switch 
-            v-model="userForm.is_admin" 
-            :disabled="userForm.username === 'admin'"
-            active-text="是"
-            inactive-text="否"
-          />
+          <el-switch v-model="userForm.is_admin" :disabled="userForm.username === 'admin'" active-text="是"
+            inactive-text="否" />
         </el-form-item>
         <el-form-item label="状态" prop="status" v-if="isEdit">
           <el-select v-model="userForm.status" style="width: 100%" placeholder="请选择状态">
@@ -217,13 +181,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="所属租户" prop="tenant_ids">
-          <el-select 
-            v-model="userForm.tenant_ids" 
-            multiple 
-            collapse-tags 
-            style="width: 100%"
-            placeholder="请选择所属租户"
-          >
+          <el-select v-model="userForm.tenant_ids" multiple collapse-tags style="width: 100%" placeholder="请选择所属租户">
             <el-option v-for="tenant in tenants" :key="tenant.id" :label="tenant.name" :value="tenant.id" />
           </el-select>
         </el-form-item>
@@ -239,12 +197,7 @@
     </el-dialog>
 
     <!-- 导入用户对话框 -->
-    <el-dialog 
-      v-model="importDialogVisible" 
-      title="导入用户" 
-      width="500px"
-      class="modern-dialog"
-    >
+    <el-dialog v-model="importDialogVisible" title="导入用户" width="500px" class="modern-dialog">
       <el-form ref="importFormRef" :model="importForm" :rules="importRules" label-width="100px" class="modern-form">
         <el-form-item label="平台类型" prop="platform_type">
           <el-select v-model="importForm.platform_type" style="width: 100%" placeholder="请选择平台类型">
@@ -252,21 +205,10 @@
           </el-select>
         </el-form-item>
         <el-form-item label="认证信息" prop="authorization">
-          <el-input 
-            v-model="importForm.authorization" 
-            type="password" 
-            show-password 
-            placeholder="请输入认证Token" 
-          />
+          <el-input v-model="importForm.authorization" type="password" show-password placeholder="请输入认证Token" />
         </el-form-item>
         <el-form-item label="所属租户" prop="tenant_ids">
-          <el-select 
-            v-model="importForm.tenant_ids" 
-            multiple 
-            collapse-tags 
-            style="width: 100%"
-            placeholder="请选择所属租户"
-          >
+          <el-select v-model="importForm.tenant_ids" multiple collapse-tags style="width: 100%" placeholder="请选择所属租户">
             <el-option v-for="tenant in tenants" :key="tenant.id" :label="tenant.name" :value="tenant.id" />
           </el-select>
         </el-form-item>
@@ -282,23 +224,14 @@
     </el-dialog>
 
     <!-- 修改密码对话框 -->
-    <el-dialog 
-      v-model="passwordDialogVisible" 
-      title="修改密码" 
-      width="500px"
-      class="modern-dialog"
-    >
-      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="80px" class="modern-form">
+    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="500px" class="modern-dialog">
+      <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="80px"
+        class="modern-form">
         <el-form-item label="用户名" prop="username">
           <el-input v-model="passwordForm.username" disabled />
         </el-form-item>
         <el-form-item label="新密码" prop="password">
-          <el-input 
-            v-model="passwordForm.password" 
-            type="password" 
-            show-password 
-            placeholder="请输入新密码" 
-          />
+          <el-input v-model="passwordForm.password" type="password" show-password placeholder="请输入新密码" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -536,9 +469,9 @@ const saveUser = async () => {
     // 打印表单内容以便调试
     console.log('Form data before validation:', JSON.stringify(userForm));
     console.log('Is edit mode:', isEdit.value);
-    
+
     await userFormRef.value.validate();
-    
+
     saveLoading.value = true;
 
     // 准备提交的数据
@@ -597,21 +530,21 @@ const saveUser = async () => {
 // 保存密码
 const savePassword = async () => {
   if (!passwordFormRef.value) return;
-  
+
   try {
     await passwordFormRef.value.validate();
-    
+
     passwordLoading.value = true;
-    
+
     // 准备提交的数据
     const userData = {
       password: passwordForm.password
     };
-    
+
     console.log(`Updating password for user ID: ${passwordForm.id}`);
     const data = await updateUser(passwordForm.id!, userData);
     console.log('Update password response:', data);
-    
+
     if (data.code === 0 || data.code === 200) {
       ElMessage.success('密码修改成功');
       passwordDialogVisible.value = false;
@@ -683,10 +616,10 @@ const importUser = async () => {
 
 /* 页面头部样式 */
 .page-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
   border-radius: 16px;
   margin-bottom: 24px;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.15);
+  box-shadow: 0 8px 32px rgba(79, 156, 249, 0.15);
   overflow: hidden;
   position: relative;
 }
@@ -816,7 +749,7 @@ const importUser = async () => {
 
 .card-title .el-icon {
   font-size: 20px;
-  color: #667eea;
+  color: #4f9cf9;
 }
 
 .card-title span {
@@ -828,7 +761,7 @@ const importUser = async () => {
 .user-count {
   font-size: 14px;
   color: #64748b;
-  background: rgba(102, 126, 234, 0.1);
+  background: rgba(79, 156, 249, 0.1);
   padding: 6px 12px;
   border-radius: 20px;
   font-weight: 500;
@@ -880,8 +813,8 @@ const importUser = async () => {
 /* 表格内容样式 */
 .id-cell {
   font-weight: 600;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
+  color: #4f9cf9;
+  background: rgba(79, 156, 249, 0.1);
   padding: 4px 8px;
   border-radius: 6px;
   display: inline-block;
@@ -898,7 +831,7 @@ const importUser = async () => {
 .user-avatar {
   width: 36px;
   height: 36px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -912,13 +845,17 @@ const importUser = async () => {
   color: #1a202c;
 }
 
-.fullname, .email {
+.fullname,
+.email {
   color: #64748b;
   font-size: 14px;
 }
 
 /* 标签样式 */
-.status-tag, .admin-tag, .platform-tag, .tenant-tag {
+.status-tag,
+.admin-tag,
+.platform-tag,
+.tenant-tag {
   border-radius: 20px;
   font-weight: 500;
   font-size: 12px;
@@ -987,7 +924,7 @@ const importUser = async () => {
 }
 
 :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
   padding: 24px;
   margin: 0;
 }
@@ -1038,13 +975,13 @@ const importUser = async () => {
 }
 
 :deep(.el-input__wrapper:hover) {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  border-color: #4f9cf9;
+  box-shadow: 0 4px 12px rgba(79, 156, 249, 0.1);
 }
 
 :deep(.el-input__wrapper.is-focus) {
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #4f9cf9;
+  box-shadow: 0 0 0 3px rgba(79, 156, 249, 0.1);
 }
 
 :deep(.el-select .el-input__wrapper) {
@@ -1052,7 +989,7 @@ const importUser = async () => {
 }
 
 :deep(.el-switch) {
-  --el-switch-on-color: #667eea;
+  --el-switch-on-color: #4f9cf9;
 }
 
 /* 对话框底部按钮 */
@@ -1081,7 +1018,7 @@ const importUser = async () => {
 .save-btn {
   padding: 10px 24px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
   border: none;
   color: white;
   font-weight: 600;
@@ -1090,7 +1027,7 @@ const importUser = async () => {
 
 .save-btn:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px rgba(79, 156, 249, 0.3);
 }
 
 /* 响应式设计 */
@@ -1098,18 +1035,18 @@ const importUser = async () => {
   .users-container {
     padding: 16px;
   }
-  
+
   .header-content {
     flex-direction: column;
     gap: 16px;
     text-align: center;
   }
-  
+
   .header-actions {
     width: 100%;
     justify-content: center;
   }
-  
+
   .action-btn {
     flex: 1;
     max-width: 150px;
@@ -1123,7 +1060,7 @@ const importUser = async () => {
 }
 
 :deep(.el-loading-spinner) {
-  color: #667eea;
+  color: #4f9cf9;
 }
 
 /* 滚动条样式 */
