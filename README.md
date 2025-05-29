@@ -32,7 +32,7 @@
 
 ### MCP 统计
 
-![statistics2.jpg](https://img.picui.cn/free/2025/05/15/6825c4b8a9c0f.jpg)
+![mcp-stat-v2.jpg](https://img.picui.cn/free/2025/05/29/68384779bc6c9.jpg)
 
 ## 临时体验地址
 

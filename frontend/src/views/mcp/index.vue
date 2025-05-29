@@ -1,232 +1,339 @@
 <template>
-  <div class="mcp-services-list">
-    <div class="services-header">
-      <h1 class="page-title">MCP服务</h1>
-      <div class="header-actions">
-        <!-- 搜索表单 -->
-        <div class="search-form">
-          <el-input v-model="pageQuery.condition.name" placeholder="搜索服务名称" clearable @clear="handleSearch"
-            @keyup.enter="handleSearch" style="width: 200px; margin-right: 10px;" />
-          <el-select v-model="pageQuery.condition.module_id" placeholder="搜索MCP模板" clearable @clear="handleSearch"
-            @keyup.enter="handleSearch" style="width: 200px; margin-right: 10px;" @change="handleSearch">
-            <el-option v-for="(module, index) in modules" :key="index" :label="module.name" :value="module.id">
-              <span style="float: left">{{ index + 1 }}. {{ module.name }}</span>
-            </el-option>
-          </el-select>
-          <el-select v-model="pageQuery.condition.status" placeholder="选择状态" clearable @clear="handleSearch"
-            @change="handleSearch" style="width: 120px; margin-right: 10px;">
-            <el-option label="运行中" value="running" />
-            <el-option label="已停止" value="stopped" />
-            <el-option label="错误" value="error" />
-          </el-select>
-          <el-select v-model="pageQuery.condition.user_id" placeholder="搜索创建者" clearable @clear="handleSearch"
-            @keyup.enter="handleSearch" style="width: 150px; margin-right: 10px;" @change="handleSearch">
-            <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id">
-              <span style="float: left">{{ user.username }}</span>
-              <el-icon v-if="user.is_admin" class="mr-1">
-                <UserFilled />
-              </el-icon>
-            </el-option>
-          </el-select>
-          <el-button type="primary" @click="handleSearch" round>
-            <el-icon class="mr-1">
-              <Search />
+  <div class="mcp-services-container">
+    <!-- 页面头部 -->
+    <div class="page-header">
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <el-icon class="title-icon">
+              <Promotion />
             </el-icon>
-            搜索
-          </el-button>
+            MCP服务管理
+          </h1>
+          <!-- <p class="page-subtitle">管理和监控您的MCP服务实例</p> -->
         </div>
-        <el-button type="primary" @click="loadServices" :loading="loading" class="refresh-button" round>
-          <el-icon class="mr-1">
-            <Refresh />
-          </el-icon>
-          刷新
-        </el-button>
+        
+        <!-- 搜索和操作区域 -->
+        <div class="header-actions">
+          <div class="search-section">
+            <el-input 
+              v-model="pageQuery.condition.name" 
+              placeholder="搜索服务名称" 
+              clearable 
+              @clear="handleSearch"
+              @keyup.enter="handleSearch" 
+              class="search-input"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            
+            <el-select 
+              v-model="pageQuery.condition.module_id" 
+              placeholder="选择模板" 
+              clearable 
+              @clear="handleSearch"
+              @change="handleSearch" 
+              class="filter-select"
+            >
+              <el-option 
+                v-for="(module, index) in modules" 
+                :key="index" 
+                :label="module.name" 
+                :value="module.id"
+              >
+                <span class="option-text">{{ module.name }}</span>
+              </el-option>
+            </el-select>
+            
+            <el-select 
+              v-model="pageQuery.condition.status" 
+              placeholder="选择状态" 
+              clearable 
+              @clear="handleSearch"
+              @change="handleSearch" 
+              class="filter-select"
+            >
+              <el-option label="运行中" value="running" />
+              <el-option label="已停止" value="stopped" />
+              <el-option label="错误" value="error" />
+            </el-select>
+            
+            <el-select 
+              v-model="pageQuery.condition.user_id" 
+              placeholder="选择创建者" 
+              clearable 
+              @clear="handleSearch"
+              @change="handleSearch" 
+              class="filter-select"
+            >
+              <el-option 
+                v-for="user in users" 
+                :key="user.id" 
+                :label="user.username" 
+                :value="user.id"
+              >
+                <span class="option-text">{{ user.username }}</span>
+                <el-icon v-if="user.is_admin" class="admin-icon">
+                  <UserFilled />
+                </el-icon>
+              </el-option>
+            </el-select>
+          </div>
+          
+          <div class="action-buttons">
+            <el-button 
+              type="primary" 
+              @click="handleSearch" 
+              class="search-btn"
+            >
+              <el-icon><Search /></el-icon>
+              搜索
+            </el-button>
+            
+            <el-button 
+              type="default" 
+              @click="loadServices" 
+              :loading="loading" 
+              class="refresh-btn"
+            >
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
+          </div>
+        </div>
       </div>
     </div>
 
-    <el-row :gutter="24" v-loading="loading">
+    <!-- 服务卡片网格 -->
+    <div class="services-grid" v-loading="loading">
       <!-- 服务卡片 -->
-      <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="6" v-for="service in services" :key="service.id"
-        class="service-col">
-        <el-card class="service-card" shadow="hover" :body-style="{ padding: '0px' }"
-          :class="{ 'service-running': service.status === 'running' }">
-          <div class="card-content">
-            <div class="card-header">
-              <div class="service-status">
-                <span class="status-dot" :class="getStatusClass(service.status)"></span>
-                <span class="status-text">{{ getStatusText(service.status) }}</span>
-                <!-- 公开状态标签 -->
-                <div class="public-status">
-                  <el-tag v-if="service.is_public" type="success" size="small" class="public-tag">
-                    公开
-                  </el-tag>
-                  <el-tag v-else type="info" size="small" class="public-tag">
-                    私有
-                  </el-tag>
-                </div>
-              </div>
+      <div 
+        v-for="service in services" 
+        :key="service.id"
+        class="service-card"
+        :class="{ 'service-running': service.status === 'running' }"
+      >
+        <div class="card-header">
+          <div class="status-section">
+            <div class="status-indicator" :class="getStatusClass(service.status)">
+              <span class="status-dot"></span>
+              <span class="status-text">{{ getStatusText(service.status) }}</span>
+            </div>
+            
+            <div class="visibility-badge">
+              <el-tag 
+                :type="service.is_public ? 'success' : 'info'" 
+                size="small" 
+                effect="light"
+              >
+                {{ service.is_public ? '公开' : '私有' }}
+              </el-tag>
+            </div>
+          </div>
 
-              <!-- 权限状态和操作按钮 -->
-              <div class="service-actions">
-                <!-- 无权限时显示锁图标 -->
-                <el-tooltip content="无管理权限，仅可使用" v-if="!canManageService(service)">
-                  <el-icon class="lock-icon" size="16">
-                    <Lock />
-                  </el-icon>
+          <div class="action-section">
+            <!-- 无权限时显示锁图标 -->
+            <el-tooltip content="无管理权限，仅可使用" v-if="!canManageService(service)">
+              <el-icon class="lock-icon">
+                <Lock />
+              </el-icon>
+            </el-tooltip>
+
+            <!-- 有权限时显示管理按钮 -->
+            <div v-else class="action-buttons">
+              <el-tooltip content="参数管理" v-if="hasConfigParams(service)">
+                <el-button 
+                  type="info" 
+                  circle 
+                  size="small" 
+                  @click.stop="handleViewServiceParams(service)"
+                  class="action-btn"
+                >
+                  <el-icon><Setting /></el-icon>
+                </el-button>
+              </el-tooltip>
+
+              <el-tooltip content="启动服务" v-if="service.status !== 'running'">
+                <el-button 
+                  type="success" 
+                  circle 
+                  size="small" 
+                  @click.stop="handleStartService(service)"
+                  class="action-btn"
+                >
+                  <el-icon><VideoPlay /></el-icon>
+                </el-button>
+              </el-tooltip>
+
+              <el-tooltip content="停止服务" v-if="service.status === 'running'">
+                <el-button 
+                  type="warning" 
+                  circle 
+                  size="small" 
+                  @click.stop="handleStopService(service)"
+                  class="action-btn"
+                >
+                  <el-icon><VideoPause /></el-icon>
+                </el-button>
+              </el-tooltip>
+
+              <el-tooltip content="删除服务">
+                <el-button 
+                  type="danger" 
+                  circle 
+                  size="small" 
+                  @click.stop="handleUninstallService(service)"
+                  class="action-btn"
+                >
+                  <el-icon><Delete /></el-icon>
+                </el-button>
+              </el-tooltip>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <div class="service-info">
+            <h3 class="service-name">{{ service.name || '默认服务' }}</h3>
+            <p class="service-module">{{ service.module_name || '未命名模块' }}</p>
+            <p class="service-description">{{ service.description || '暂无描述' }}</p>
+          </div>
+
+          <div class="service-meta">
+            <div class="meta-row">
+              <div class="meta-item">
+                <span class="meta-label">创建者</span>
+                <span class="meta-value">{{ service.user_name || '未知' }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">创建时间</span>
+                <span class="meta-value">{{ formatDate(service.created_at) }}</span>
+              </div>
+            </div>
+
+            <div class="url-section">
+              <div class="url-label">SSE URL</div>
+              <div class="url-container">
+                <el-tooltip content="点击复制URL" placement="top">
+                  <div class="url-text" @click.stop="copyToClipboard(service.sse_url)">
+                    {{ service.sse_url }}
+                  </div>
                 </el-tooltip>
-
-                <!-- 有权限时显示管理按钮 -->
-                <template v-else>
-                  <el-tooltip content="参数管理" v-if="hasConfigParams(service)">
-                    <el-button type="info" circle size="small" @click.stop="handleViewServiceParams(service)"
-                      class="action-button">
-                      <el-icon>
-                        <Setting />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-
-                  <el-tooltip content="启动服务" v-if="service.status !== 'running'">
-                    <el-button type="success" circle size="small" @click.stop="handleStartService(service)"
-                      class="action-button">
-                      <el-icon>
-                        <VideoPlay />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-
-                  <el-tooltip content="停止服务" v-if="service.status === 'running'">
-                    <el-button type="warning" circle size="small" @click.stop="handleStopService(service)"
-                      class="action-button">
-                      <el-icon>
-                        <VideoPause />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-
-                  <el-tooltip content="删除服务">
-                    <el-button type="danger" circle size="small" @click.stop="handleUninstallService(service)"
-                      class="action-button">
-                      <el-icon>
-                        <Delete />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-                </template>
-              </div>
-            </div>
-
-            <div class="service-info">
-              <!-- 模板和名称放一行 -->
-              <div class="service-title-row">
-                <div class="service-title-item">
-                  <span class="title-label">名称：</span>
-                  <el-text truncated class="title-value">{{ service.name || '默认' }}</el-text>
-                </div>
-                <div class="service-title-item">
-                  <span class="title-label">模板：</span>
-                  <el-text truncated class="title-value">{{ service.module_name || '未命名服务' }}</el-text>
-                </div>
-              </div>
-
-              <!-- 描述 -->
-              <div class="service-description">
-                <el-text truncated type="info" size="small">
-                  {{ service.description || '暂无描述' }}
-                </el-text>
-              </div>
-            </div>
-
-            <div class="service-details">
-              <!-- 创建者和创建时间放一行 -->
-              <div class="detail-row">
-                <div class="detail-item">
-                  <span class="detail-label">创建者</span>
-                  <span class="detail-value">{{ service.user_name || '未知' }}</span>
-                </div>
-                <div class="detail-item">
-                  <span class="detail-label">创建时间</span>
-                  <span class="detail-value">{{ formatDate(service.created_at) }}</span>
-                </div>
-              </div>
-
-              <!-- SSE URL -->
-              <div class="detail-item">
-                <span class="detail-label">SSE URL</span>
-                <div class="url-container">
+                <div class="url-actions">
                   <el-tooltip content="复制URL" placement="top">
-                    <el-text class="url-text" type="primary" truncated @click.stop="copyToClipboard(service.sse_url)">
-                      {{ service.sse_url }}
-                    </el-text>
+                    <el-button 
+                      link 
+                      type="primary" 
+                      @click.stop="copyToClipboard(service.sse_url)" 
+                      class="url-btn"
+                    >
+                      <el-icon><CopyDocument /></el-icon>
+                    </el-button>
                   </el-tooltip>
-                  <el-button link type="primary" @click.stop="copyToClipboard(service.sse_url)" class="copy-button">
-                    <el-icon>
-                      <CopyDocument />
-                    </el-icon>
-                  </el-button>
                   <el-tooltip content="复制为egovakb格式" placement="top">
-                    <el-button link type="success" @click.stop="copyAsEgovakbUrl(service.sse_url)" class="copy-button">
-                      <el-icon>
-                        <Connection />
-                      </el-icon>
+                    <el-button 
+                      link 
+                      type="success" 
+                      @click.stop="copyAsEgovakbUrl(service.sse_url)" 
+                      class="url-btn"
+                    >
+                      <el-icon><Connection /></el-icon>
                     </el-button>
                   </el-tooltip>
                 </div>
-                <el-text v-if="service.status === 'error'" type="danger" size="small" truncated>
+              </div>
+              
+              <div v-if="service.status === 'error'" class="error-message">
+                <el-text type="danger" size="small">
                   {{ service.error_message }}
                 </el-text>
               </div>
             </div>
           </div>
-        </el-card>
-      </el-col>
+        </div>
+      </div>
 
       <!-- 添加新服务卡片 -->
-      <el-col :xs="24" :sm="12" :md="8" :lg="8" :xl="6" class="service-col">
-        <el-card class="add-service-card" shadow="hover" @click="goToCreateService">
-          <div class="add-service-content">
-            <el-icon class="add-icon">
-              <Plus />
-            </el-icon>
-            <span class="add-text">创建新服务</span>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 空状态显示 -->
-      <el-col :span="24" v-if="services.length === 0 && !loading">
-        <div class="empty-container">
-          <el-empty description="暂无发布的MCP服务">
-            <el-button type="primary" @click="loadServices" round>刷新</el-button>
-            <el-button type="success" @click="goToCreateService" round>创建服务</el-button>
-          </el-empty>
+      <div class="add-service-card" @click="goToCreateService">
+        <div class="add-content">
+          <el-icon class="add-icon">
+            <Plus />
+          </el-icon>
+          <span class="add-text">创建新服务</span>
+          <span class="add-subtitle">点击开始创建MCP服务</span>
         </div>
-      </el-col>
-    </el-row>
+      </div>
+
+      <!-- 空状态 -->
+      <div v-if="services.length === 0 && !loading" class="empty-state">
+        <el-empty description="暂无MCP服务" :image-size="120">
+          <template #description>
+            <p class="empty-description">还没有创建任何MCP服务</p>
+            <p class="empty-hint">点击下方按钮开始创建您的第一个服务</p>
+          </template>
+          <div class="empty-actions">
+            <el-button type="primary" @click="goToCreateService" size="large">
+              <el-icon><Plus /></el-icon>
+              创建服务
+            </el-button>
+            <el-button @click="loadServices" size="large">
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
+          </div>
+        </el-empty>
+      </div>
+    </div>
 
     <!-- 分页组件 -->
-    <div v-if="!loading && total > 0" class="pagination-container">
+    <div v-if="!loading && total > 0" class="pagination-wrapper">
       <el-config-provider :locale="zhCn">
-        <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[7, 11, 15, 19]"
-        :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
-        @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+        <el-pagination 
+          :current-page="currentPage" 
+          :page-size="pageSize" 
+          :page-sizes="[7, 11, 15, 19]"
+          :background="true" 
+          layout="total, sizes, prev, pager, next, jumper" 
+          :total="total"
+          @size-change="handleSizeChange" 
+          @current-change="handleCurrentChange"
+          class="pagination"
+        />
       </el-config-provider>
     </div>
 
     <!-- 服务参数管理对话框 -->
-    <el-dialog v-model="serviceParamsDialogVisible" title="服务参数管理" width="50%" :destroy-on-close="true">
-      <ServiceParamsManager v-if="currentService && currentServiceSchema" :config-params="serviceParamsForm"
-        :config-schema="currentServiceSchema" @update:config-params="updateServiceParamsForm"
-        ref="serviceParamsManagerRef" />
-      <div v-else class="text-center py-4">
+    <el-dialog 
+      v-model="serviceParamsDialogVisible" 
+      title="服务参数管理" 
+      width="50%" 
+      :destroy-on-close="true"
+      class="params-dialog"
+    >
+      <ServiceParamsManager 
+        v-if="currentService && currentServiceSchema" 
+        :config-params="serviceParamsForm"
+        :config-schema="currentServiceSchema" 
+        @update:config-params="updateServiceParamsForm"
+        ref="serviceParamsManagerRef" 
+      />
+      <div v-else class="dialog-empty">
         <el-empty description="无法加载服务参数" :image-size="60" />
       </div>
 
       <template #footer>
-        <span class="dialog-footer">
+        <div class="dialog-footer">
           <el-button @click="serviceParamsDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="updateServiceParams" :loading="updatingParams">更新参数</el-button>
-        </span>
+          <el-button 
+            type="primary" 
+            @click="updateServiceParams" 
+            :loading="updatingParams"
+          >
+            更新参数
+          </el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
@@ -237,7 +344,20 @@ import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
-import { VideoPlay, VideoPause, Delete, Refresh, CopyDocument, Plus, Connection, Lock, Setting, Search } from '@element-plus/icons-vue';
+import { 
+  VideoPlay, 
+  VideoPause, 
+  Delete, 
+  Refresh, 
+  CopyDocument, 
+  Plus, 
+  Connection, 
+  Lock, 
+  Setting, 
+  Search,
+  Promotion,
+  UserFilled
+} from '@element-plus/icons-vue';
 import {
   listServices,
   startService,
@@ -254,7 +374,7 @@ import type { McpServiceInfo } from '../../types/marketplace';
 // @ts-ignore
 import ServiceParamsManager from '../../components/ServiceParamsManager.vue';
 import { Page } from '../../types/page';
-import { getAllUsers } from '@/api/auth';
+import { getAllUsers } from '../../api/auth';
 
 // 路由
 const router = useRouter();
@@ -658,228 +778,349 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.mcp-services-list {
+.mcp-services-container {
   padding: 24px;
-  max-width: 1440px;
+  /* max-width: 1440px; */
   margin: 0 auto;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
 }
 
-.services-header {
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 32px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-content {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 32px;
+  align-items: flex-start;
+  gap: 32px;
   flex-wrap: wrap;
-  gap: 16px;
+}
+
+.title-section {
+  flex: 1;
+  min-width: 300px;
 }
 
 .page-title {
-  font-size: 28px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
-.refresh-button {
-  border-radius: 20px;
-  padding: 8px 20px;
+.title-icon {
+  font-size: 28px;
+  color: #667eea;
+}
+
+.page-subtitle {
+  font-size: 16px;
+  color: #718096;
+  margin: 0;
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 600px;
+  flex-wrap: wrap;
+}
+
+.search-section {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  flex: 1;
+}
+
+.search-input {
+  width: 220px;
+}
+
+.filter-select {
+  width: 180px;
+}
+
+.option-text {
   font-weight: 500;
 }
 
-.service-col {
-  margin-bottom: 24px;
+.admin-icon {
+  color: #f56565;
+  margin-left: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-btn,
+.refresh-btn {
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-btn:hover,
+.refresh-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
 }
 
 .service-card {
-  height: 100%;
-  border-radius: 16px;
-  /* transition: all 0.3s ease; */
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
   overflow: hidden;
   position: relative;
   cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
 .service-card:hover {
-  /* transform: translateY(-4px); */
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
 }
 
 .service-running {
-  border-left: 4px solid #67c23a;
-}
-
-.card-content {
-  padding: 24px;
+  border-left: 4px solid #48bb78;
+  background: linear-gradient(135deg, rgba(72, 187, 120, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.service-status {
+.status-section {
   display: flex;
   align-items: center;
+  gap: 12px;
 }
 
-.public-status {
-  margin-left: auto;
-  margin-right: 8px;
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 .status-dot {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
-  margin-right: 8px;
-  position: relative;
 }
 
 .status-running {
-  background-color: #67c23a;
-  box-shadow: 0 0 0 3px rgba(103, 194, 58, 0.2);
+  background: rgba(72, 187, 120, 0.1);
+  color: #38a169;
 }
 
-.status-running::after {
-  content: '';
-  position: absolute;
-  top: -3px;
-  left: -3px;
-  right: -3px;
-  bottom: -3px;
-  border-radius: 50%;
-  background-color: rgba(103, 194, 58, 0.2);
+.status-running .status-dot {
+  background: #48bb78;
+  box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.3);
   animation: pulse 2s infinite;
+}
+
+.status-stopped {
+  background: rgba(160, 174, 192, 0.1);
+  color: #718096;
+}
+
+.status-stopped .status-dot {
+  background: #a0aec0;
+}
+
+.status-error {
+  background: rgba(245, 101, 101, 0.1);
+  color: #e53e3e;
+}
+
+.status-error .status-dot {
+  background: #f56565;
+}
+
+.status-unknown {
+  background: rgba(237, 137, 54, 0.1);
+  color: #dd6b20;
+}
+
+.status-unknown .status-dot {
+  background: #ed8936;
 }
 
 @keyframes pulse {
   0% {
-    transform: scale(1);
-    opacity: 0.8;
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0.3);
   }
-
   70% {
-    transform: scale(1.5);
-    opacity: 0;
+    box-shadow: 0 0 0 8px rgba(72, 187, 120, 0);
   }
-
   100% {
-    transform: scale(1.5);
-    opacity: 0;
+    box-shadow: 0 0 0 3px rgba(72, 187, 120, 0);
   }
 }
 
-.status-stopped {
-  background-color: #909399;
-  box-shadow: 0 0 0 3px rgba(144, 147, 153, 0.2);
+.visibility-badge {
+  margin-left: auto;
 }
 
-.status-error {
-  background-color: #f56c6c;
-  box-shadow: 0 0 0 3px rgba(245, 108, 108, 0.2);
-}
-
-.status-unknown {
-  background-color: #e6a23c;
-  box-shadow: 0 0 0 3px rgba(230, 162, 60, 0.2);
-}
-
-.status-text {
-  font-size: 14px;
-  color: #606266;
-  font-weight: 500;
-}
-
-.service-actions {
+.action-section {
   display: flex;
   gap: 8px;
 }
 
-.action-button {
+.action-buttons {
+  display: flex;
+  gap: 6px;
+}
+
+.action-btn {
   font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.action-btn:hover {
+  transform: scale(1.1);
 }
 
 .lock-icon {
-  color: #909399;
+  color: #a0aec0;
   cursor: help;
+  font-size: 18px;
+}
+
+.card-content {
+  padding: 24px;
 }
 
 .service-info {
-  margin-bottom: 16px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 20px;
 }
 
-.service-title-row {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 8px;
+.service-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
 }
 
-.service-title-item {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.title-label {
-  font-size: 12px;
-  color: #909399;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.title-value {
+.service-module {
   font-size: 14px;
-  color: #303133;
-  font-weight: 500;
+  color: #667eea;
+  margin: 0 0 8px 0;
+  font-weight: 600;
 }
 
 .service-description {
-  margin-bottom: 0;
+  font-size: 14px;
+  color: #718096;
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.service-details {
+.service-meta {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.detail-row {
-  display: flex;
   gap: 16px;
 }
 
-.detail-item {
+.meta-row {
+  display: flex;
+  gap: 20px;
+}
+
+.meta-item {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
-  min-width: 0;
 }
 
-.detail-label {
+.meta-label {
   font-size: 12px;
-  color: #909399;
+  color: #a0aec0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.meta-value {
+  font-size: 14px;
+  color: #4a5568;
   font-weight: 500;
 }
 
-.detail-value {
-  font-size: 14px;
-  color: #303133;
+.url-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.url-label {
+  font-size: 12px;
+  color: #a0aec0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .url-container {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background-color: #f5f7fa;
-  border-radius: 6px;
-  padding: 6px 10px;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border-radius: 12px;
+  padding: 12px 16px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.url-container:hover {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .url-text {
@@ -889,91 +1130,302 @@ onMounted(() => {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #4a5568;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  transition: color 0.2s ease;
 }
 
-.copy-button {
-  padding: 2px;
+.url-text:hover {
+  color: #667eea;
 }
 
-.empty-container {
-  padding: 80px 0;
-  text-align: center;
+.url-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+.url-btn {
+  padding: 4px;
+  transition: all 0.2s ease;
+}
+
+.url-btn:hover {
+  transform: scale(1.1);
+}
+
+.error-message {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(245, 101, 101, 0.1);
+  border-radius: 8px;
+  border-left: 3px solid #f56565;
 }
 
 .add-service-card {
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 16px;
-  border: 2px dashed #dcdfe6;
-  background-color: rgba(255, 255, 255, 0.8);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(255, 255, 255, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 2px dashed #667eea;
   cursor: pointer;
-  /* transition: all 0.3s; */
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  position: relative;
+  overflow: hidden;
+}
+
+.add-service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.add-service-card:hover::before {
+  left: 100%;
 }
 
 .add-service-card:hover {
-  /* transform: translateY(-4px); */
-  border-color: #409eff;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transform: translateY(-8px);
+  border-color: #5a67d8;
+  box-shadow: 0 20px 40px rgba(102, 126, 234, 0.2);
 }
 
-.add-service-content {
+.add-content {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30px 0;
+  padding: 40px 20px;
+  z-index: 1;
 }
 
 .add-icon {
-  font-size: 32px;
-  color: #409eff;
+  font-size: 48px;
+  color: #667eea;
   margin-bottom: 16px;
+  transition: all 0.3s ease;
+}
+
+.add-service-card:hover .add-icon {
+  transform: scale(1.1);
+  color: #5a67d8;
 }
 
 .add-text {
-  font-size: 16px;
-  color: #409eff;
-  font-weight: 500;
+  font-size: 18px;
+  color: #667eea;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
-/* 适配暗色主题 */
-:root[data-theme="dark"] .service-card {
-  background-color: rgba(48, 49, 51, 0.8);
-  border-color: #484848;
+.add-subtitle {
+  font-size: 14px;
+  color: #718096;
+  text-align: center;
 }
 
-:root[data-theme="dark"] .add-service-card {
-  background-color: rgba(48, 49, 51, 0.5);
-  border-color: #606266;
+.empty-state {
+  grid-column: 1 / -1;
+  padding: 80px 20px;
+  text-align: center;
 }
 
-:root[data-theme="dark"] .add-service-card:hover {
-  border-color: #409eff;
+.empty-description {
+  font-size: 18px;
+  color: #4a5568;
+  margin: 16px 0 8px 0;
+  font-weight: 600;
 }
 
-:root[data-theme="dark"] .url-container {
-  background-color: rgba(0, 0, 0, 0.2);
+.empty-hint {
+  font-size: 14px;
+  color: #718096;
+  margin: 0 0 24px 0;
 }
 
-.header-actions {
+.empty-actions {
   display: flex;
-  align-items: center;
+  justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
 }
 
-.search-form {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.pagination-container {
+.pagination-wrapper {
   display: flex;
   justify-content: center;
-  margin-top: 24px;
-  padding: 20px 0;
+  margin-top: 32px;
+  padding: 24px 0;
+}
+
+.pagination {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 16px 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.params-dialog {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.dialog-empty {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 16px 0 0 0;
+}
+
+/* 响应式设计 */
+@media (max-width: 1200px) {
+  .services-grid {
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .mcp-services-container {
+    padding: 16px;
+  }
+  
+  .page-header {
+    padding: 24px;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .header-actions {
+    min-width: auto;
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-section {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .search-input,
+  .filter-select {
+    width: 100%;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+  
+  .services-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .page-title {
+    font-size: 24px;
+  }
+  
+  .title-section {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .header-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .search-section {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .search-btn,
+  .refresh-btn {
+    width: 100%;
+  }
+  
+  .card-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .action-section {
+    align-self: flex-end;
+  }
+  
+  .meta-row {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
+/* 暗色主题适配 */
+@media (prefers-color-scheme: dark) {
+  .mcp-services-container {
+    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+  }
+  
+  .page-header,
+  .service-card,
+  .pagination {
+    background: rgba(45, 55, 72, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .page-title {
+    color: #f7fafc;
+  }
+  
+  .page-subtitle {
+    color: #a0aec0;
+  }
+  
+  .service-name {
+    color: #f7fafc;
+  }
+  
+  .service-description,
+  .meta-value {
+    color: #cbd5e0;
+  }
+  
+  .url-container {
+    background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    border-color: #4a5568;
+  }
+  
+  .url-text {
+    color: #cbd5e0;
+  }
+  
+  .add-service-card {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(45, 55, 72, 0.95) 100%);
+  }
 }
 </style>
