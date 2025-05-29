@@ -21,6 +21,7 @@ class McpGroup(Base):
     order = Column(Integer, default=0)  # 排序序号
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
+    user_id = Column(Integer, nullable=True, index=True)  # 创建者ID
 
     def to_dict(self):
         """转换为字典格式"""
@@ -39,5 +40,6 @@ class McpGroup(Base):
             "order": self.order,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
-            "modules_count": modules_count
+            "modules_count": modules_count,
+            "user_id": self.user_id
         }
