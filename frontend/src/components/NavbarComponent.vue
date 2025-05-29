@@ -200,14 +200,28 @@ const changePassword = async () => {
 
 <style scoped>
 .navbar-container {
-  border-bottom: solid 1px var(--el-menu-border-color);
+  border-bottom: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+  position: relative;
+}
+
+.navbar-container::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
 }
 
 .nav-menu {
   display: flex;
   align-items: center;
-  height: 60px;
-  padding: 0 20px;
+  height: 70px;
+  padding: 0 30px;
+  background: transparent;
 }
 
 .flex-grow {
@@ -217,40 +231,150 @@ const changePassword = async () => {
 .logo-container {
   display: flex;
   align-items: center;
-  padding-right: 20px;
+  padding-right: 30px;
+}
+
+.logo-container h1 {
+  color: white !important;
+  font-size: 24px;
+  font-weight: 700;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin: 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .text-primary {
-  color: var(--el-color-primary);
+  color: white !important;
 }
 
 .version-info {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  color: var(--el-text-color-secondary);
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .user-controls {
   display: flex;
   align-items: center;
-  margin-left: 20px;
+  margin-left: 30px;
 }
 
 .user-dropdown-link {
   display: flex;
   align-items: center;
   cursor: pointer;
-  color: var(--el-color-primary);
+  color: white;
   font-size: 14px;
-  padding: 0 8px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.user-dropdown-link:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-controls .el-button {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-weight: 500;
+  border-radius: 20px;
+  padding: 8px 20px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.user-controls .el-button:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 :deep(.el-menu-item) {
   font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  margin: 0 4px;
+  padding: 0 16px;
+  height: 40px;
+  line-height: 40px;
+  transition: all 0.3s ease;
+  background: transparent;
+  border-bottom: none;
+}
+
+:deep(.el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-menu-item.is-active) {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 :deep(.el-menu--horizontal) {
   border-bottom: none;
+  background: transparent;
+}
+
+:deep(.el-menu--horizontal .el-menu-item:not(.is-disabled):focus) {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+}
+
+/* 对话框样式优化 */
+:deep(.el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+:deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+}
+
+:deep(.el-dialog__title) {
+  color: white;
+  font-weight: 600;
+}
+
+:deep(.el-dialog__headerbtn .el-dialog__close) {
+  color: white;
+}
+
+:deep(.el-form-item__label) {
+  color: #374151;
+  font-weight: 500;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 8px;
+}
+
+:deep(.el-button) {
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
 }
 </style>

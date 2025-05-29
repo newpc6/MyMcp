@@ -67,9 +67,19 @@
       <div class="module-grid">
         <div v-for="module in modules" :key="module.id" class="module-item">
           <el-card class="module-card" shadow="hover" @click="goToModuleDetail(module.id)">
-            <div class="card-header">
-              <el-avatar :icon="getModuleIcon(module)" :size="40" class="mr-2"></el-avatar>
-              <h3 class="card-title">{{ module.name }}</h3>
+            <div class="card-header flex-between items-center">
+              <div class="flex items-center">
+                <el-avatar :icon="getModuleIcon(module)" :size="40" class="mr-2"></el-avatar>
+                <h3 class="card-title">{{ module.name }}</h3>
+              </div>
+              <div>
+                <el-tag v-if="!module.is_public" size="small" type="danger" class="ml-1">
+                  私有
+                </el-tag>
+                <el-tag v-else size="small" type="success" class="ml-1">
+                  公开
+                </el-tag>
+              </div>
             </div>
             <p class="card-desc">{{ module.description }}</p>
             <div class="card-footer">
@@ -77,32 +87,35 @@
                 <el-tag v-if="module.category_name" size="small" type="warning" class="ml-1">
                   {{ module.category_name }}
                 </el-tag>
-                <el-tag v-if="!module.is_public" size="small" type="danger" class="ml-1">
-                  私有
-                </el-tag>
-                <el-tag v-else size="small" type="success" class="ml-1">
-                  公开
-                </el-tag>
                 <el-tag v-if="module.username" size="small" type="info" class="ml-1">
                   创建者: {{ module.username }}
                 </el-tag>
               </div>
-              <div class="flex flex-col items-end">
-                <div class="text-gray-500 text-xs mb-1">更新时间: {{ formatDate(module.updated_at) }}</div>
+              <div class="flex items-end">
+                <div class="text-gray-500 text-xs mb-1 time-display">更新时间: {{ formatDate(module.updated_at) }}</div>
                 <el-dropdown trigger="click" @click.stop>
                   <el-button size="small" type="primary" @click.stop>
-                    <el-icon><MoreFilled /></el-icon>
+                    <el-icon>
+                      <MoreFilled />
+                    </el-icon>
                   </el-button>
                   <template #dropdown>
                     <el-dropdown-menu>
                       <el-dropdown-item @click.stop="goToModuleDetail(module.id)">
-                        <el-icon><View /></el-icon> 查看详情
+                        <el-icon>
+                          <View />
+                        </el-icon> 查看详情
                       </el-dropdown-item>
                       <el-dropdown-item @click.stop="handleCloneModule(module)">
-                        <el-icon><CopyDocument /></el-icon> 复制
+                        <el-icon>
+                          <CopyDocument />
+                        </el-icon> 复制
                       </el-dropdown-item>
-                      <el-dropdown-item v-if="hasEditPermission(module)" @click.stop="handleDeleteModule(module)" divided>
-                        <el-icon><Delete /></el-icon> 删除
+                      <el-dropdown-item v-if="hasEditPermission(module)" @click.stop="handleDeleteModule(module)"
+                        divided>
+                        <el-icon>
+                          <Delete />
+                        </el-icon> 删除
                       </el-dropdown-item>
                     </el-dropdown-menu>
                   </template>
@@ -129,28 +142,16 @@
       <!-- 分页组件 -->
       <div v-if="!loading && modules.length > 0" class="pagination-container">
         <el-config-provider :locale="zhCn">
-          <el-pagination
-            :current-page="currentPage"
-            :page-size="pageSize"
-            :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
-            :background="true"
-            layout="total, sizes, prev, pager, next, jumper"
-            :total="total"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
+          <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
+            :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
+            @size-change="handleSizeChange" @current-change="handleCurrentChange" />
         </el-config-provider>
       </div>
     </el-main>
 
     <!-- 创建MCP服务对话框 -->
     <el-dialog v-model="createDialogVisible" title="创建MCP服务" width="60%" :destroy-on-close="true">
-      <McpServiceForm 
-        v-model="createForm" 
-        :categories="categories"
-        :isSubmitting="submitting"
-        ref="createFormRef"
-      >
+      <McpServiceForm v-model="createForm" :categories="categories" :isSubmitting="submitting" ref="createFormRef">
         <template #actions>
           <el-button @click="createDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitCreateForm" :loading="submitting">创建</el-button>
@@ -160,12 +161,7 @@
 
     <!-- 复制MCP服务对话框 -->
     <el-dialog v-model="cloneDialogVisible" title="复制MCP服务" width="60%" :destroy-on-close="true">
-      <McpServiceForm 
-        v-model="cloneForm" 
-        :categories="categories"
-        :isSubmitting="submitting"
-        ref="cloneFormRef"
-      >
+      <McpServiceForm v-model="cloneForm" :categories="categories" :isSubmitting="submitting" ref="cloneFormRef">
         <template #actions>
           <el-button @click="cloneDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitCloneForm" :loading="submitting">复制</el-button>
@@ -906,51 +902,123 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 <style scoped>
 .marketplace-container {
   height: calc(100vh - 80px);
-  background-color: #f9fafc;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
 }
 
 .el-aside {
   border-radius: 0 16px 16px 0;
   padding-top: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);
 }
 
 .el-card {
   border-radius: 16px !important;
   overflow: hidden;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: none;
+  position: relative;
+}
+
+.el-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px 16px 0 0;
 }
 
 /* 移除左侧卡片悬浮效果 */
 .el-aside .el-card:hover {
   transform: none;
-  box-shadow: none !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* 只保留右侧卡片悬浮效果 */
-.module-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+/* 分类卡片头部样式 */
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  border-bottom: none;
+  margin-top: 4px;
+}
+
+:deep(.el-card__header .text-lg) {
+  color: white !important;
+  font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.el-card__header .el-icon) {
+  color: white !important;
+}
+
+:deep(.el-card__header .el-button) {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  color: white !important;
+  backdrop-filter: blur(10px);
+}
+
+:deep(.el-card__header .el-button:hover) {
+  background: rgba(255, 255, 255, 0.3) !important;
+  transform: translateY(-1px);
 }
 
 .category-menu {
   max-height: calc(100vh - 150px);
   overflow-y: auto;
   border-radius: 12px;
+  background: transparent;
+  padding: 8px;
 }
 
 .category-item {
   display: flex;
   align-items: center;
-  border-radius: 8px;
-  margin-bottom: 4px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
 }
 
 .el-menu-item {
   border-radius: 12px;
   margin: 4px 0;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid #e2e8f0;
+  color: #4a5568;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.el-menu-item:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
 .el-menu-item.is-active {
-  background-color: var(--el-color-primary-light-9) !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.el-menu-item.is-active .el-tag {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.el-menu-item:hover .el-tag {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 .category-name {
@@ -959,6 +1027,46 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   overflow: hidden;
   text-overflow: ellipsis;
   margin-right: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* 分类图标样式 */
+.el-menu-item .el-icon {
+  margin-right: 8px;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+.el-menu-item:hover .el-icon,
+.el-menu-item.is-active .el-icon {
+  color: white;
+  transform: scale(1.1);
+}
+
+/* 分类数量标签样式 */
+.el-menu-item .el-tag {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+/* 下拉菜单样式 */
+.el-dropdown {
+  margin-left: 4px;
+}
+
+.el-dropdown .el-icon {
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.el-menu-item:hover .el-dropdown .el-icon,
+.el-menu-item.is-active .el-dropdown .el-icon {
+  opacity: 1;
+  color: white;
 }
 
 .module-grid {
@@ -985,28 +1093,42 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  transition: all 0.3s;
+  transition: all 0.3s ease;
   border: none;
   overflow: hidden;
-  background-color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+
+.module-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px 16px 0 0;
 }
 
 .card-header {
   display: flex;
   align-items: center;
   margin-bottom: 12px;
+  padding-top: 8px;
 }
 
 .card-title {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: #1a202c;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 }
 
 .card-desc {
-  color: #666;
+  color: #4a5568;
   flex: 1;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1016,6 +1138,7 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   margin-bottom: 16px;
   line-height: 1.6;
   min-height: 48px;
+  font-size: 14px;
 }
 
 .card-footer {
@@ -1024,7 +1147,10 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   align-items: flex-end;
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  margin: 0 -20px -20px -20px;
+  padding: 12px 20px;
 }
 
 .tag-container {
@@ -1037,20 +1163,53 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 .el-tag {
   border-radius: 12px;
   padding: 0 10px;
+  font-weight: 500;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.el-tag--warning {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #ffffff;
+}
+
+.el-tag--info {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  color: #ffffff;
+}
+
+.el-tag--success {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: #ffffff;
+}
+
+.el-tag--danger {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+  color: #ffffff;
 }
 
 .el-button {
   border-radius: 12px;
+  font-weight: 500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .el-button--primary {
-  background: linear-gradient(135deg, var(--el-color-primary), var(--el-color-primary-light-3));
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
 }
 
 .el-avatar {
   border-radius: 12px;
-  background: linear-gradient(135deg, #e0f2ff, #d4e6fd);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+  background: linear-gradient(135deg, #e0f2ff 0%, #bfdbfe 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #ffffff;
 }
 
 .el-page-header {
@@ -1076,40 +1235,39 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 
 :deep(.el-menu) {
   border-right: none;
+  background: transparent;
 }
 
-:deep(.el-textarea__inner) {
-  border-radius: 12px;
+:deep(.el-menu-item) {
+  height: auto;
+  line-height: 1.5;
+  padding: 12px 16px;
 }
 
-:deep(.el-input__wrapper) {
-  border-radius: 12px;
+/* 自定义滚动条样式 */
+.category-menu::-webkit-scrollbar {
+  width: 6px;
 }
 
-:deep(.el-select .el-input__wrapper) {
-  border-radius: 12px;
+.category-menu::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
 }
 
-/* 添加新样式 */
-.el-dropdown-menu {
-  border-radius: 8px;
+.category-menu::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 3px;
 }
 
-.el-dropdown {
-  margin-left: 4px;
+.category-menu::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
 }
 
-.el-select-dropdown__item {
-  display: flex;
-  align-items: center;
-}
-
-/* 分页组件样式 */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  padding: 20px 0;
+.time-display {
+  color: #718096 !important;
+  font-size: 12px;
+  font-weight: 400;
+  opacity: 0.8;
 }
 
 .el-pagination {
@@ -1126,5 +1284,42 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
 .el-pagination .el-pager li {
   border-radius: 8px;
   margin: 0 2px;
+}
+
+/* 只保留右侧卡片悬浮效果 */
+.module-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* 输入框和下拉菜单样式 */
+:deep(.el-textarea__inner) {
+  border-radius: 12px;
+}
+
+:deep(.el-input__wrapper) {
+  border-radius: 12px;
+}
+
+:deep(.el-select .el-input__wrapper) {
+  border-radius: 12px;
+}
+
+/* 下拉菜单样式 */
+.el-dropdown-menu {
+  border-radius: 8px;
+}
+
+.el-select-dropdown__item {
+  display: flex;
+  align-items: center;
+}
+
+/* 分页组件样式 */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding: 20px 0;
 }
 </style>
