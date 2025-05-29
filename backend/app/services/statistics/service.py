@@ -20,7 +20,7 @@ from app.models.statistics import (
 from app.models.modules.mcp_services import McpService
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.tools.tool_execution import ToolExecution
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.utils.http import PageParams, PageResult
 from app.models.modules.users import User
 
@@ -76,7 +76,7 @@ class StatisticsService:
                 return stats
             except Exception as e:
                 db.rollback()
-                em_logger.error(f"更新服务统计数据时出错: {str(e)}")
+                mcp_logger.error(f"更新服务统计数据时出错: {str(e)}")
                 raise
 
     def update_module_statistics(self) -> List[ModuleStatistics]:
@@ -143,7 +143,7 @@ class StatisticsService:
                 return result
             except Exception as e:
                 db.rollback()
-                em_logger.error(f"更新模块统计数据时出错: {str(e)}")
+                mcp_logger.error(f"更新模块统计数据时出错: {str(e)}")
                 raise
 
     def update_tool_statistics(self) -> List[ToolStatistics]:
@@ -218,7 +218,7 @@ class StatisticsService:
                 return result
             except Exception as e:
                 db.rollback()
-                em_logger.error(f"更新工具统计数据时出错: {str(e)}")
+                mcp_logger.error(f"更新工具统计数据时出错: {str(e)}")
                 raise
 
     def update_service_call_statistics(self) -> List[ServiceCallStatistics]:
@@ -301,7 +301,7 @@ class StatisticsService:
                 return result
             except Exception as e:
                 db.rollback()
-                em_logger.error(f"更新服务调用统计数据时出错: {str(e)}")
+                mcp_logger.error(f"更新服务调用统计数据时出错: {str(e)}")
                 raise
 
     def get_service_statistics(self) -> Dict[str, Any]:
@@ -360,7 +360,7 @@ class StatisticsService:
                     "pages": result.total_pages
                 }
             except Exception as e:
-                em_logger.error(f"获取模块排名数据时出错: {str(e)}")
+                mcp_logger.error(f"获取模块排名数据时出错: {str(e)}")
                 raise
 
     def get_tool_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
@@ -400,7 +400,7 @@ class StatisticsService:
                     "pages": result.total_pages
                 }
             except Exception as e:
-                em_logger.error(f"获取工具排名数据时出错: {str(e)}")
+                mcp_logger.error(f"获取工具排名数据时出错: {str(e)}")
                 raise
 
     def get_service_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
@@ -440,7 +440,7 @@ class StatisticsService:
                     "pages": result.total_pages
                 }
             except Exception as e:
-                em_logger.error(f"获取服务排名数据时出错: {str(e)}")
+                mcp_logger.error(f"获取服务排名数据时出错: {str(e)}")
                 raise
 
     def get_tool_executions(
@@ -903,7 +903,7 @@ class StatisticsService:
                                .isoformat())
             }
         except Exception as e:
-            em_logger.error(f"刷新统计数据时出错: {str(e)}")
+            mcp_logger.error(f"刷新统计数据时出错: {str(e)}")
             raise
 
 

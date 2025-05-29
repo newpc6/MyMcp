@@ -9,7 +9,7 @@ from starlette.responses import JSONResponse
 from starlette.requests import Request
 from pydantic import BaseModel, ValidationError
 
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 
 class LogTestRequest(BaseModel):
@@ -33,9 +33,9 @@ async def log_test(request: Request):
     message = params.get("message", "测试日志消息")
     
     # 记录不同级别的日志
-    em_logger.debug(f"调试日志: {message}")
-    em_logger.info(f"信息日志: {message}")
-    em_logger.warning(f"模块警告日志: {message}")
+    mcp_logger.debug(f"调试日志: {message}")
+    mcp_logger.info(f"信息日志: {message}")
+    mcp_logger.warning(f"模块警告日志: {message}")
     
     return JSONResponse({
         "message": "日志已记录",
@@ -62,15 +62,15 @@ async def log_level(request: Request):
         message = request_data.message
         
         if level == "debug":
-            em_logger.debug(message)
+            mcp_logger.debug(message)
         elif level == "info":
-            em_logger.info(message)
+            mcp_logger.info(message)
         elif level == "warning":
-            em_logger.warning(message)
+            mcp_logger.warning(message)
         elif level == "error":
-            em_logger.error(message)
+            mcp_logger.error(message)
         elif level == "critical":
-            em_logger.critical(message)
+            mcp_logger.critical(message)
         else:
             return JSONResponse({"detail": "无效的日志级别"}, status_code=400)
         
@@ -81,7 +81,7 @@ async def log_level(request: Request):
     except ValidationError as e:
         return JSONResponse({"detail": str(e)}, status_code=422)
     except Exception as e:
-        em_logger.error(f"记录日志时出错: {str(e)}")
+        mcp_logger.error(f"记录日志时出错: {str(e)}")
         return JSONResponse({"detail": "记录日志时出错"}, status_code=500)
 
 

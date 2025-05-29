@@ -1,10 +1,10 @@
 import signal
 from app.server.mcp_server import stop_mcp_server
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 
 def signal_handler(sig, frame):
-    em_logger.info("接收到终止信号，正在关闭MCP服务器...")
+    mcp_logger.info("接收到终止信号，正在关闭MCP服务器...")
     stop_mcp_server()
     # sys.exit(0)
 

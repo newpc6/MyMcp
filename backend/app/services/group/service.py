@@ -9,7 +9,7 @@ from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.utils.permissions import add_edit_permission
 
 
@@ -148,7 +148,7 @@ class GroupService:
                 db.commit()
                 return True
             except SQLAlchemyError as e:
-                em_logger.error(f"删除分组失败: {str(e)}")
+                mcp_logger.error(f"删除分组失败: {str(e)}")
                 db.rollback()
                 return False
     

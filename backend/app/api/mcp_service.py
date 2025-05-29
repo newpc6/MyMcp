@@ -8,7 +8,7 @@ from app.server.mcp_server import (
     add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools, update_service_params
 )
 from app.utils.permissions import add_edit_permission, get_user_info
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 class ToolLoadRequest(BaseModel):
     """加载工具请求模型"""
@@ -152,7 +152,7 @@ async def update_params(request: Request):
         update_service_params(id, data)
         return success_response(message="服务参数更新成功")
     except Exception as e:
-        em_logger.error(f"更新服务参数失败: {str(e)}")
+        mcp_logger.error(f"更新服务参数失败: {str(e)}")
         return error_response(
             f"更新服务参数失败: {str(e)}", code=500, http_status_code=500
         )
@@ -185,7 +185,7 @@ async def list_services(request: Request):
         )
         return success_response(services)
     except Exception as e:
-        em_logger.error(f"获取服务列表失败: {str(e)}")
+        mcp_logger.error(f"获取服务列表失败: {str(e)}")
         err_msg = f"获取服务列表失败: {str(e)}"
         return error_response(err_msg, code=500, http_status_code=500)
 
@@ -220,7 +220,7 @@ async def get_service(request: Request):
 
         return success_response(service)
     except Exception as e:
-        em_logger.error(f"获取服务状态失败: {str(e)}")
+        mcp_logger.error(f"获取服务状态失败: {str(e)}")
         err_msg = f"获取服务状态失败: {str(e)}"
         return error_response(err_msg, code=500, http_status_code=500)
 
@@ -233,7 +233,7 @@ async def get_online_services(request: Request):
         online_services = list(service_manager._running_services.keys())
         return success_response(online_services)
     except Exception as e:
-        em_logger.error(f"获取在线服务失败: {str(e)}")
+        mcp_logger.error(f"获取在线服务失败: {str(e)}")
         return error_response(
             f"获取在线服务失败: {str(e)}", code=500, http_status_code=500
         )
@@ -264,7 +264,7 @@ async def stop_service(request: Request):
         # 权限错误
         return error_response(str(e), code=403, http_status_code=403)
     except Exception as e:
-        em_logger.error(f"停止服务失败: {str(e)}")
+        mcp_logger.error(f"停止服务失败: {str(e)}")
         return error_response(
             f"停止服务失败: {str(e)}", code=500, http_status_code=500
         )
@@ -292,7 +292,7 @@ async def start_service(request: Request):
 
         return success_response({"message": "服务已启动"})
     except Exception as e:
-        em_logger.error(f"启动服务失败: {str(e)}")
+        mcp_logger.error(f"启动服务失败: {str(e)}")
         err_msg = f"启动服务失败: {str(e)}"
         return error_response(err_msg, code=500, http_status_code=500)
 
@@ -319,7 +319,7 @@ async def uninstall_service(request: Request):
 
         return success_response({"message": "服务已卸载"})
     except Exception as e:
-        em_logger.error(f"卸载服务失败: {str(e)}")
+        mcp_logger.error(f"卸载服务失败: {str(e)}")
         return error_response(
             f"卸载服务失败: {str(e)}", code=500, http_status_code=500
         )

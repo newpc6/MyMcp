@@ -8,7 +8,7 @@ from pathlib import Path
 from starlette.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from app.core.config import settings
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 # 获取前端dist目录的绝对路径
 DIST_DIR = os.path.join(settings.MCP_BASE_DIR, "dist")
@@ -17,36 +17,36 @@ DIST_DIR = os.path.join(settings.MCP_BASE_DIR, "dist")
 BACKEND_DIST_DIR = os.path.join(settings.MCP_BASE_DIR, "backend", "dist")
 if os.path.exists(BACKEND_DIST_DIR):
     DIST_DIR = BACKEND_DIST_DIR
-    em_logger.info(f"使用前端资源目录: {DIST_DIR}")
+    mcp_logger.info(f"使用前端资源目录: {DIST_DIR}")
 
 # 检查dist目录是否存在
 if not os.path.exists(DIST_DIR):
-    em_logger.error(f"前端资源目录不存在: {DIST_DIR}")
+    mcp_logger.error(f"前端资源目录不存在: {DIST_DIR}")
     # raise FileNotFoundError(f"前端资源目录不存在: {DIST_DIR}")
 
 # 检查assets目录是否存在
 ASSETS_DIR = os.path.join(DIST_DIR, "assets")
 if not os.path.exists(ASSETS_DIR):
-    em_logger.warning(f"前端资源目录中没有assets子目录: {ASSETS_DIR}")
+    mcp_logger.warning(f"前端资源目录中没有assets子目录: {ASSETS_DIR}")
 
 
 try:
     # 创建StaticFiles实例
     static_files = StaticFiles(directory=DIST_DIR)
 except Exception as e:
-    em_logger.error(f"未找到dist前端资源目录: {DIST_DIR}")
+    mcp_logger.error(f"未找到dist前端资源目录: {DIST_DIR}")
 
 
 try:
     # 创建专门用于assets的StaticFiles实例
     assets_files = StaticFiles(directory=ASSETS_DIR) if os.path.exists(ASSETS_DIR) else None
 except Exception as e:
-    em_logger.error(f"未找到assets目录: {ASSETS_DIR}")
+    mcp_logger.error(f"未找到assets目录: {ASSETS_DIR}")
 
 
 async def index(request):
     """提供前端首页"""
-    em_logger.debug(f"提供前端首页: {request.url.path}")
+    mcp_logger.debug(f"提供前端首页: {request.url.path}")
     return FileResponse(os.path.join(DIST_DIR, "index.html"))
 
 def get_media_type(file_path):
@@ -89,13 +89,13 @@ async def spa_routing(request):
     """
     path = request.path_params.get("path", "")
     full_path = request.url.path
-    em_logger.debug(f"SPA路由处理: {path}, 完整路径: {full_path}")
+    mcp_logger.debug(f"SPA路由处理: {path}, 完整路径: {full_path}")
     
     # API请求不应该由SPA路由处理器捕获
     # 如果配置正确，这里应该永远不会接收到API请求
     # 但如果API请求到达这里，说明API路由没有捕获它，应该返回404
     if full_path.startswith("/api") or path.startswith("api"):
-        em_logger.warning(f"API路径未被API路由捕获: {full_path}")
+        mcp_logger.warning(f"API路径未被API路由捕获: {full_path}")
         from starlette.responses import PlainTextResponse
         return PlainTextResponse(
             "API路径未找到。此请求不应由SPA路由处理。",
@@ -107,7 +107,7 @@ async def spa_routing(request):
         asset_path = path[7:]  # 移除 "assets/" 前缀
         file_path = os.path.join(ASSETS_DIR, asset_path)
         if os.path.exists(file_path) and os.path.isfile(file_path):
-            em_logger.debug(f"直接提供静态资源: {file_path}")
+            mcp_logger.debug(f"直接提供静态资源: {file_path}")
             media_type = get_media_type(file_path)            
             return FileResponse(file_path, media_type=media_type)
     
@@ -117,7 +117,7 @@ async def spa_routing(request):
 async def asset_file(request):
     """提供assets目录下的静态文件"""
     path = request.path_params.get("path", "")
-    em_logger.debug(f"提供assets文件: {path}")
+    mcp_logger.debug(f"提供assets文件: {path}")
     file_path = os.path.join(ASSETS_DIR, path)
     
     if os.path.exists(file_path) and os.path.isfile(file_path):
@@ -134,7 +134,7 @@ async def asset_file(request):
 def get_static_mount():
     """获取静态文件挂载点"""
     if static_files is None:
-        em_logger.error("静态文件挂载点不存在")
+        mcp_logger.error("静态文件挂载点不存在")
         return None
     return static_files
 
@@ -142,7 +142,7 @@ def get_static_mount():
 def get_assets_mount():
     """获取assets目录的挂载点"""
     if assets_files is None:
-        em_logger.error("assets目录挂载点不存在")
+        mcp_logger.error("assets目录挂载点不存在")
         return None
     return assets_files
 

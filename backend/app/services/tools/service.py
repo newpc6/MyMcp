@@ -11,7 +11,7 @@ from ...core.config import settings
 from ...models.tools.schemas import ToolContent
 # 导入历史服务
 from ..history.service import HistoryService
-from ...utils.logging import em_logger
+from ...utils.logging import mcp_logger
 # 创建历史服务实例
 history_service = HistoryService()
 
@@ -28,11 +28,11 @@ class ToolService:
                 self._registered_tool_names = {
                     tool.name for tool in server_instance._tool_manager.list_tools()
                 }
-                em_logger.info(f"初始化时加载了 {len(self._registered_tool_names)} 个注册工具")
+                mcp_logger.info(f"初始化时加载了 {len(self._registered_tool_names)} 个注册工具")
             else:
-                em_logger.warning("初始化时server_instance未找到或未初始化")
+                mcp_logger.warning("初始化时server_instance未找到或未初始化")
         except Exception as e:
-            em_logger.error(f"初始化时无法从server_instance._tool_manager获取工具列表: {e}")
+            mcp_logger.error(f"初始化时无法从server_instance._tool_manager获取工具列表: {e}")
 
     def get_all_tools(self) -> List[Dict[str, Any]]:
         """获取所有工具信息"""
@@ -44,11 +44,11 @@ class ToolService:
                 self._registered_tool_names = {
                     tool.name for tool in server_instance._tool_manager.list_tools()
                 }
-                em_logger.info(f"更新时加载了 {len(self._registered_tool_names)} 个注册工具")
+                mcp_logger.info(f"更新时加载了 {len(self._registered_tool_names)} 个注册工具")
             else:
-                em_logger.warning("更新时server_instance未找到或未初始化")
+                mcp_logger.warning("更新时server_instance未找到或未初始化")
         except Exception as e:
-            em_logger.error(f"更新时无法从server_instance._tool_manager获取工具列表: {e}")
+            mcp_logger.error(f"更新时无法从server_instance._tool_manager获取工具列表: {e}")
             # 这里保留旧缓存
 
         tools = self.scan_tools()
@@ -128,13 +128,13 @@ class ToolService:
             if server_instance and hasattr(server_instance, '_tool_manager'):
                 registered_tools = server_instance._tool_manager.list_tools()
                 registered_tool_names = {tool.name for tool in registered_tools}
-                em_logger.info(f"从server_instance._tool_manager获取到的工具列表: {registered_tool_names}")
+                mcp_logger.info(f"从server_instance._tool_manager获取到的工具列表: {registered_tool_names}")
                 if not registered_tool_names:
-                    em_logger.warning("警告: server_instance._tool_manager中没有找到任何注册工具！")
+                    mcp_logger.warning("警告: server_instance._tool_manager中没有找到任何注册工具！")
             else:
-                em_logger.warning("警告: server_instance不存在或未初始化")
+                mcp_logger.warning("警告: server_instance不存在或未初始化")
         except Exception as e:
-            em_logger.error(f"获取已注册工具列表时出错: {e}")
+            mcp_logger.error(f"获取已注册工具列表时出错: {e}")
         
         # 更新实例变量，以便其他方法使用
         self._registered_tool_names = registered_tool_names
@@ -245,7 +245,7 @@ class ToolService:
                         }
                     else:
                         # 额外打印未注册的函数，帮助诊断
-                        em_logger.warning(
+                        mcp_logger.warning(
                             f"× 模块 {module_key} 中的函数 {obj.__name__} "
                             f"未在工具管理器中注册"
                         )

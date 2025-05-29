@@ -9,7 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
 from app.services.users import UserService
 from app.utils.response import error_response
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.core.config import settings
 from app.utils.cache import memory_cache
 # 重命名以确保使用正确的PyJWT库
@@ -71,7 +71,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             响应对象
         """
         path = request.url.path
-        em_logger.debug(f"处理请求: {path}")
+        mcp_logger.debug(f"处理请求: {path}")
         
         # 首先检查是否为API路径 - API路径的处理优先级高于静态资源
         if path.startswith("/api"):
@@ -84,7 +84,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         # 处理静态资源文件 - 完全不需要认证
         if self._is_static_resource(path):
-            em_logger.debug(f"允许访问静态资源: {path}")
+            mcp_logger.debug(f"允许访问静态资源: {path}")
             return await call_next(request)
         
         # 检查SSE路径
@@ -243,7 +243,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # 返回用户数据
             return payload, True
         except Exception as e:
-            em_logger.error(f"令牌验证失败: {str(e)}")
+            mcp_logger.error(f"令牌验证失败: {str(e)}")
             return None, False
     
     def _validate_egova_kb_token(self, token: str) -> Optional[Dict[str, Any]]:
@@ -262,7 +262,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             cached_user_data = memory_cache.get(cache_key)
             
             if cached_user_data:
-                em_logger.debug("使用缓存的EGova KB令牌数据")
+                mcp_logger.debug("使用缓存的EGova KB令牌数据")
                 return cached_user_data
             
             # 调用egovakb接口获取用户信息
@@ -278,13 +278,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
             
             if response.status_code != 200:
                 error_msg = f"调用egovakb接口失败: {response.status_code} {response.text}"
-                em_logger.error(error_msg)
+                mcp_logger.error(error_msg)
                 return None
             
             data = response.json()
             
             if data.get("code") != 200 or "data" not in data:
-                em_logger.error(f"egovakb返回错误: {data}")
+                mcp_logger.error(f"egovakb返回错误: {data}")
                 return None
             
             user_data = data["data"]
@@ -293,7 +293,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             email = user_data.get("email")
             
             if not external_id or not username:
-                em_logger.error(f"egovakb返回的用户数据不完整: {user_data}")
+                mcp_logger.error(f"egovakb返回的用户数据不完整: {user_data}")
                 return None
             
             # 检查用户是否已存在(根据外部ID)
@@ -333,7 +333,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
                 )
                 
                 if not new_user:
-                    em_logger.error(f"创建导入用户失败: {username}")
+                    mcp_logger.error(f"创建导入用户失败: {username}")
                     return None
                 
                 # 构建用户数据
@@ -356,7 +356,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             return result_data
             
         except Exception as e:
-            em_logger.error(f"验证EGova KB令牌失败: {str(e)}")
+            mcp_logger.error(f"验证EGova KB令牌失败: {str(e)}")
             return None
     
     def _generate_jwt_token(self, user_data: Dict[str, Any]) -> str:

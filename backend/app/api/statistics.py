@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, List
 
 from app.services.statistics.service import statistics_service
 from app.utils.response import success_response, error_response
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.utils.http import get_page_params
 
 async def get_service_statistics(request: Request):
@@ -145,7 +145,7 @@ async def get_tool_executions(request: Request):
         )
         return success_response(data)
     except Exception as e:
-        em_logger.error(f"获取工具执行记录时出错: {str(e)}")
+        mcp_logger.error(f"获取工具执行记录时出错: {str(e)}")
         return error_response(str(e))
 
 
@@ -167,7 +167,7 @@ async def refresh_statistics(request: Request):
             "details": result
         })
     except Exception as e:
-        em_logger.error(f"刷新统计数据时出错: {str(e)}")
+        mcp_logger.error(f"刷新统计数据时出错: {str(e)}")
         return error_response(str(e))
 
 
@@ -202,7 +202,7 @@ async def get_tool_executions_by_module(request: Request):
         )
         return success_response(data)
     except Exception as e:
-        em_logger.error(f"获取模块工具执行记录时出错: {str(e)}")
+        mcp_logger.error(f"获取模块工具执行记录时出错: {str(e)}")
         return error_response(str(e))
 
 
@@ -231,7 +231,7 @@ async def get_tool_executions_by_service(request: Request):
         )
         return success_response(data)
     except Exception as e:
-        em_logger.error(f"获取服务工具执行记录时出错: {str(e)}")
+        mcp_logger.error(f"获取服务工具执行记录时出错: {str(e)}")
         return error_response(str(e))
 
 
@@ -271,7 +271,7 @@ async def get_module_tool_rankings(request: Request):
         )
         return success_response(data)
     except Exception as e:
-        em_logger.error(f"获取模块工具排名时出错: {str(e)}")
+        mcp_logger.error(f"获取模块工具排名时出错: {str(e)}")
         return error_response(str(e))
 
 

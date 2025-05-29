@@ -6,7 +6,7 @@
 import os
 import importlib
 import re
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 # 迁移文件正则表达式：匹配V{数字}_{描述}.py格式
 MIGRATION_PATTERN = re.compile(r'^V(\d+)_.*\.py$')
@@ -20,7 +20,7 @@ def get_migration_files():
     
     # 确保目录存在
     if not os.path.exists(current_dir):
-        em_logger.warning(f"迁移目录不存在: {current_dir}")
+        mcp_logger.warning(f"迁移目录不存在: {current_dir}")
         return migrations
     
     # 遍历当前目录中的文件
@@ -48,6 +48,6 @@ def get_all_migrations():
             module = importlib.import_module(f"{package}.{module_name}")
             migrations.append(module)
         except ImportError as e:
-            em_logger.error(f"导入迁移模块 {module_name} 失败: {str(e)}")
+            mcp_logger.error(f"导入迁移模块 {module_name} 失败: {str(e)}")
     
     return migrations 

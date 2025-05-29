@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError, SQLAlchemyError
 from app.models.engine import engine, get_db
 from app.models.tools.tool_execution import ToolExecution
 from sqlalchemy.orm import sessionmaker
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 # 创建会话
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
@@ -82,13 +82,13 @@ class HistoryService:
                     
             except OperationalError as e:
                 retry_count += 1
-                em_logger.warning(
+                mcp_logger.warning(
                     f"数据库连接错误，正在进行第 {retry_count} 次重试: {str(e)}"
                 )
                 
                 # 如果达到最大重试次数，记录错误并返回
                 if retry_count >= max_retries:
-                    em_logger.error(f"记录工具执行失败，已达到最大重试次数: {str(e)}")
+                    mcp_logger.error(f"记录工具执行失败，已达到最大重试次数: {str(e)}")
                     return None
                     
                 # 重试前等待一段时间
@@ -102,7 +102,7 @@ class HistoryService:
                 self.db = SessionLocal()
                 
             except Exception as e:
-                em_logger.error(f"记录工具执行时出现未知错误: {str(e)}")
+                mcp_logger.error(f"记录工具执行时出现未知错误: {str(e)}")
                 return None
         
         return None
@@ -141,7 +141,7 @@ class HistoryService:
                 "data": [execution.to_dict() for execution in executions]
             }
         except SQLAlchemyError as e:
-            em_logger.error(f"获取工具执行记录时出错: {str(e)}")
+            mcp_logger.error(f"获取工具执行记录时出错: {str(e)}")
             # 重置会话
             try:
                 self.db.rollback()

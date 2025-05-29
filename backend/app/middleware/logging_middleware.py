@@ -4,6 +4,7 @@
 用于记录API请求和响应
 """
 
+import time
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
@@ -26,17 +27,15 @@ class APILoggingMiddleware(BaseHTTPMiddleware):
             
         Returns:
             响应对象
-        """
-        # 记录请求日志
-        log_api_call(request)
-        
+        """        
+        start_time = time.time()
         try:
             # 处理请求
             response = await call_next(request)
             # 记录响应日志
-            log_api_call(request, response)
+            log_api_call(request, response, start_time=start_time)
             return response
         except Exception as e:
             # 记录异常日志
-            log_api_call(request, error=e)
+            log_api_call(request, error=e, start_time=start_time)
             raise 

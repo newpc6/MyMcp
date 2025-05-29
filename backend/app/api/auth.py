@@ -10,7 +10,7 @@ import jwt as pyjwt  # 重命名以确保使用正确的PyJWT库
 
 from app.services.users import UserService, TenantService
 from app.core.config import settings
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.utils.response import success_response, error_response
 
 # JWT密钥
@@ -91,7 +91,7 @@ async def login(request: Request):
         return response
     
     except Exception as e:
-        em_logger.error(f"登录失败: {str(e)}")
+        mcp_logger.error(f"登录失败: {str(e)}")
         return error_response("登录处理过程中发生错误", code=500, http_status_code=500)
 
 
@@ -232,7 +232,7 @@ async def create_user(request: Request):
         }, "创建用户成功")
         
     except Exception as e:
-        em_logger.error(f"创建用户失败: {str(e)}")
+        mcp_logger.error(f"创建用户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -306,7 +306,7 @@ async def update_user(request: Request):
     except ValueError:
         return error_response("无效的用户ID", code=400, http_status_code=400)
     except Exception as e:
-        em_logger.error(f"更新用户失败: {str(e)}")
+        mcp_logger.error(f"更新用户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -338,7 +338,7 @@ async def delete_user(request: Request):
     except ValueError:
         return error_response("无效的用户ID", code=400, http_status_code=400)
     except Exception as e:
-        em_logger.error(f"删除用户失败: {str(e)}")
+        mcp_logger.error(f"删除用户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -384,7 +384,7 @@ async def change_password(request: Request):
         return success_response(message="密码修改成功")
         
     except Exception as e:
-        em_logger.error(f"修改密码失败: {str(e)}")
+        mcp_logger.error(f"修改密码失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -479,7 +479,7 @@ async def create_tenant(request: Request):
         }, "创建租户成功")
         
     except Exception as e:
-        em_logger.error(f"创建租户失败: {str(e)}")
+        mcp_logger.error(f"创建租户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -535,7 +535,7 @@ async def update_tenant(request: Request):
     except ValueError:
         return error_response("无效的租户ID", code=400, http_status_code=400)
     except Exception as e:
-        em_logger.error(f"更新租户失败: {str(e)}")
+        mcp_logger.error(f"更新租户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -562,7 +562,7 @@ async def delete_tenant(request: Request):
     except ValueError:
         return error_response("无效的租户ID", code=400, http_status_code=400)
     except Exception as e:
-        em_logger.error(f"删除租户失败: {str(e)}")
+        mcp_logger.error(f"删除租户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 
@@ -604,7 +604,7 @@ async def import_platform_user(request: Request):
         return success_response(user_data, message)
         
     except Exception as e:
-        em_logger.error(f"导入用户失败: {str(e)}")
+        mcp_logger.error(f"导入用户失败: {str(e)}")
         return error_response("处理请求时发生错误", code=500, http_status_code=500)
 
 

@@ -12,7 +12,7 @@ from pytz import timezone
 
 from app.core.config import settings
 from app.services.statistics.service import statistics_service
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 
 # 默认统计任务间隔（分钟）
@@ -37,11 +37,11 @@ def update_statistics():
     try:
         tz = timezone('Asia/Shanghai')
         current_time = datetime.now(tz).strftime('%Y-%m-%d %H:%M:%S')
-        em_logger.info(f"开始执行统计数据定时更新任务: {current_time}")
+        mcp_logger.info(f"开始执行统计数据定时更新任务: {current_time}")
         result = statistics_service.refresh_all_statistics()
-        em_logger.info(f"统计数据更新完成: {result}")
+        mcp_logger.info(f"统计数据更新完成: {result}")
     except Exception as e:
-        em_logger.error(f"执行统计数据定时更新任务出错: {str(e)}")
+        mcp_logger.error(f"执行统计数据定时更新任务出错: {str(e)}")
 
 
 def run_scheduler():
@@ -62,7 +62,7 @@ def start_statistics_scheduler():
     根据配置的间隔时间，定期执行统计数据更新任务
     """
     interval = get_statistics_interval()
-    em_logger.info(f"启动统计数据定时更新任务，间隔时间: {interval}分钟")
+    mcp_logger.info(f"启动统计数据定时更新任务，间隔时间: {interval}分钟")
     
     # 设置定时任务
     schedule.every(interval).minutes.do(update_statistics)
@@ -74,6 +74,6 @@ def start_statistics_scheduler():
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()
     
-    em_logger.info("统计数据定时任务已成功启动")
+    mcp_logger.info("统计数据定时任务已成功启动")
     
     return scheduler_thread 

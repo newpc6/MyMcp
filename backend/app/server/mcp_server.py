@@ -15,7 +15,7 @@ from app.models.engine import get_db
 
 # 导入配置和基础模块
 from ..core.config import settings
-from ..utils.logging import em_logger
+from ..utils.logging import mcp_logger
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
 
@@ -48,7 +48,7 @@ def add_tool(
         doc: 工具文档，如果不提供则使用函数文档
     """
     if server_instance is None:
-        em_logger.warning("MCP服务器尚未启动，无法添加工具")
+        mcp_logger.warning("MCP服务器尚未启动，无法添加工具")
         return func
 
     tool_name = name or func.__name__
@@ -60,15 +60,15 @@ def add_tool(
             tool.name for tool in server_instance._tool_manager.list_tools()
         }
         if tool_name in existing_tools:
-            em_logger.warning(f"工具 {tool_name} 已存在，将先移除")
+            mcp_logger.warning(f"工具 {tool_name} 已存在，将先移除")
             remove_tool(tool_name)
     except Exception as e:
-        em_logger.error(f"检查现有工具时出错: {str(e)}")
+        mcp_logger.error(f"检查现有工具时出错: {str(e)}")
 
     # 使用mcp的tool装饰器添加工具
     server_instance.tool(name=tool_name, description=tool_doc)(func)
 
-    em_logger.info(f"已成功添加工具: {tool_name}")
+    mcp_logger.info(f"已成功添加工具: {tool_name}")
     return func  # 返回函数便于链式调用
 
 
@@ -83,7 +83,7 @@ def remove_tool(tool_name: str) -> bool:
         bool: 是否成功移除
     """
     if server_instance is None:
-        em_logger.warning("MCP服务器尚未启动，无法移除工具")
+        mcp_logger.warning("MCP服务器尚未启动，无法移除工具")
         return False
 
     try:
@@ -91,14 +91,14 @@ def remove_tool(tool_name: str) -> bool:
         if (hasattr(server_instance._tool_manager, "_tools")
                 and tool_name in server_instance._tool_manager._tools):
             del server_instance._tool_manager._tools[tool_name]
-            em_logger.info(f"已从工具管理器中移除工具: {tool_name}")
+            mcp_logger.info(f"已从工具管理器中移除工具: {tool_name}")
 
             return True
         else:
-            em_logger.warning(f"工具 {tool_name} 不存在，无需移除")
+            mcp_logger.warning(f"工具 {tool_name} 不存在，无需移除")
             return False
     except Exception as e:
-        em_logger.error(f"移除工具 {tool_name} 时出错: {str(e)}")
+        mcp_logger.error(f"移除工具 {tool_name} 时出错: {str(e)}")
         return False
 
 def get_service_by_id(id: int):
@@ -112,7 +112,7 @@ def get_service_by_id(id: int):
 def update_service_params(id: int, config_params: Dict[str, Any]):
     """更新服务参数"""
     if server_instance is None:
-        em_logger.warning("MCP服务器尚未启动，无法更新服务参数")
+        mcp_logger.warning("MCP服务器尚未启动，无法更新服务参数")
         return False
     
     with get_db() as db:
@@ -139,7 +139,7 @@ def get_enabled_tools() -> List[str]:
             tool.name for tool in server_instance._tool_manager.list_tools()
         ]
     except Exception as e:
-        em_logger.error(f"获取启用工具列表时出错: {str(e)}")
+        mcp_logger.error(f"获取启用工具列表时出错: {str(e)}")
         return []
 
 
@@ -168,7 +168,7 @@ def is_running() -> bool:
         tools = get_enabled_tools()
         return len(tools) > 0
     except Exception as e:
-        em_logger.error(f"检查MCP运行状态时出错: {str(e)}")
+        mcp_logger.error(f"检查MCP运行状态时出错: {str(e)}")
         return False
 
 
@@ -206,20 +206,20 @@ def stop_mcp_server():
         try:
             server_instance.stop()
             server_instance = None
-            em_logger.info("已停止MCP服务器")
+            mcp_logger.info("已停止MCP服务器")
             return True
         except Exception as e:
-            em_logger.error(f"停止MCP服务器时出错: {str(e)}")
+            mcp_logger.error(f"停止MCP服务器时出错: {str(e)}")
             return False
     return False
 
 
 def restart_mcp_server():
-    em_logger.info("正在重启MCP服务器...")
+    mcp_logger.info("正在重启MCP服务器...")
     stop_mcp_server()
     time.sleep(1)  # 等待资源释放
     start_mcp_server()
-    em_logger.info("MCP服务器已重新启动")
+    mcp_logger.info("MCP服务器已重新启动")
     return True
 
 
@@ -227,7 +227,7 @@ def get_mcp_server():
     main_thread = threading.main_thread()
     current_thread = threading.current_thread()
     global server_instance
-    em_logger.info(
+    mcp_logger.info(
         "获取MCP变量，主线程：%s 当前线程：%s，是否是主线程：%s， "
         "进程ID：%s， server_instance：%s",
         main_thread, current_thread, main_thread == current_thread,
@@ -264,7 +264,7 @@ def start_mcp_server():
     app = server_instance.sse_app()
     
     # 输出CORS配置信息
-    em_logger.info(
+    mcp_logger.info(
         f"CORS配置: allow_origins={settings.CORS_ORIGINS}, "
         f"allow_credentials={settings.CORS_CREDENTIALS}"
     )
@@ -287,7 +287,7 @@ def start_mcp_server():
     get_router(app)
     # 保存服务器实例
     # server_instance = server
-    em_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
+    mcp_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
         
     global uni_server
     config = uvicorn.Config(
@@ -306,17 +306,17 @@ def start_mcp_server():
             start_statistics_scheduler
         )
         start_statistics_scheduler()
-        em_logger.info("统计数据定时任务已启动")
+        mcp_logger.info("统计数据定时任务已启动")
     except Exception as e:
-        em_logger.error(f"启动统计数据定时任务时出错: {str(e)}")
+        mcp_logger.error(f"启动统计数据定时任务时出错: {str(e)}")
 
     # 启动缓存清理定时任务
     try:
         from app.services.schedule_service import start_cache_clean_scheduler
         start_cache_clean_scheduler()
-        em_logger.info("缓存清理定时任务已启动")
+        mcp_logger.info("缓存清理定时任务已启动")
     except Exception as e:
-        em_logger.error(f"启动缓存清理定时任务时出错: {str(e)}")
+        mcp_logger.error(f"启动缓存清理定时任务时出错: {str(e)}")
 
     # 启动服务器
     if threading.current_thread() is not threading.main_thread():
@@ -325,10 +325,10 @@ def start_mcp_server():
 
     # 这是阻塞调用
     try:
-        em_logger.info(f"启动MCP服务器... 端口: {settings.PORT}")
+        mcp_logger.info(f"启动MCP服务器... 端口: {settings.PORT}")
         anyio.run(run_sse_async, app)
     except Exception as e:
-        em_logger.error(f"启动MCP服务器时出错: {str(e)}")
+        mcp_logger.error(f"启动MCP服务器时出错: {str(e)}")
     return server_instance
 
 

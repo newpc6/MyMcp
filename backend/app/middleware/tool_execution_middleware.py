@@ -13,7 +13,7 @@ from starlette.types import ASGIApp
 from starlette.responses import Response
 from starlette.datastructures import MutableHeaders
 
-from ..utils.logging import em_logger
+from ..utils.logging import mcp_logger
 from ..services.history.service import HistoryService
 from ..models.engine import get_db
 from ..models.modules.mcp_services import McpService
@@ -66,13 +66,13 @@ class ToolExecutionMiddleware(BaseHTTPMiddleware):
                     if service:
                         module_id = service.module_id
             except Exception as e:
-                em_logger.warning(f"查询服务关联模块时出错: {str(e)}")        
+                mcp_logger.warning(f"查询服务关联模块时出错: {str(e)}")        
             try:
                 # 尝试获取请求参数
                 if request.method in ["POST", "PUT"]:
                     try:
                         body = json.loads(body_bytes)
-                        em_logger.info(f"{path} 请求体: {body}")
+                        mcp_logger.info(f"{path} 请求体: {body}")
                         
                         method = body.get("method")
                         if method == "tools/call":
@@ -80,11 +80,11 @@ class ToolExecutionMiddleware(BaseHTTPMiddleware):
                             tool_name = params.get("name")
                             parameters = params.get("arguments", {})
                     except Exception as e:
-                        em_logger.warning(f"解析请求体时出错: {str(e)}")            
+                        mcp_logger.warning(f"解析请求体时出错: {str(e)}")            
                 # 处理请求
                 return await call_next(request)       
             except Exception as e:
-                em_logger.error(f"处理MCP工具执行时出错: {str(e)}")
+                mcp_logger.error(f"处理MCP工具执行时出错: {str(e)}")
                 status = "error"
                 # 继续处理请求，不中断
                 return await call_next(request)        
@@ -105,13 +105,13 @@ class ToolExecutionMiddleware(BaseHTTPMiddleware):
                             status=status,
                             execution_time=execution_time
                         )
-                        em_logger.info(
+                        mcp_logger.info(
                             f"记录工具执行: {tool_name}, 服务: {service_id}, "
                             f"模块: {module_id}, 状态: {status}, "
                             f"执行时间: {execution_time}ms"
                         )
                     except Exception as e:
-                        em_logger.error(f"记录工具执行时出错: {str(e)}")
+                        mcp_logger.error(f"记录工具执行时出错: {str(e)}")
     
     def _is_tool_execution_path(self, path: str, body_bytes: bytes) -> bool:
         """检查路径是否为MCP工具执行路径"""
@@ -123,6 +123,6 @@ class ToolExecutionMiddleware(BaseHTTPMiddleware):
                 if method == "tools/call":
                     return True
             except Exception as e:
-                em_logger.warning(f"解析请求体时出错: {str(e)}")
+                mcp_logger.warning(f"解析请求体时出错: {str(e)}")
                 return False
         return False

@@ -12,7 +12,7 @@ from pytz import timezone
 
 from app.models.engine import get_db
 from app.models.modules.users import User, Tenant, UserTenant
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.core.config import settings
 from app.utils.cache import memory_cache
 
@@ -42,7 +42,7 @@ class UserService:
                 user_query = select(User).where(User.username == username)
                 existing_user = db.execute(user_query).scalar_one_or_none()
                 if existing_user:
-                    em_logger.warning(f"用户名 {username} 已存在")
+                    mcp_logger.warning(f"用户名 {username} 已存在")
                     return None
                 
                 # 创建新用户
@@ -79,11 +79,11 @@ class UserService:
                 
                 db.commit()
                 db.refresh(new_user)
-                em_logger.info(f"创建用户成功: {username}")
+                mcp_logger.info(f"创建用户成功: {username}")
                 return new_user
                 
         except Exception as e:
-            em_logger.error(f"创建用户失败: {str(e)}")
+            mcp_logger.error(f"创建用户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -94,7 +94,7 @@ class UserService:
                 query = select(User).where(User.id == user_id)
                 return db.execute(query).scalar_one_or_none()
         except Exception as e:
-            em_logger.error(f"获取用户失败: {str(e)}")
+            mcp_logger.error(f"获取用户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -105,7 +105,7 @@ class UserService:
                 query = select(User).where(User.username == username)
                 return db.execute(query).scalar_one_or_none()
         except Exception as e:
-            em_logger.error(f"获取用户失败: {str(e)}")
+            mcp_logger.error(f"获取用户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -119,7 +119,7 @@ class UserService:
                 )
                 return db.execute(query).scalar_one_or_none()
         except Exception as e:
-            em_logger.error(f"获取用户失败: {str(e)}")
+            mcp_logger.error(f"获取用户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -143,7 +143,7 @@ class UserService:
                 ).scalar_one_or_none()
                 
                 if not user:
-                    em_logger.warning(f"用户ID {user_id} 不存在")
+                    mcp_logger.warning(f"用户ID {user_id} 不存在")
                     return False
                 
                 # 准备更新值
@@ -178,14 +178,14 @@ class UserService:
                     )
                 
                 db.commit()
-                em_logger.info(f"更新用户成功: {user_id}")
+                mcp_logger.info(f"更新用户成功: {user_id}")
                 return True
                 
         except IntegrityError:
-            em_logger.error(f"更新用户失败: 用户名 {username} 已存在")
+            mcp_logger.error(f"更新用户失败: 用户名 {username} 已存在")
             return False
         except Exception as e:
-            em_logger.error(f"更新用户失败: {str(e)}")
+            mcp_logger.error(f"更新用户失败: {str(e)}")
             return False
     
     @staticmethod
@@ -199,7 +199,7 @@ class UserService:
                 ).scalar_one_or_none()
                 
                 if not user:
-                    em_logger.warning(f"用户ID {user_id} 不存在")
+                    mcp_logger.warning(f"用户ID {user_id} 不存在")
                     return False
                 
                 # 删除用户与租户的关联
@@ -213,11 +213,11 @@ class UserService:
                 )
                 
                 db.commit()
-                em_logger.info(f"删除用户成功: {user_id}")
+                mcp_logger.info(f"删除用户成功: {user_id}")
                 return True
                 
         except Exception as e:
-            em_logger.error(f"删除用户失败: {str(e)}")
+            mcp_logger.error(f"删除用户失败: {str(e)}")
             return False
     
     @staticmethod
@@ -228,7 +228,7 @@ class UserService:
                 query = select(User)
                 return db.execute(query).scalars().all()
         except Exception as e:
-            em_logger.error(f"获取所有用户失败: {str(e)}")
+            mcp_logger.error(f"获取所有用户失败: {str(e)}")
             return []
     
     @staticmethod
@@ -242,7 +242,7 @@ class UserService:
                 ).scalar_one_or_none()
                 
                 if not user:
-                    em_logger.warning(f"用户ID {user_id} 不存在")
+                    mcp_logger.warning(f"用户ID {user_id} 不存在")
                     return False
                 
                 # 删除现有关联
@@ -268,11 +268,11 @@ class UserService:
                         db.add(user_tenant)
                 
                 db.commit()
-                em_logger.info(f"更新用户租户关联成功: {user_id}")
+                mcp_logger.info(f"更新用户租户关联成功: {user_id}")
                 return True
                 
         except Exception as e:
-            em_logger.error(f"更新用户租户关联失败: {str(e)}")
+            mcp_logger.error(f"更新用户租户关联失败: {str(e)}")
             return False
 
     @staticmethod
@@ -288,7 +288,7 @@ class UserService:
                 
                 return None
         except Exception as e:
-            em_logger.error(f"用户登录验证失败: {str(e)}")
+            mcp_logger.error(f"用户登录验证失败: {str(e)}")
             return None
             
     @staticmethod
@@ -311,7 +311,7 @@ class UserService:
             cached_user_data = memory_cache.get(cache_key)
             
             if cached_user_data:
-                em_logger.debug("使用缓存的EGova KB用户数据")
+                mcp_logger.debug("使用缓存的EGova KB用户数据")
                 # 如果指定了租户ID，则更新用户租户关联
                 if tenant_ids and "id" in cached_user_data:
                     UserService.update_user_tenants(
@@ -346,13 +346,13 @@ class UserService:
                     f"调用egovakb接口失败: {response.status_code} "
                     f"{response.text}"
                 )
-                em_logger.error(error_msg)
+                mcp_logger.error(error_msg)
                 return None
             
             data = response.json()
             
             if data.get("code") != 200 or "data" not in data:
-                em_logger.error(f"egovakb返回错误: {data}")
+                mcp_logger.error(f"egovakb返回错误: {data}")
                 return None
             
             user_data = data["data"]
@@ -361,7 +361,7 @@ class UserService:
             email = user_data.get("email")
             
             if not external_id or not username:
-                em_logger.error(f"egovakb返回的用户数据不完整: {user_data}")
+                mcp_logger.error(f"egovakb返回的用户数据不完整: {user_data}")
                 return None
             
             # 检查用户是否已存在(根据外部ID)
@@ -426,7 +426,7 @@ class UserService:
             )
             
             if not new_user:
-                em_logger.error(f"创建导入用户失败: {username}")
+                mcp_logger.error(f"创建导入用户失败: {username}")
                 return None
             
             # 获取用户关联的租户
@@ -459,7 +459,7 @@ class UserService:
             return result
             
         except Exception as e:
-            em_logger.error(f"导入用户失败: {str(e)}")
+            mcp_logger.error(f"导入用户失败: {str(e)}")
             return None
 
 
@@ -480,7 +480,7 @@ class TenantService:
                 tenant_query = select(Tenant).where(Tenant.code == code)
                 existing_tenant = db.execute(tenant_query).scalar_one_or_none()
                 if existing_tenant:
-                    em_logger.warning(f"租户代码 {code} 已存在")
+                    mcp_logger.warning(f"租户代码 {code} 已存在")
                     return None
                 
                 # 如果指定了父租户，检查父租户是否存在
@@ -488,7 +488,7 @@ class TenantService:
                     parent_query = select(Tenant).where(Tenant.id == parent_id)
                     parent_tenant = db.execute(parent_query).scalar_one_or_none()
                     if not parent_tenant:
-                        em_logger.warning(f"父租户ID {parent_id} 不存在")
+                        mcp_logger.warning(f"父租户ID {parent_id} 不存在")
                         return None
                 
                 # 创建新租户
@@ -504,11 +504,11 @@ class TenantService:
                 db.add(new_tenant)
                 db.commit()
                 db.refresh(new_tenant)
-                em_logger.info(f"创建租户成功: {name}")
+                mcp_logger.info(f"创建租户成功: {name}")
                 return new_tenant
                 
         except Exception as e:
-            em_logger.error(f"创建租户失败: {str(e)}")
+            mcp_logger.error(f"创建租户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -519,7 +519,7 @@ class TenantService:
                 query = select(Tenant).where(Tenant.id == tenant_id)
                 return db.execute(query).scalar_one_or_none()
         except Exception as e:
-            em_logger.error(f"获取租户失败: {str(e)}")
+            mcp_logger.error(f"获取租户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -530,7 +530,7 @@ class TenantService:
                 query = select(Tenant).where(Tenant.code == code)
                 return db.execute(query).scalar_one_or_none()
         except Exception as e:
-            em_logger.error(f"获取租户失败: {str(e)}")
+            mcp_logger.error(f"获取租户失败: {str(e)}")
             return None
     
     @staticmethod
@@ -550,12 +550,12 @@ class TenantService:
                 ).scalar_one_or_none()
                 
                 if not tenant:
-                    em_logger.warning(f"租户ID {tenant_id} 不存在")
+                    mcp_logger.warning(f"租户ID {tenant_id} 不存在")
                     return False
                 
                 # 检查是否形成循环引用
                 if parent_id and tenant_id == parent_id:
-                    em_logger.warning(f"租户不能将自己设为父租户")
+                    mcp_logger.warning(f"租户不能将自己设为父租户")
                     return False
                 
                 # 如果指定了父租户，检查父租户是否存在
@@ -563,14 +563,14 @@ class TenantService:
                     parent_query = select(Tenant).where(Tenant.id == parent_id)
                     parent_tenant = db.execute(parent_query).scalar_one_or_none()
                     if not parent_tenant:
-                        em_logger.warning(f"父租户ID {parent_id} 不存在")
+                        mcp_logger.warning(f"父租户ID {parent_id} 不存在")
                         return False
                     
                     # 检查是否会形成循环引用
                     current_parent = parent_tenant
                     while current_parent and current_parent.parent_id:
                         if current_parent.parent_id == tenant_id:
-                            em_logger.warning(f"检测到循环依赖，无法设置父租户")
+                            mcp_logger.warning(f"检测到循环依赖，无法设置父租户")
                             return False
                         parent_query = select(Tenant).where(Tenant.id == current_parent.parent_id)
                         current_parent = db.execute(parent_query).scalar_one_or_none()
@@ -596,11 +596,11 @@ class TenantService:
                     )
                 
                 db.commit()
-                em_logger.info(f"更新租户成功: {tenant_id}")
+                mcp_logger.info(f"更新租户成功: {tenant_id}")
                 return True
                 
         except Exception as e:
-            em_logger.error(f"更新租户失败: {str(e)}")
+            mcp_logger.error(f"更新租户失败: {str(e)}")
             return False
     
     @staticmethod
@@ -614,7 +614,7 @@ class TenantService:
                 ).scalar_one_or_none()
                 
                 if not tenant:
-                    em_logger.warning(f"租户ID {tenant_id} 不存在")
+                    mcp_logger.warning(f"租户ID {tenant_id} 不存在")
                     return False
                 
                 # 删除用户与租户的关联
@@ -628,11 +628,11 @@ class TenantService:
                 )
                 
                 db.commit()
-                em_logger.info(f"删除租户成功: {tenant_id}")
+                mcp_logger.info(f"删除租户成功: {tenant_id}")
                 return True
                 
         except Exception as e:
-            em_logger.error(f"删除租户失败: {str(e)}")
+            mcp_logger.error(f"删除租户失败: {str(e)}")
             return False
     
     @staticmethod
@@ -643,7 +643,7 @@ class TenantService:
                 query = select(Tenant)
                 return db.execute(query).scalars().all()
         except Exception as e:
-            em_logger.error(f"获取所有租户失败: {str(e)}")
+            mcp_logger.error(f"获取所有租户失败: {str(e)}")
             return []
     
     @staticmethod
@@ -676,11 +676,11 @@ class TenantService:
                     parent = tenant_map[tenant_data["parent_id"]]
                     parent["children"].append(tenant_data)
             
-            em_logger.info(f"获取租户树成功，共{len(all_tenants)}个租户")
+            mcp_logger.info(f"获取租户树成功，共{len(all_tenants)}个租户")
             return root_nodes
             
         except Exception as e:
-            em_logger.error(f"获取租户树失败: {str(e)}")
+            mcp_logger.error(f"获取租户树失败: {str(e)}")
             return []
     
     @staticmethod
@@ -694,7 +694,7 @@ class TenantService:
                 ).scalar_one_or_none()
                 
                 if not user:
-                    em_logger.warning(f"用户ID {user_id} 不存在")
+                    mcp_logger.warning(f"用户ID {user_id} 不存在")
                     return []
                 
                 # 获取用户关联的租户
@@ -706,5 +706,5 @@ class TenantService:
                 return db.execute(query).scalars().all()
                 
         except Exception as e:
-            em_logger.error(f"获取用户租户失败: {str(e)}")
+            mcp_logger.error(f"获取用户租户失败: {str(e)}")
             return [] 

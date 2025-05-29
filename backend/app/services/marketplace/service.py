@@ -17,7 +17,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule, McpTool
 from app.core.utils import now_beijing
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.permissions import add_edit_permission
 from app.models.group.group import McpGroup
@@ -213,9 +213,9 @@ class MarketplaceService:
             
             except Exception as e:
                 import traceback
-                from app.utils.logging import em_logger
-                em_logger.error(f"解析模块代码时出错: {str(e)}")
-                em_logger.error(traceback.format_exc())
+                from app.utils.logging import mcp_logger
+                mcp_logger.error(f"解析模块代码时出错: {str(e)}")
+                mcp_logger.error(traceback.format_exc())
                 return []
             
             return tools
@@ -245,10 +245,10 @@ class MarketplaceService:
                 stats["total"] = len(modules)
                 
                 if not modules:
-                    em_logger.warning("数据库中没有找到MCP模块")
+                    mcp_logger.warning("数据库中没有找到MCP模块")
                     return stats
                 
-                em_logger.info(f"在数据库中找到{len(modules)}个MCP模块")
+                mcp_logger.info(f"在数据库中找到{len(modules)}个MCP模块")
                 
                 # 创建临时目录存放模块代码
                 temp_dir = tempfile.mkdtemp(prefix="mcp_modules_")
@@ -260,7 +260,7 @@ class MarketplaceService:
                 # 处理每个模块
                 for module in modules:
                     if not module.code:
-                        em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
+                        mcp_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
                         continue
                     
                     # 创建临时模块文件
@@ -291,7 +291,7 @@ class MarketplaceService:
                                 stats["tools"] += tool_count
                                 
                     except Exception as e:
-                        em_logger.error(
+                        mcp_logger.error(
                             f"处理模块 {module.name} 失败: {str(e)}"
                         )
                 
@@ -300,13 +300,13 @@ class MarketplaceService:
                     import shutil
                     shutil.rmtree(temp_dir)
                 except Exception as e:
-                    em_logger.warning(f"清理临时目录失败: {str(e)}")
+                    mcp_logger.warning(f"清理临时目录失败: {str(e)}")
                 
                 db.commit()
                 return stats
                 
         except Exception as e:
-            em_logger.error(f"扫描模块时出错: {str(e)}")
+            mcp_logger.error(f"扫描模块时出错: {str(e)}")
             return stats
     
     def _scan_module_tools(
@@ -533,7 +533,7 @@ class MarketplaceService:
                 db.commit()
                 return True
         except SQLAlchemyError as e:
-            em_logger.error(f"删除模块错误: {str(e)}")
+            mcp_logger.error(f"删除模块错误: {str(e)}")
             return False
             
     def clone_module(
@@ -590,7 +590,7 @@ class MarketplaceService:
                 
                 return new_module.to_dict()
         except SQLAlchemyError as e:
-            em_logger.error(f"复制模块错误: {str(e)}")
+            mcp_logger.error(f"复制模块错误: {str(e)}")
             return None
 
 

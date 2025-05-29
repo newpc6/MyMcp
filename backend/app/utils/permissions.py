@@ -2,7 +2,7 @@
 权限相关工具函数
 """
 from typing import Dict, List, Optional, Union, Set
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 
 def can_edit(user_id, item_owner_id, is_admin=False):
@@ -115,7 +115,7 @@ def _get_usernames_by_ids(user_ids: Set[int]) -> Dict[int, str]:
         return username_map
     except Exception as e:
         # 如果发生错误，例如数据库连接问题或模型导入问题，返回空字典
-        em_logger.error(f"获取用户名失败: {e}")
+        mcp_logger.error(f"获取用户名失败: {e}")
         return {}
 
 

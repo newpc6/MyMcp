@@ -12,7 +12,7 @@ from . import (
     auth, tools, mcp_service, history,
     execution, log, marketplace, statistics, static, group
 )
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 async def api_root(request):
     """API根路由"""
@@ -56,7 +56,7 @@ def get_router(app) -> None:
     
     # 添加MCP服务路由
     for route in mcp_service.get_router():
-        em_logger.info(f"添加MCP服务路由: {settings.API_PREFIX}/service{route.path}")
+        mcp_logger.info(f"添加MCP服务路由: {settings.API_PREFIX}/service{route.path}")
         app.add_route(
             f"{settings.API_PREFIX}/service{route.path}", 
             route.endpoint, 
@@ -127,8 +127,8 @@ def get_router(app) -> None:
                 methods=route["methods"],
                 name=route["name"]
             )
-            em_logger.info(f"添加静态文件路由: {route['path']}")
+            mcp_logger.info(f"添加静态文件路由: {route['path']}")
     except Exception as e:
-        em_logger.error(f"配置静态资源路由时出错: {str(e)}")
+        mcp_logger.error(f"配置静态资源路由时出错: {str(e)}")
 
     return app

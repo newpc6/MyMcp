@@ -15,7 +15,7 @@ from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpTool, McpModule
 from app.services.execution.executor import execute_tool_by_name
 from app.services.mcp_service.service_manager import service_manager
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 async def execute_tool(request: Request):
     """
@@ -137,7 +137,7 @@ async def execute_module_function(request: Request):
                 # 动态导入模块
                 spec = importlib.util.find_spec(module_name)
                 if not spec:
-                    em_logger.error(f"无法加载模块: {module_name}")
+                    mcp_logger.error(f"无法加载模块: {module_name}")
                     return error_response("无法加载模块", code=500, http_status_code=500)
                 
                 imported_module = importlib.import_module(module_name)

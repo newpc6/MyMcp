@@ -17,7 +17,7 @@ from starlette.requests import Request
 import re
 
 from app.core.config import settings
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.modules.mcp_services import McpService
@@ -58,7 +58,7 @@ class McpServiceManager:
     def _load_services_from_db(self):
         """从数据库中加载已存在的服务"""
         if not self._main_app:
-            em_logger.warning("主应用程序未初始化，无法加载服务")
+            mcp_logger.warning("主应用程序未初始化，无法加载服务")
             return
         try:
             with get_db() as db:
@@ -75,16 +75,16 @@ class McpServiceManager:
                         ).first()
                         if module:
                             self._create_mcp(service, module)
-                            em_logger.info(
+                            mcp_logger.info(
                                 f"已启动mcp服务: {service.service_uuid} {module.name}")
                     except Exception as e:
                         msg = f"启动mcp服务失败 {service.service_uuid} {module.name}: {str(e)}"
-                        em_logger.error(msg)
+                        mcp_logger.error(msg)
                         service.status = "error"
                         service.error_message = str(e)
                         db.commit()
         except Exception as e:
-            em_logger.error(f"启动mcp服务失败: {str(e)}")
+            mcp_logger.error(f"启动mcp服务失败: {str(e)}")
 
     def _get_sse_path(self, service_uuid: str) -> str:
         """获取SSE URL"""
@@ -132,10 +132,10 @@ class McpServiceManager:
                     # 验证必填参数
                     for key, schema in config_schema.items():
                         if schema.get('required', False) and (not config_params or key not in config_params or not config_params[key]):
-                            em_logger.error(f"缺少必填参数: {key}")
+                            mcp_logger.error(f"缺少必填参数: {key}")
                             raise ValueError(f"缺少必填参数: {key}")
                 except json.JSONDecodeError:
-                    em_logger.error(f"config_schema解析失败: {module.config_schema}")
+                    mcp_logger.error(f"config_schema解析失败: {module.config_schema}")
                     pass  # 如果解析失败则忽略
 
             # 检查权限: 非管理员只能发布自己创建的或公开的模块
@@ -181,7 +181,7 @@ class McpServiceManager:
                 service_record.status = "error"
                 service_record.error_message = str(e)
                 db.commit()
-                em_logger.error(f"发布服务失败: {str(e)}")
+                mcp_logger.error(f"发布服务失败: {str(e)}")
                 raise e
 
     def stop_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
@@ -238,9 +238,9 @@ class McpServiceManager:
         for route in routes_to_delete:
             try:
                 self._main_app.routes.remove(route)
-                em_logger.info(f"成功删除路由: {route.path}")
+                mcp_logger.info(f"成功删除路由: {route.path}")
             except Exception as e:
-                em_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
+                mcp_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
 
         # 更新数据库状态
         with get_db() as db:
@@ -279,7 +279,7 @@ class McpServiceManager:
 
             # 检查权限：非管理员只能启动自己创建的服务
             if not is_admin and user_id is not None and service.user_id != user_id:
-                em_logger.warning(f"用户 {user_id} 尝试启动非自己创建的服务 {service_uuid}")
+                mcp_logger.warning(f"用户 {user_id} 尝试启动非自己创建的服务 {service_uuid}")
                 return False
 
             # 检查模块是否存在
@@ -300,7 +300,7 @@ class McpServiceManager:
                 db.refresh(service)
                 return True
             except Exception as e:
-                em_logger.error(f"启动服务失败 {service_uuid}: {str(e)}")
+                mcp_logger.error(f"启动服务失败 {service_uuid}: {str(e)}")
                 return False
 
     def delete_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
@@ -324,7 +324,7 @@ class McpServiceManager:
 
             # 检查权限：非管理员只能删除自己创建的服务
             if not is_admin and user_id is not None and service.user_id != user_id:
-                em_logger.warning(f"用户 {user_id} 尝试删除非自己创建的服务 {service_uuid}")
+                mcp_logger.warning(f"用户 {user_id} 尝试删除非自己创建的服务 {service_uuid}")
                 return False
 
         # 先停止服务
@@ -355,7 +355,7 @@ class McpServiceManager:
                 ).first()
                 return service
         except Exception as e:
-            em_logger.error(f"获取指定模块ID的服务失败: {str(e)}")
+            mcp_logger.error(f"获取指定模块ID的服务失败: {str(e)}")
             return None
 
     def _get_full_sse_url(self, sse_url: str, request: Optional[Request] = None) -> str:
@@ -534,7 +534,7 @@ class McpServiceManager:
             service_uuid: 服务UUID，用于找到对应的模块并注册其工具
         """
         if not service_uuid or service_uuid not in self._running_services:
-            em_logger.error(f"无效的服务UUID: {service_uuid}")
+            mcp_logger.error(f"无效的服务UUID: {service_uuid}")
             return
 
         try:
@@ -551,7 +551,7 @@ class McpServiceManager:
             module_code = code
 
             # 数据库会话结束后，使用复制的数据而不是数据库对象
-            em_logger.info(f"为服务 {service_uuid} 加载模块: {module_name}")
+            mcp_logger.info(f"为服务 {service_uuid} 加载模块: {module_name}")
 
             # 创建临时目录存放代码文件
             temp_dir = tempfile.mkdtemp(
@@ -575,7 +575,7 @@ class McpServiceManager:
             if spec and spec.loader:
                 module_obj = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module_obj)
-                em_logger.info(f"成功导入模块: {module_name}")
+                mcp_logger.info(f"成功导入模块: {module_name}")
 
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
@@ -591,11 +591,11 @@ class McpServiceManager:
                         # 将工具注册到对应的服务实例
                         self._running_services[service_uuid]["server"].add_tool(
                             func, name=name, description=doc)
-                        em_logger.info(
+                        mcp_logger.info(
                             f"为服务 {service_uuid} 注册工具: {name}")
 
         except Exception as e:
-            em_logger.error(f"为服务 {service_uuid} 注册工具失败: {str(e)}")
+            mcp_logger.error(f"为服务 {service_uuid} 注册工具失败: {str(e)}")
 
     def _create_mcp(self, service: McpService, module: McpModule):
         """创建MCP服务实例"""
@@ -603,7 +603,7 @@ class McpServiceManager:
 
         try:
             if not module.code:
-                em_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
+                mcp_logger.warning(f"模块 {module.name} 没有代码内容，跳过")
                 service.status = "error"
                 service.error_message = "模块没有代码内容"
                 with get_db() as db:
@@ -617,7 +617,7 @@ class McpServiceManager:
                 raise ValueError("模块没有代码内容")
                 
             if self._running_services.get(service.service_uuid):
-                em_logger.info(f"服务 {service.service_uuid} 已存在，不重复创建")
+                mcp_logger.info(f"服务 {service.service_uuid} 已存在，不重复创建")
                 raise ValueError("服务已存在，不重复创建")
 
             if not self._main_app:
@@ -667,20 +667,20 @@ class McpServiceManager:
             for route in routes_to_delete:
                 try:
                     self._main_app.routes.remove(route)
-                    em_logger.info(f"已删除现有路由: {route.path}")
+                    mcp_logger.info(f"已删除现有路由: {route.path}")
                 except Exception as e:
-                    em_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
+                    mcp_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
             # 创建SSE处理函数，使用特定服务的server实例
             async def handle_sse(request: Request) -> None:
                 try:
-                    em_logger.info(f"开始处理SSE请求: service_uuid={service_uuid}")
+                    mcp_logger.info(f"开始处理SSE请求: service_uuid={service_uuid}")
                     async with sse.connect_sse(
                         request.scope,
                         request.receive,
                         request._send,
                     ) as streams:
                         if self._running_services.get(service_uuid):
-                            em_logger.info(f"开始运行服务 {service_uuid} 的MCP服务器")
+                            mcp_logger.info(f"开始运行服务 {service_uuid} 的MCP服务器")
                             await self._running_services[service_uuid]["server"]._mcp_server.run(
                                 streams[0],
                                 streams[1],
@@ -688,12 +688,12 @@ class McpServiceManager:
                                 ),
                             )
                         else:
-                            em_logger.error(f"服务 {service_uuid} 不存在或已停止")
+                            mcp_logger.error(f"服务 {service_uuid} 不存在或已停止")
                 except Exception as e:
-                    em_logger.error(
+                    mcp_logger.error(
                         f"处理SSE请求失败: service_uuid={service_uuid}, 错误: {str(e)}")
                 finally:
-                    em_logger.info(f"SSE连接关闭: service_uuid={service_uuid}")
+                    mcp_logger.info(f"SSE连接关闭: service_uuid={service_uuid}")
 
             # 添加服务路由到主应用
             sse_path = f"{self._get_sse_path(service_uuid)}/sse"
@@ -718,7 +718,7 @@ class McpServiceManager:
                     db.commit()           
         
         except Exception as e:
-            em_logger.error(f"创建MCP服务失败: {str(e)}")
+            mcp_logger.error(f"创建MCP服务失败: {str(e)}")
              # 更新服务状态为错误
             with get_db() as db:
                 service_record = db.query(McpService).filter(
@@ -747,7 +747,7 @@ class McpServiceManager:
 
         for route in list(self._main_app.routes):
             if hasattr(route, 'path') and route.path in routes_to_remove:
-                em_logger.info(f"移除路由: {route.path}")
+                mcp_logger.info(f"移除路由: {route.path}")
                 self._main_app.routes.remove(route)
 
 

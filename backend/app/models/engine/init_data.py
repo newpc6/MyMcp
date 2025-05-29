@@ -8,7 +8,7 @@ from datetime import datetime
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.group.group import McpGroup
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from pytz import timezone
 from app.models.modules.users import Tenant, User
 from app.services.users import UserService, TenantService
@@ -21,32 +21,32 @@ def migrate_database():
         try:
             from app.models.engine.migrations import get_all_migrations
         except ImportError as e:
-            em_logger.warning(f"迁移模块导入失败，使用内置迁移: {str(e)}")
+            mcp_logger.warning(f"迁移模块导入失败，使用内置迁移: {str(e)}")
             return
 
         # 获取所有迁移模块
         migrations = get_all_migrations()
         if not migrations:
-            em_logger.warning("未找到迁移模块，使用内置迁移")
+            mcp_logger.warning("未找到迁移模块，使用内置迁移")
             return
 
-        em_logger.info(f"找到 {len(migrations)} 个迁移模块")
+        mcp_logger.info(f"找到 {len(migrations)} 个迁移模块")
 
         # 执行所有迁移
         with get_db() as db:
             for migration in migrations:
                 try:
                     migration_name = migration.__name__.split('.')[-1]
-                    em_logger.info(f"执行迁移: {migration_name}")
+                    mcp_logger.info(f"执行迁移: {migration_name}")
                     migration.run(db)
                 except Exception as e:
-                    em_logger.error(f"迁移 {migration_name} 执行失败: {str(e)}")
+                    mcp_logger.error(f"迁移 {migration_name} 执行失败: {str(e)}")
                     raise
 
-            em_logger.info("所有迁移执行完成")
+            mcp_logger.info("所有迁移执行完成")
 
     except Exception as e:
-        em_logger.error(f"数据库迁移失败: {str(e)}")
+        mcp_logger.error(f"数据库迁移失败: {str(e)}")
 
 
 def init_category_data():
@@ -73,7 +73,7 @@ def init_category_data():
             # 检查是否已有分类数据
             existing = db.execute(select(McpGroup)).scalars().all()
             if existing:
-                em_logger.info(f"已存在 {len(existing)} 个MCP分类，跳过初始化")
+                mcp_logger.info(f"已存在 {len(existing)} 个MCP分类，跳过初始化")
                 return
 
             # 添加分类数据
@@ -89,10 +89,10 @@ def init_category_data():
                 db.add(category)
 
             db.commit()
-            em_logger.info(f"成功初始化 {len(categories)} 个MCP分类")
+            mcp_logger.info(f"成功初始化 {len(categories)} 个MCP分类")
         except Exception as e:
             db.rollback()
-            em_logger.error(f"初始化MCP分类失败: {str(e)}")
+            mcp_logger.error(f"初始化MCP分类失败: {str(e)}")
 
 
 def auto_categorize_modules():
@@ -108,13 +108,13 @@ def auto_categorize_modules():
             ).scalars().all()
 
             if not uncategorized_modules:
-                em_logger.info("没有需要分类的模块")
+                mcp_logger.info("没有需要分类的模块")
                 return
 
             # 获取所有分类
             categories = db.execute(select(McpGroup)).scalars().all()
             if not categories:
-                em_logger.info("没有可用的分类")
+                mcp_logger.info("没有可用的分类")
                 return
 
             # 分类关键词映射
@@ -170,11 +170,11 @@ def auto_categorize_modules():
 
             if categorized_count > 0:
                 db.commit()
-                em_logger.info(f"成功自动分类 {categorized_count} 个模块")
+                mcp_logger.info(f"成功自动分类 {categorized_count} 个模块")
             else:
-                em_logger.info("没有找到可匹配的模块")
+                mcp_logger.info("没有找到可匹配的模块")
     except Exception as e:
-        em_logger.error(f"自动分类模块失败: {str(e)}")
+        mcp_logger.error(f"自动分类模块失败: {str(e)}")
         try:
             db.rollback()
         except Exception:  # 不使用裸except
@@ -961,10 +961,10 @@ data = get_table_data("orders", columns="id,customer_name,total", where="total >
                 db.add(db_utils_module)
 
                 db.commit()
-                em_logger.info("初始化了演示模块数据")
+                mcp_logger.info("初始化了演示模块数据")
 
     except Exception as e:
-        em_logger.error(f"初始化演示模块失败: {str(e)}")
+        mcp_logger.error(f"初始化演示模块失败: {str(e)}")
 
 
 def init_admin_users():
@@ -980,7 +980,7 @@ def init_admin_users():
             admin_count = len(db.execute(count_query).all())
 
             if not admin_count:
-                em_logger.info("创建默认管理员用户")
+                mcp_logger.info("创建默认管理员用户")
 
                 # 检查是否已有默认租户
                 default_tenant_query = select(Tenant).where(Tenant.code == "default")
@@ -1003,4 +1003,4 @@ def init_admin_users():
                     tenant_ids=[default_tenant.id]
                 )
     except Exception as e:
-        em_logger.error(f"初始化管理员用户失败: {str(e)}")
+        mcp_logger.error(f"初始化管理员用户失败: {str(e)}")

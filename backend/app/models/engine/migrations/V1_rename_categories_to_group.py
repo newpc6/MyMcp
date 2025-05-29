@@ -2,7 +2,7 @@
 迁移脚本：将 mcp_categories 表改名为 mcp_group
 """
 from sqlalchemy import text
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 
 
 def run(db):
@@ -17,7 +17,7 @@ def run(db):
         
         if result:
             # 表存在，执行重命名
-            em_logger.info("检测到 mcp_categories 表，开始重命名为 mcp_group")
+            mcp_logger.info("检测到 mcp_categories 表，开始重命名为 mcp_group")
             
             # 重命名表
             rename_sql = text("ALTER TABLE mcp_categories RENAME TO mcp_group")
@@ -26,11 +26,11 @@ def run(db):
             # 提交事务
             db.commit()
             
-            em_logger.info("表重命名成功：mcp_categories -> mcp_group")
+            mcp_logger.info("表重命名成功：mcp_categories -> mcp_group")
         else:
-            em_logger.info("未检测到 mcp_categories 表，无需执行迁移")
+            mcp_logger.info("未检测到 mcp_categories 表，无需执行迁移")
             
     except Exception as e:
         db.rollback()
-        em_logger.error(f"迁移失败：{str(e)}")
+        mcp_logger.error(f"迁移失败：{str(e)}")
         raise 

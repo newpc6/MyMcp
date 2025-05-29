@@ -6,7 +6,7 @@ from starlette.requests import Request
 from app.utils.response import success_response, error_response
 
 from app.services.marketplace.service import marketplace_service
-from app.utils.logging import em_logger
+from app.utils.logging import mcp_logger
 from app.utils.permissions import get_user_info
 
 
@@ -151,7 +151,7 @@ async def publish_module(request: Request):
     except ValueError as e:
         return error_response(str(e), code=400, http_status_code=400)
     except Exception as e:
-        em_logger.error(f"发布服务失败: {str(e)}")
+        mcp_logger.error(f"发布服务失败: {str(e)}")
         return error_response(f"发布服务失败: {str(e)}", code=500, http_status_code=500)
 
 
