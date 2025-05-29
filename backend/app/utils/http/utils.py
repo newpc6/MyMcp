@@ -9,6 +9,17 @@ from typing import Callable
 from .pagination import PageParams
 
 
+def body_page_params(
+    body: dict, 
+    default_size: int = 10, 
+    max_size: int = 50
+) -> PageParams:
+    """
+    获取分页参数
+    """
+    return PageParams.from_request_body(body, default_size, max_size)
+
+
 def get_page_params(
     request: Request, 
     default_size: int = 10, 
@@ -27,6 +38,15 @@ def get_page_params(
     """
     return PageParams.from_request(request, default_size, max_size)
 
+
+def get_page_body(
+    request: Request, 
+    default_size: int = 10, 
+    max_size: int = 50
+) -> PageParams:
+    """
+    获取分页参数
+    """
 
 def paginate_dependency(
     default_size: int = 10, 

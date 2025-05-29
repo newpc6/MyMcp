@@ -8,26 +8,43 @@ from app.utils.response import success_response, error_response
 from app.services.marketplace.service import marketplace_service
 from app.utils.logging import mcp_logger
 from app.utils.permissions import get_user_info
-from app.utils.http.utils import get_page_params
+from app.utils.http.utils import body_page_params
+
+
+async def page_modules(request: Request):
+    """获取MCP模块列表（支持分页）"""
+    try:
+        data = await request.json()
+        condition = data.get("condition", {})
+        # 获取分页参数
+        page_params = body_page_params(data)
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)
+        
+        # 调用服务层方法
+        result = marketplace_service.page_modules(
+            page_params=page_params,
+            condition=condition,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        return success_response(result)
+    except Exception as e:
+        mcp_logger.error(f"获取MCP模块列表失败: {str(e)}")
+        return error_response(
+            f"获取MCP模块列表失败: {str(e)}", 
+            code=500, 
+            http_status_code=500
+        )
+
 
 
 async def list_modules(request: Request):
     """获取MCP模块列表（支持分页）"""
-    # 获取分页参数
-    page_params = get_page_params(request, default_size=12, max_size=50)
-    
-    # 支持按分组查询
-    category_id = request.query_params.get("category_id")
-    if category_id:
-        category_id = int(category_id)
-
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
-
     # 调用服务层方法，获取包含编辑权限的结果
-    result = marketplace_service.list_modules_paginated(
-        page_params=page_params,
-        category_id=category_id,
+    result = marketplace_service.list_modules(
         user_id=user_id,
         is_admin=is_admin
     )
@@ -198,6 +215,7 @@ def get_router():
     """获取MCP广场路由"""
     routes = [
         Route("/modules", list_modules, methods=["GET"]),
+        Route("/modules/page", page_modules, methods=["POST"]),
         Route("/modules/{module_id:int}", get_module, methods=["GET"]),
         Route("/modules/{module_id:int}/tools",
               get_module_tools, methods=["GET"]),

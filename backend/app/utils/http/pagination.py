@@ -18,6 +18,19 @@ class PageParams(BaseModel):
     offset: int
     
     @classmethod
+    def from_request_body(
+        cls, body, default_size: int = 10, max_size: int = 50
+    ) -> 'PageParams':
+        """
+        从请求体中提取分页参数
+        """
+        page = body.get("paging", {}).get("page", 1)
+        size = body.get("paging", {}).get("size", default_size)
+        offset = (page - 1) * size
+        return cls(page=page, size=size, offset=offset)
+    
+
+    @classmethod
     def from_request(
         cls, request: Request, default_size: int = 10, max_size: int = 50
     ) -> 'PageParams':

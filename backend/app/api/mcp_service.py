@@ -9,6 +9,8 @@ from app.server.mcp_server import (
 )
 from app.utils.permissions import add_edit_permission, get_user_info
 from app.utils.logging import mcp_logger
+from app.utils.http.utils import body_page_params
+from app.services.mcp_service.service_manager import service_manager
 
 class ToolLoadRequest(BaseModel):
     """加载工具请求模型"""
@@ -40,7 +42,7 @@ async def load_tool(request: Request):
         # 获取函数
         if not hasattr(module, request_data.function_name):
             error_msg = (f"函数 {request_data.function_name} 在模块 "
-                        f"{request_data.module_path} 中不存在")
+                         f"{request_data.module_path} 中不存在")
             return error_response(error_msg, code=404, http_status_code=404)
         
         func = getattr(module, request_data.function_name)
@@ -172,10 +174,6 @@ async def list_services(request: Request):
     user_id, is_admin = get_user_info(request)
 
     try:
-        from app.services.mcp_service.service_manager import (
-            service_manager
-        )
-
         # 获取服务列表（包含编辑权限信息）
         services = service_manager.list_services(
             module_id=module_id,
@@ -190,6 +188,35 @@ async def list_services(request: Request):
         return error_response(err_msg, code=500, http_status_code=500)
 
 
+async def page_services(request: Request):
+    """分页查询服务列表"""
+    try:
+        # 获取请求体数据
+        data = await request.json()
+        
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)        
+        # 从请求体中解析分页参数和搜索条件
+        page_params = body_page_params(data)
+        
+        # 获取搜索条件
+        condition = data.get("condition", {})
+        # 获取分页服务列表
+        result = service_manager.page_services(
+            page_params=page_params,
+            user_id=user_id,
+            is_admin=is_admin,
+            condition=condition,
+            request=request
+        )
+        
+        return success_response(result)
+    except Exception as e:
+        mcp_logger.error(f"分页查询服务列表失败: {str(e)}")
+        err_msg = f"分页查询服务列表失败: {str(e)}"
+        return error_response(err_msg, code=500, http_status_code=500)
+
+
 async def get_service(request: Request):
     """获取服务详情"""
     service_uuid = request.path_params["service_uuid"]
@@ -198,10 +225,6 @@ async def get_service(request: Request):
     user_id, is_admin = get_user_info(request)
 
     try:
-        from app.services.mcp_service.service_manager import (
-            service_manager
-        )
-
         # 获取服务状态（包含编辑权限信息）
         service = service_manager.get_service_status(
             service_uuid,
@@ -228,7 +251,6 @@ async def get_service(request: Request):
 async def get_online_services(request: Request):
     """获取在线服务列表"""
     try:
-        from app.services.mcp_service.service_manager import service_manager
         # 获取运行中的服务UUID列表
         online_services = list(service_manager._running_services.keys())
         return success_response(online_services)
@@ -247,8 +269,6 @@ async def stop_service(request: Request):
     user_id, is_admin = get_user_info(request)
 
     try:
-        from app.services.mcp_service.service_manager import service_manager
-
         # 停止服务
         result = service_manager.stop_service(
             service_uuid,
@@ -278,8 +298,6 @@ async def start_service(request: Request):
     user_id, is_admin = get_user_info(request)
 
     try:
-        from app.services.mcp_service.service_manager import service_manager
-
         # 启动服务
         result = service_manager.start_service(
             service_uuid,
@@ -305,8 +323,6 @@ async def uninstall_service(request: Request):
     user_id, is_admin = get_user_info(request)
 
     try:
-        from app.services.mcp_service.service_manager import service_manager
-
         # 删除服务
         result = service_manager.delete_service(
             service_uuid,
@@ -363,6 +379,85 @@ async def update_service_description(request: Request):
         )
 
 
+async def list_modules_for_select(request: Request):
+    """获取模块列表用于下拉选择器"""
+    try:
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)
+        
+        from app.models.engine import get_db
+        from app.models.modules.mcp_marketplace import McpModule
+        
+        with get_db() as db:
+            # 构建查询
+            query = db.query(McpModule)
+            
+            # 权限控制：非管理员只能看到公开模块或自己创建的模块
+            if not is_admin and user_id is not None:
+                query = query.filter(
+                    (McpModule.is_public == True) | 
+                    (McpModule.user_id == user_id)
+                )
+            elif not is_admin:
+                # 未登录用户只能看到公开模块
+                query = query.filter(McpModule.is_public == True)
+            
+            modules = query.order_by(McpModule.name).all()
+            
+            # 转换为简单的选项格式
+            result = [
+                {
+                    "id": module.id,
+                    "name": module.name,
+                    "description": module.description or ""
+                }
+                for module in modules
+            ]
+            
+        return success_response(result)
+    except Exception as e:
+        mcp_logger.error(f"获取模块列表失败: {str(e)}")
+        return error_response(
+            f"获取模块列表失败: {str(e)}", code=500, http_status_code=500
+        )
+
+
+async def list_users_for_select(request: Request):
+    """获取用户列表用于下拉选择器"""
+    try:
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)
+        
+        # 只有管理员可以查看所有用户列表
+        if not is_admin:
+            return error_response(
+                "权限不足", code=403, http_status_code=403
+            )
+        
+        from app.models.engine import get_db
+        from app.models.modules.users import User
+        
+        with get_db() as db:
+            users = db.query(User).order_by(User.username).all()
+            
+            # 转换为简单的选项格式
+            result = [
+                {
+                    "id": user.id,
+                    "name": user.username,
+                    "is_admin": getattr(user, 'is_admin', False)
+                }
+                for user in users
+            ]
+            
+        return success_response(result)
+    except Exception as e:
+        mcp_logger.error(f"获取用户列表失败: {str(e)}")
+        return error_response(
+            f"获取用户列表失败: {str(e)}", code=500, http_status_code=500
+        )
+
+
 def get_router():
     """获取MCP服务路由"""
     routes = [
@@ -377,6 +472,7 @@ def get_router():
         # 注意：静态路由必须放在动态路由之前，避免路由冲突
         Route("/online", get_online_services, methods=["GET"]),
         Route("/list", list_services, methods=["GET"]),
+        Route("/page", page_services, methods=["POST"]),
         Route("/{service_uuid}", get_service, methods=["GET"]),
         Route("/{service_uuid}/stop", stop_service, methods=["POST"]),
         Route("/{service_uuid}/start", start_service, methods=["POST"]),
@@ -384,6 +480,8 @@ def get_router():
               methods=["POST"]),
         Route("/{service_uuid}/description", update_service_description, 
               methods=["PUT"]),
+        Route("/modules_for_select", list_modules_for_select, methods=["GET"]),
+        Route("/users_for_select", list_users_for_select, methods=["GET"]),
     ]
     
     return routes 

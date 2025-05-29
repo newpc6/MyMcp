@@ -27,12 +27,12 @@ from app.utils.http.pagination import PageParams
 class MarketplaceService:
     """MCP广场服务"""
     
-    def list_modules_paginated(
+    def page_modules(
         self, 
         page_params: PageParams,
-        category_id: Optional[int] = None, 
         user_id: Optional[int] = None, 
-        is_admin: bool = False
+        is_admin: bool = False,
+        condition: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """获取MCP模块列表（分页）
         
@@ -49,27 +49,32 @@ class MarketplaceService:
             query = select(McpModule)
             
             # 如果指定了分组ID，按分组过滤
-            if category_id:
-                query = query.where(McpModule.category_id == category_id)
+            if condition.get("category_id"):
+                if condition.get("category_id") == "all":
+                    pass
+                else:
+                    query = query.where(McpModule.category_id == condition.get("category_id"))
             
             # 非管理员用户只能看到自己创建的和公开的模块
             if not is_admin and user_id is not None:
                 query = query.where(
-                    (McpModule.is_public is True) |
+                    (McpModule.is_public == True) |
                     (McpModule.user_id == user_id)
                 )
-            
-            # 按更新时间倒序排列
-            query = query.order_by(McpModule.updated_at.desc())
+            elif not is_admin:
+                # 未登录用户只能看到公开模块
+                query = query.where(McpModule.is_public == True)
             
             # 获取总数
             total_count = db.execute(
                 select(func.count()).select_from(query.subquery())
             ).scalar()
             
-            # 分页查询
+            # 分页查询，按更新时间倒序排列
             modules = db.execute(
-                query.offset(page_params.offset).limit(page_params.size)
+                query.order_by(McpModule.updated_at.desc())
+                .offset(page_params.offset)
+                .limit(page_params.size)
             ).scalars().all()
             
             # 获取分组信息

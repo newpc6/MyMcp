@@ -4,38 +4,25 @@
 import api from './index'
 import { apiPrefix } from './index'
 import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo, McpServiceInfo, ApiResponse } from '../types/marketplace'
+import { Page } from '@/types/page';
+
+
+export async function pageModules(params: Page) {
+  const response = await api.post(`${apiPrefix}/marketplace/modules/page`, params);
+  return response.data;
+}
 
 /**
  * 获取MCP模块列表（支持分页）
  */
-export async function listModules(
-  categoryId?: string | null,
-  page?: number,
-  size?: number
-): Promise<ApiResponse<{
-  items: McpModuleInfo[];
-  total: number;
-  page: number;
-  size: number;
-  total_pages: number;
-}>> {
+export async function listModules() {
   let url = `${apiPrefix}/marketplace/modules`
   const params = new URLSearchParams()
-  
-  if (categoryId) {
-    params.append('category_id', categoryId)
-  }
-  if (page) {
-    params.append('page', page.toString())
-  }
-  if (size) {
-    params.append('size', size.toString())
-  }
-  
+
   if (params.toString()) {
     url += `?${params.toString()}`
   }
-  
+
   const response = await api.get(url)
   return response.data
 }
@@ -271,4 +258,22 @@ export async function getOnlineServices(): Promise<ApiResponse<string[]>> {
 export async function cloneModule(moduleId: number, data: Partial<McpModuleInfo>): Promise<ApiResponse<McpModuleInfo>> {
   const response = await api.post(`${apiPrefix}/marketplace/modules/${moduleId}/clone`, data)
   return response.data
+}
+
+/**
+ * 更新服务参数
+ */
+export async function updateServiceParams(serviceId: number, configParams: Record<string, any>) {
+  const response = await api.put(`${apiPrefix}/service/${serviceId}/params`, {
+    config_params: configParams
+  });
+  return response.data;
+}
+
+/**
+ * 分页查询服务列表
+ */
+export async function pageServices(params: Page) {
+  const response = await api.post(`${apiPrefix}/service/page`, params);
+  return response.data;
 }

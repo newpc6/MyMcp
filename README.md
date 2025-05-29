@@ -12,7 +12,8 @@
 
 ### MCP 广场
 
-![](https://img.remit.ee/api/file/AgACAgUAAyEGAASHRsPbAAIKLmgjSUf-awc7pOFluacXGKLBtIeaAAJJxDEbmboZVXNO4KdTf63RAQADAgADdwADNgQ.jpg)
+![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/05/29/6838001fac033.jpg)
+
 
 #### MCP 工具-测试
 
@@ -24,7 +25,7 @@
 
 ### MCP 服务
 
-![](https://img.remit.ee/api/file/AgACAgUAAyEGAASHRsPbAAIKL2gjSe1pWFa6MYOfRk3gpqW4y7xKAAJLxDEbmboZVS9Rh0LI4QQgAQADAgADdwADNgQ.jpg)
+![mcp-service-v2.jpg](https://img.picui.cn/free/2025/05/29/68381d521f1c5.jpg)
 
 ### MCP 统计
 

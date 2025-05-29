@@ -9,7 +9,7 @@ import json
 import uuid
 import threading
 import time
-from typing import Dict, Optional, List, Callable
+from typing import Dict, Optional, List, Callable, Any
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.routing import Route, Mount
@@ -21,6 +21,7 @@ from app.utils.logging import mcp_logger
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.modules.mcp_services import McpService
+from app.models.modules.users import User
 from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
 import importlib
@@ -30,6 +31,7 @@ import sys
 import tempfile
 from sqlalchemy import select
 from app.utils.permissions import add_edit_permission
+from app.utils.http.pagination import PageParams
 
 
 class McpServiceManager:
@@ -464,7 +466,12 @@ class McpServiceManager:
             服务列表
         """
         with get_db() as db:
-            query = db.query(McpService)
+            # 构建主查询，联表查询用户和模块信息
+            query = db.query(McpService).join(
+                McpModule, McpService.module_id == McpModule.id
+            ).outerjoin(
+                User, McpService.user_id == User.id
+            )
             
             # 如果指定了模块ID，按模块过滤
             if module_id:
@@ -506,6 +513,140 @@ class McpServiceManager:
             
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
+
+    def page_services(
+        self, 
+        page_params: PageParams,
+        user_id: Optional[int] = None, 
+        is_admin: bool = False, 
+        condition: Optional[Dict] = None,
+        request: Optional[Request] = None
+    ) -> Dict[str, Any]:
+        """获取服务列表（分页）
+        
+        Args:
+            page_params: 分页参数
+            module_id: 模块ID过滤，可选
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+            request: HTTP请求对象，用于构建完整URL
+            search_name: 搜索服务名称
+            search_status: 搜索服务状态
+            search_user_id: 搜索用户ID
+            
+        Returns:
+            分页结果字典
+        """
+        with get_db() as db:
+            # 构建主查询，联表查询用户和模块信息
+            query = db.query(McpService).join(
+                McpModule, McpService.module_id == McpModule.id
+            ).outerjoin(
+                User, McpService.user_id == User.id
+            )
+            
+            # 如果指定了模块ID，按模块过滤
+            if condition.get("module_id"):
+                query = query.filter(McpService.module_id == condition.get("module_id"))
+                
+            # 权限控制：非管理员只能看到自己的服务或公开的服务，管理员可以看到所有服务
+            if not is_admin and user_id is not None:
+                # 非管理员只能搜索公开服务或自己的服务
+                public_filter = (
+                    (McpService.is_public == True) & 
+                    (McpModule.is_public == True)
+                )
+                own_filter = (McpService.user_id == user_id)
+                query = query.filter(public_filter | own_filter)
+            elif not is_admin:
+                # 未登录用户只能看到公开的服务
+                query = query.filter(
+                    (McpService.is_public == True) & 
+                    (McpModule.is_public == True)
+                )
+                
+            # 搜索条件
+            if condition.get("name"):
+                query = query.filter(
+                    McpService.name.like(f'%{condition.get("name")}%')
+                )
+                
+            if condition.get("status"):
+                query = query.filter(McpService.status == condition.get("status"))
+                
+            if condition.get("user_id"):
+                query = query.filter(
+                    User.id == condition.get("user_id")
+                )
+            
+            # 获取总数
+            total_count = query.count()
+            
+            # 分页查询，按创建时间倒序
+            services = query.order_by(McpService.created_at.desc()).offset(
+                page_params.offset
+            ).limit(page_params.size).all()
+            
+            result_items = []
+            
+            # 获取每个服务的详细信息
+            for service in services:
+                service_dict = service.to_dict()
+                
+                # 获取模块名称
+                module = db.query(McpModule).filter(
+                    McpModule.id == service.module_id
+                ).first()
+                service_dict["module_name"] = (
+                    module.name if module else "Unknown"
+                )
+                service_dict["description"] = (
+                    module.description if module else ""
+                )
+                
+                # 获取用户名称
+                user = (
+                    db.query(User).filter(
+                        User.id == service.user_id
+                    ).first() if service.user_id else None
+                )
+                service_dict["user_name"] = (
+                    user.username if user else "Unknown"
+                )
+                
+                # 替换SSE URL为完整URL
+                sse_url = service.sse_url
+                service_dict["sse_url"] = self._get_full_sse_url(
+                    sse_url, request
+                )
+                
+                # 检查服务是否正在运行
+                running_info = self._running_services.get(
+                    service.service_uuid
+                )
+                if running_info:
+                    service_dict["status"] = "running"
+                
+                result_items.append(service_dict)
+            
+            # 添加可编辑字段
+            result_items = add_edit_permission(
+                result_items, user_id, is_admin
+            )
+            
+            # 计算总页数
+            total_pages = (
+                (total_count + page_params.size - 1) // page_params.size
+                if total_count > 0 else 0
+            )
+            
+            return {
+                "items": result_items,
+                "total": total_count,
+                "page": page_params.page,
+                "size": page_params.size,
+                "total_pages": total_pages
+            }
 
     def replace_config_params(self, code: str, config_params: Dict) -> str:
         """替换配置参数

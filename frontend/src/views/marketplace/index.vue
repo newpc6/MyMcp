@@ -142,9 +142,9 @@
       <!-- 分页组件 -->
       <div v-if="!loading && modules.length > 0" class="pagination-container">
         <el-config-provider :locale="zhCn">
-          <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
-            :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
-            @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+          <el-pagination :current-page="queryPage.paging.page" :page-size="queryPage.paging.size"
+            :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]" :background="true" layout="total, sizes, prev, pager, next, jumper"
+            :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
         </el-config-provider>
       </div>
     </el-main>
@@ -218,11 +218,12 @@ import {
   Star, Box, Monitor, Setting, Document, View, CopyDocument, Delete
 } from '@element-plus/icons-vue';
 import {
-  listModules, listGroup, createModule, deleteModule, cloneModule,
+  pageModules, listGroup, createModule, deleteModule, cloneModule,
   createGroup, updateGroup, deleteGroup
 } from '../../api/marketplace';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 import { defineAsyncComponent } from 'vue';
+import { Page } from '@/types/page';
 
 const router = useRouter();
 const modules = ref<McpModuleInfo[]>([]);
@@ -231,9 +232,17 @@ const loading = ref(true);
 const scanning = ref(false);
 const selectedCategoryId = ref<string | null>('all');
 
+const queryPage = ref<Page>({
+  paging: {
+    page: 1,
+    size: 9
+  },
+  condition: {
+    category_id: null
+  }
+});
+
 // 分页相关状态
-const currentPage = ref(1);
-const pageSize = ref(9);
 const total = ref(0);
 const totalPages = ref(0);
 
@@ -435,15 +444,14 @@ async function submitCreateForm() {
 async function loadModules() {
   loading.value = true;
   try {
-    const categoryId = selectedCategoryId.value === 'all' ? null : selectedCategoryId.value;
-    const response = await listModules(categoryId, currentPage.value, pageSize.value);
+    const response = await pageModules(queryPage.value);
     // 处理API响应格式
     if (response && response.data) {
       modules.value = response.data.items || [];
       total.value = response.data.total || 0;
       totalPages.value = response.data.total_pages || 0;
-      currentPage.value = response.data.page || 1;
-      pageSize.value = response.data.size || 12;
+      queryPage.value.paging.page = response.data.page || 1;
+      queryPage.value.paging.size = response.data.size || 12;
     } else {
       modules.value = [];
       total.value = 0;
@@ -463,14 +471,11 @@ async function loadModules() {
 
 // 处理分页大小变化
 function handleSizeChange(newSize: number) {
-  pageSize.value = newSize;
-  currentPage.value = 1; // 重置到第一页
   loadModules();
 }
 
 // 处理当前页变化
 function handleCurrentChange(newPage: number) {
-  currentPage.value = newPage;
   loadModules();
 }
 
@@ -497,7 +502,7 @@ async function loadCategories() {
 // 处理分组选择
 function handleCategorySelect(categoryId: string) {
   selectedCategoryId.value = categoryId;
-  currentPage.value = 1; // 重置到第一页
+  queryPage.value.condition.category_id = categoryId;
   loadModules();
 }
 
