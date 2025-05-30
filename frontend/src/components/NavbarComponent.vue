@@ -2,7 +2,17 @@
   <div class="navbar-container">
     <el-menu mode="horizontal" router :ellipsis="false" class="nav-menu">
       <div class="flex-grow logo-container">
-        <h1 class="text-xl font-bold text-primary">MCP管理平台</h1>
+        <div class="brand-logo" @click="goToHome">
+          <div class="brand-icon">
+            <el-icon>
+              <Connection />
+            </el-icon>
+          </div>
+          <div class="brand-text">
+            <span class="brand-name">MCP</span>
+            <span class="brand-subtitle">管理平台</span>
+          </div>
+        </div>
       </div>
 
       <!-- <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item> -->
@@ -62,7 +72,7 @@
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, FormInstance } from 'element-plus';
-import { ArrowDown } from '@element-plus/icons-vue';
+import { ArrowDown, Connection } from '@element-plus/icons-vue';
 import { logout, changePassword as apiChangePassword } from '@/api/auth';
 
 defineOptions({
@@ -196,6 +206,11 @@ const changePassword = async () => {
     changing.value = false;
   }
 };
+
+// 点击logo回到首页
+const goToHome = () => {
+  router.push('/');
+};
 </script>
 
 <style scoped>
@@ -232,6 +247,101 @@ const changePassword = async () => {
   display: flex;
   align-items: center;
   padding-right: 30px;
+}
+
+.brand-logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  padding: 8px 16px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.brand-logo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.brand-logo:hover::before {
+  left: 100%;
+}
+
+.brand-logo:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.brand-icon {
+  width: 36px;
+  height: 36px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.brand-icon .el-icon {
+  font-size: 18px;
+  color: white;
+}
+
+.brand-logo:hover .brand-icon {
+  background: rgba(255, 255, 255, 0.25);
+  transform: rotate(10deg) scale(1.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-size: 22px;
+  font-weight: 800;
+  color: white;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: all 0.3s ease;
+}
+
+.brand-subtitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: 1px;
+  margin-top: 2px;
+  transition: all 0.3s ease;
+}
+
+.brand-logo:hover .brand-name {
+  letter-spacing: 3px;
+  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+}
+
+.brand-logo:hover .brand-subtitle {
+  color: rgba(255, 255, 255, 1);
+  letter-spacing: 1.5px;
 }
 
 .logo-container h1 {
