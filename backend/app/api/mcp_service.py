@@ -12,6 +12,7 @@ from app.utils.logging import mcp_logger
 from app.utils.http.utils import body_page_params
 from app.services.mcp_service.service_manager import service_manager
 
+
 class ToolLoadRequest(BaseModel):
     """加载工具请求模型"""
     module_path: str  # 模块路径，例如 "repository.demo_tool"
@@ -31,29 +32,29 @@ async def load_tool(request: Request):
         # 解析请求数据
         data = await request.json()
         request_data = ToolLoadRequest(**data)
-        
+
         # 动态导入模块
         try:
             module = importlib.import_module(request_data.module_path)
         except ImportError as e:
             error_msg = f"模块 {request_data.module_path} 导入失败: {str(e)}"
             return error_response(error_msg, code=404, http_status_code=404)
-        
+
         # 获取函数
         if not hasattr(module, request_data.function_name):
             error_msg = (f"函数 {request_data.function_name} 在模块 "
                          f"{request_data.module_path} 中不存在")
             return error_response(error_msg, code=404, http_status_code=404)
-        
+
         func = getattr(module, request_data.function_name)
-        
+
         # 添加为工具
         add_tool(
             func=func,
             name=request_data.tool_name,
             doc=request_data.description
         )
-        
+
         tool_name = request_data.tool_name or request_data.function_name
         return success_response({
             "tool_name": tool_name
@@ -71,7 +72,7 @@ async def unload_tool(request: Request):
     try:
         data = await request.json()
         request_data = ToolRemoveRequest(**data)
-        
+
         success = remove_tool(request_data.tool_name)
         if success:
             return success_response(
@@ -108,13 +109,13 @@ async def get_status(request: Request):
     try:
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         # 获取服务状态
         status = check_mcp_status()
-        
+
         # 添加可编辑字段
         status = add_edit_permission(status, user_id, is_admin)
-        
+
         return success_response(status)
     except Exception as e:
         error_msg = f"获取服务状态失败: {str(e)}"
@@ -126,15 +127,15 @@ async def enabled_tools(request: Request):
     try:
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         # 获取工具列表
         tools_list = get_enabled_tools()
-        
+
         # 添加可编辑字段
         tools_list = add_edit_permission(tools_list, user_id, is_admin)
-        
+
         return success_response({
-            "enabled_tools": tools_list, 
+            "enabled_tools": tools_list,
             "count": len(tools_list)
         })
     except Exception as e:
@@ -188,17 +189,57 @@ async def list_services(request: Request):
         return error_response(err_msg, code=500, http_status_code=500)
 
 
+async def create_third_party_service(request: Request):
+    """创建第三方MCP服务"""
+    # 获取用户信息
+    user_id, is_admin = get_user_info(request)
+
+    try:
+        # 获取服务数据
+        data = await request.json()
+        # 验证必填字段
+        name = data.get("service_name", None)
+        sse_url = data.get("sse_url", None)
+
+        if not name:
+            return error_response("服务名称不能为空", code=400, http_status_code=400)
+        if not sse_url:
+            return error_response("SSE URL不能为空", code=400, http_status_code=400)
+
+        from app.services.mcp_service.service_manager import service_manager
+
+        # 创建第三方服务
+        service = service_manager.publish_third_party_service(
+            user_id=user_id,
+            is_admin=is_admin,
+            data=data
+        )
+        return success_response({
+            "message": "第三方服务创建成功",
+            "service": service.to_dict()
+        })
+    except ValueError as e:
+        return error_response(str(e), code=400, http_status_code=400)
+    except Exception as e:
+        mcp_logger.error(f"创建第三方服务失败: {str(e)}")
+        return error_response(
+            f"创建第三方服务失败: {str(e)}",
+            code=500,
+            http_status_code=500
+        )
+
+
 async def page_services(request: Request):
     """分页查询服务列表"""
     try:
         # 获取请求体数据
         data = await request.json()
-        
+
         # 获取用户信息
-        user_id, is_admin = get_user_info(request)        
+        user_id, is_admin = get_user_info(request)
         # 从请求体中解析分页参数和搜索条件
         page_params = body_page_params(data)
-        
+
         # 获取搜索条件
         condition = data.get("condition", {})
         # 获取分页服务列表
@@ -209,7 +250,7 @@ async def page_services(request: Request):
             condition=condition,
             request=request
         )
-        
+
         return success_response(result)
     except Exception as e:
         mcp_logger.error(f"分页查询服务列表失败: {str(e)}")
@@ -384,26 +425,26 @@ async def list_modules_for_select(request: Request):
     try:
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         from app.models.engine import get_db
         from app.models.modules.mcp_marketplace import McpModule
-        
+
         with get_db() as db:
             # 构建查询
             query = db.query(McpModule)
-            
+
             # 权限控制：非管理员只能看到公开模块或自己创建的模块
             if not is_admin and user_id is not None:
                 query = query.filter(
-                    (McpModule.is_public == True) | 
+                    (McpModule.is_public == True) |
                     (McpModule.user_id == user_id)
                 )
             elif not is_admin:
                 # 未登录用户只能看到公开模块
                 query = query.filter(McpModule.is_public == True)
-            
+
             modules = query.order_by(McpModule.name).all()
-            
+
             # 转换为简单的选项格式
             result = [
                 {
@@ -413,7 +454,7 @@ async def list_modules_for_select(request: Request):
                 }
                 for module in modules
             ]
-            
+
         return success_response(result)
     except Exception as e:
         mcp_logger.error(f"获取模块列表失败: {str(e)}")
@@ -427,19 +468,19 @@ async def list_users_for_select(request: Request):
     try:
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         # 只有管理员可以查看所有用户列表
         if not is_admin:
             return error_response(
                 "权限不足", code=403, http_status_code=403
             )
-        
+
         from app.models.engine import get_db
         from app.models.modules.users import User
-        
+
         with get_db() as db:
             users = db.query(User).order_by(User.username).all()
-            
+
             # 转换为简单的选项格式
             result = [
                 {
@@ -449,7 +490,7 @@ async def list_users_for_select(request: Request):
                 }
                 for user in users
             ]
-            
+
         return success_response(result)
     except Exception as e:
         mcp_logger.error(f"获取用户列表失败: {str(e)}")
@@ -467,7 +508,7 @@ def get_router():
         Route("/status", endpoint=get_status, methods=["GET"]),
         Route("/enabled_tools", endpoint=enabled_tools, methods=["GET"]),
         Route("/{id:int}/params", endpoint=update_params, methods=["PUT"]),
-        
+
         # 从marketplace.py迁移过来的服务相关路由
         # 注意：静态路由必须放在动态路由之前，避免路由冲突
         Route("/online", get_online_services, methods=["GET"]),
@@ -476,12 +517,14 @@ def get_router():
         Route("/{service_uuid}", get_service, methods=["GET"]),
         Route("/{service_uuid}/stop", stop_service, methods=["POST"]),
         Route("/{service_uuid}/start", start_service, methods=["POST"]),
-        Route("/{service_uuid}/uninstall", uninstall_service, 
+        Route("/{service_uuid}/uninstall", uninstall_service,
               methods=["POST"]),
-        Route("/{service_uuid}/description", update_service_description, 
+        Route("/{service_uuid}/description", update_service_description,
               methods=["PUT"]),
         Route("/modules_for_select", list_modules_for_select, methods=["GET"]),
         Route("/users_for_select", list_users_for_select, methods=["GET"]),
+        # 第三方服务管理
+        Route("/third-party-services", create_third_party_service, methods=["POST"]),
     ]
-    
-    return routes 
+
+    return routes

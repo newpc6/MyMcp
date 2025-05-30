@@ -504,6 +504,14 @@ class MarketplaceService:
     def create_module(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """创建MCP模块"""
         with get_db() as db:
+            # 处理config_schema字段，如果是字典则转换为JSON字符串
+            config_schema = data.get("config_schema")
+            if config_schema is not None and isinstance(config_schema, dict):
+                config_schema = json.dumps(config_schema, ensure_ascii=False)
+            elif config_schema is not None and not isinstance(config_schema, str):
+                # 如果不是字典也不是字符串，转换为字符串
+                config_schema = str(config_schema)
+            
             # 构建模块对象
             module = McpModule(
                 name=data.get("name", ""),
@@ -517,7 +525,7 @@ class MarketplaceService:
                 repository_url=data.get("repository_url", ""),
                 category_id=data.get("category_id"),
                 code=data.get("code", ""),
-                config_schema=data.get("config_schema"),
+                config_schema=config_schema,
                 markdown_docs=data.get("markdown_docs", ""),
                 user_id=data.get("user_id"),
                 is_public=data.get("is_public", True)
@@ -554,15 +562,27 @@ class MarketplaceService:
             if not is_admin and user_id is not None and module.user_id != user_id:
                 return None
             
+            # 处理config_schema字段，如果是字典则转换为JSON字符串
+            if "config_schema" in data:
+                config_schema = data["config_schema"]
+                if config_schema is not None and isinstance(config_schema, dict):
+                    data["config_schema"] = json.dumps(config_schema, ensure_ascii=False)
+                elif config_schema is not None and not isinstance(config_schema, str):
+                    # 如果不是字典也不是字符串，转换为字符串
+                    data["config_schema"] = str(config_schema)
+            
             # 更新字段
             for key, value in data.items():
                 if hasattr(module, key) and key != "id":
                     if key == "is_public" and value in ["True", "true", "False", "false"]:
                         # 处理布尔值
                         setattr(module, key, value.lower() == "true")
+                    elif key == "config_schema":
+                        # config_schema已经在上面处理过了，直接设置
+                        setattr(module, key, value)
                     elif isinstance(value, dict):
-                        # 处理字典类型数据，如config_schema
-                        json_data = json.dumps(value)
+                        # 处理其他字典类型数据
+                        json_data = json.dumps(value, ensure_ascii=False)
                         setattr(module, key, json_data)
                     else:
                         # 其他数据

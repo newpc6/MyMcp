@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
 from sqlalchemy.sql import text
@@ -11,7 +11,7 @@ class McpService(Base):
     __tablename__ = "mcp_services"
     
     id = Column(Integer, primary_key=True, index=True)
-    module_id = Column(Integer, nullable=False, index=True)  # 模块ID
+    module_id = Column(Integer, nullable=True, index=True)  # 模块ID，第三方服务时为空
     service_uuid = Column(String(64), unique=True, index=True, nullable=False)
     name = Column(String(100), nullable=False)  # 服务名称
     status = Column(String(20), default="stopped")  # running, stopped, error
@@ -23,9 +23,14 @@ class McpService(Base):
     user_id = Column(Integer, nullable=True, index=True)  # 创建者用户ID
     config_params = Column(Text, nullable=True)  # 存储服务配置参数，包括密钥信息等
     is_public = Column(Boolean, default=False)  # 是否公开，True为公开，False为私有
+    service_type = Column(Integer, default=1)  # 服务类型：1=内置服务(基于模板), 2=第三方服务
+    description = Column(Text, nullable=True)  # 服务描述，第三方服务时使用
     
     def get_module_name(self):
         """获取关联的模块名称"""
+        if not self.module_id:
+            return "第三方服务"
+            
         with get_db() as db:
             # 使用原生SQL查询避免循环导入
             query = "SELECT name FROM mcp_modules WHERE id = :id"
@@ -44,11 +49,20 @@ class McpService(Base):
             sql = text(query).bindparams(id=self.user_id)
             result = db.execute(sql).first()
             return result[0] if result else None
+    
+    def get_service_type_name(self):
+        """获取服务类型名称"""
+        type_map = {
+            1: "内置服务",
+            2: "第三方服务"
+        }
+        return type_map.get(self.service_type, "未知类型")
             
     def to_dict(self):
         """转换为字典格式"""
         module_name = self.get_module_name()
         user_name = self.get_user_name()
+        service_type_name = self.get_service_type_name()
         
         # 解析config_params JSON字符串
         config_params = None
@@ -80,5 +94,8 @@ class McpService(Base):
             "updated_at": (
                 self.updated_at.isoformat() if self.updated_at else None
             ),
-            "is_public": self.is_public
+            "is_public": self.is_public,
+            "service_type": self.service_type,
+            "service_type_name": service_type_name,
+            "description": self.description
         } 

@@ -101,6 +101,15 @@
               <el-icon><Refresh /></el-icon>
               刷新
             </el-button>
+            
+            <el-button 
+              type="success" 
+              @click="showCreateThirdPartyDialog" 
+              class="create-btn"
+            >
+              <el-icon><Plus /></el-icon>
+              创建第三方服务
+            </el-button>
           </div>
         </div>
       </div>
@@ -120,6 +129,16 @@
             <div class="status-indicator" :class="getStatusClass(service.status)">
               <span class="status-dot"></span>
               <span class="status-text">{{ getStatusText(service.status) }}</span>
+            </div>
+            
+            <div class="service-type-badge">
+              <el-tag 
+                :type="service.service_type === 2 ? 'warning' : 'primary'" 
+                size="small" 
+                effect="light"
+              >
+                {{ service.service_type_name || '内置服务' }}
+              </el-tag>
             </div>
             
             <div class="visibility-badge">
@@ -336,6 +355,73 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 创建第三方服务对话框 -->
+    <el-dialog 
+      v-model="createThirdPartyDialogVisible" 
+      title="创建第三方MCP服务" 
+      width="50%" 
+      :destroy-on-close="true"
+      class="create-dialog"
+    >
+      <el-form 
+        ref="thirdPartyFormRef" 
+        :model="thirdPartyForm" 
+        :rules="thirdPartyRules" 
+        label-width="120px"
+        class="third-party-form"
+      >
+        <el-form-item label="服务名称" prop="service_name">
+          <el-input 
+            v-model="thirdPartyForm.service_name" 
+            placeholder="请输入服务名称"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="SSE URL" prop="sse_url">
+          <el-input 
+            v-model="thirdPartyForm.sse_url" 
+            placeholder="请输入第三方MCP服务的SSE URL，如：https://example.com/sse"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="服务描述" prop="description">
+          <el-input 
+            v-model="thirdPartyForm.description" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入服务描述（可选）"
+            clearable
+          />
+        </el-form-item>
+        
+        <el-form-item label="访问权限" prop="is_public">
+          <el-radio-group v-model="thirdPartyForm.is_public">
+            <el-radio :label="false">私有</el-radio>
+            <el-radio :label="true">公开</el-radio>
+          </el-radio-group>
+          <div class="form-tip">
+            <span>私有：仅自己可见和使用</span><br>
+            <span>公开：所有用户可见和使用</span>
+          </div>
+        </el-form-item>
+      </el-form>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="createThirdPartyDialogVisible = false">取消</el-button>
+          <el-button 
+            type="primary" 
+            @click="createThirdPartyService" 
+            :loading="creatingThirdParty"
+          >
+            创建服务
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -407,6 +493,30 @@ const currentServiceSchema = ref<Record<string, any> | null>(null);
 const serviceParamsForm = ref<Record<string, any>>({});
 const serviceParamsManagerRef = ref();
 const updatingParams = ref(false);
+
+// 第三方服务创建相关
+const createThirdPartyDialogVisible = ref(false);
+const thirdPartyFormRef = ref();
+const creatingThirdParty = ref(false);
+const thirdPartyForm = ref({
+  service_name: '',
+  sse_url: '',
+  description: '',
+  is_public: false
+});
+const thirdPartyRules = ref({
+  service_name: [
+    { required: true, message: '请输入服务名称', trigger: 'blur' }
+  ],
+  sse_url: [
+    { required: true, message: '请输入SSE URL', trigger: 'blur' },
+    { 
+      pattern: /^https?:\/\/[^\s/$.?#].[^\s]*$/, 
+      message: '请输入有效的HTTP/HTTPS URL', 
+      trigger: 'blur' 
+    }
+  ]
+});
 
 // 构建查询参数
 const pageQuery = reactive<Page>({
@@ -768,6 +878,49 @@ const handleSearch = async () => {
   await loadServices();
 };
 
+// 显示创建第三方服务对话框
+const showCreateThirdPartyDialog = () => {
+  // 重置表单
+  thirdPartyForm.value = {
+    service_name: '',
+    sse_url: '',
+    description: '',
+    is_public: false
+  };
+  createThirdPartyDialogVisible.value = true;
+};
+
+// 创建第三方服务
+const createThirdPartyService = async () => {
+  if (!thirdPartyFormRef.value) return;
+
+  try {
+    await thirdPartyFormRef.value.validate();
+    creatingThirdParty.value = true;
+
+    const { createThirdPartyService: createThirdPartyServiceAPI } = await import('../../api/marketplace');
+    const response = await createThirdPartyServiceAPI(thirdPartyForm.value);
+
+    if (response && response.data) {
+      ElNotification({
+        title: '成功',
+        message: '第三方服务创建成功',
+        type: 'success'
+      });
+      createThirdPartyDialogVisible.value = false;
+      await loadServices(); // 重新加载服务列表
+    }
+  } catch (error: any) {
+    ElNotification({
+      title: '错误',
+      message: `创建第三方服务失败: ${error.message || '未知错误'}`,
+      type: 'error'
+    });
+  } finally {
+    creatingThirdParty.value = false;
+  }
+};
+
 // 页面加载时获取服务列表
 onMounted(() => {
   loadUserInfo();
@@ -948,6 +1101,23 @@ onMounted(() => {
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
 }
 
+.create-btn {
+  border-radius: 16px;
+  padding: 12px 24px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 16px rgba(76, 175, 80, 0.2);
+  border: none;
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+}
+
+.create-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(76, 175, 80, 0.3);
+  background: linear-gradient(135deg, #388e3c 0%, #4caf50 100%);
+}
+
 .services-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -1099,8 +1269,19 @@ onMounted(() => {
   }
 }
 
+.service-type-badge {
+  margin-left: 8px;
+}
+
+.service-type-badge :deep(.el-tag) {
+  border-radius: 16px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: none;
+}
+
 .visibility-badge {
-  margin-left: auto;
+  margin-left: 8px;
 }
 
 .visibility-badge :deep(.el-tag) {
@@ -1480,6 +1661,41 @@ onMounted(() => {
 .params-dialog :deep(.el-dialog__body) {
   padding: 32px;
   background: #fafafa;
+}
+
+.create-dialog {
+  border-radius: 24px;
+  overflow: hidden;
+}
+
+.create-dialog :deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  color: white;
+  padding: 24px 32px;
+}
+
+.create-dialog :deep(.el-dialog__title) {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.create-dialog :deep(.el-dialog__body) {
+  padding: 32px;
+  background: #fafafa;
+}
+
+.third-party-form {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.form-tip {
+  margin-top: 8px;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
 }
 
 .dialog-empty {

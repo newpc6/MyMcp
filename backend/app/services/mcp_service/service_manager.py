@@ -72,15 +72,24 @@ class McpServiceManager:
                         continue
                     # 尝试重新启动已发布的服务
                     try:
-                        module = db.query(McpModule).filter(
-                            McpModule.id == service.module_id
-                        ).first()
-                        if module:
-                            self._create_mcp(service, module)
+                        if service.service_type == 2:  # 第三方服务
+                            # 第三方服务只需要保持状态，不需要创建路由
                             mcp_logger.info(
-                                f"已启动mcp服务: {service.service_uuid} {module.name}")
+                                f"第三方服务已加载: {service.service_uuid} {service.name}")
+                        else:  # 内置服务
+                            module = db.query(McpModule).filter(
+                                McpModule.id == service.module_id
+                            ).first()
+                            if module:
+                                self._create_mcp(service, module)
+                                mcp_logger.info(
+                                    f"已启动mcp服务: {service.service_uuid} {module.name}")
+                            else:
+                                mcp_logger.warning(
+                                    f"服务 {service.service_uuid} 对应的模块不存在")
                     except Exception as e:
-                        msg = f"启动mcp服务失败 {service.service_uuid} {module.name}: {str(e)}"
+                        service_name = service.name if service.service_type == 2 else (module.name if 'module' in locals() and module else "未知")
+                        msg = f"启动mcp服务失败 {service.service_uuid} {service_name}: {str(e)}"
                         mcp_logger.error(msg)
                         service.status = "error"
                         service.error_message = str(e)
@@ -186,6 +195,63 @@ class McpServiceManager:
                 mcp_logger.error(f"发布服务失败: {str(e)}")
                 raise e
 
+    def publish_third_party_service(self, user_id: Optional[int] = None,
+                                   is_admin: bool = False, data: Optional[Dict] = None) -> McpService:
+        """发布一个第三方MCP服务
+
+        Args:
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+            data: 服务数据，包含name, sse_url, description等
+
+        Returns:
+            McpService: 创建的服务记录
+        """
+        if not self._main_app:
+            raise ValueError("主应用程序未初始化，无法发布服务")
+
+        # 检查参数
+        name = data.get("service_name")
+        sse_url = data.get("sse_url")
+        description = data.get("description", "")
+        is_public = data.get("is_public", False)
+        
+        if not name:
+            raise ValueError("服务名称不能为空")
+        if not sse_url:
+            raise ValueError("SSE URL不能为空")
+
+        # 验证URL格式
+        import re
+        url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+        if not re.match(url_pattern, sse_url):
+            raise ValueError("SSE URL格式不正确")
+
+        with get_db() as db:
+            # 生成唯一ID
+            service_uuid = str(uuid.uuid4())
+                
+            # 创建新的服务记录
+            service_record = McpService(
+                module_id=None,  # 第三方服务没有模块ID
+                service_uuid=service_uuid,
+                name=name,
+                sse_url=sse_url,  # 直接使用提供的URL
+                status="stopped",  # 第三方服务默认为停止状态
+                enabled=False,
+                user_id=user_id,
+                is_public=is_public,
+                service_type=2,  # 第三方服务类型
+                description=description,
+                config_params=""  # 第三方服务暂不支持配置参数
+            )
+            db.add(service_record)
+            db.commit()
+            db.refresh(service_record)
+
+            mcp_logger.info(f"成功创建第三方服务: {service_uuid} - {name}")
+            return service_record
+
     def stop_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """停止MCP服务
 
@@ -284,26 +350,37 @@ class McpServiceManager:
                 mcp_logger.warning(f"用户 {user_id} 尝试启动非自己创建的服务 {service_uuid}")
                 return False
 
-            # 检查模块是否存在
-            module = db.query(McpModule).filter(
-                McpModule.id == service.module_id
-            ).first()
-            if not module:
-                return False
-
-            # 创建服务路由
-            try:
-                self._create_mcp(service, module)
-                # 更新服务状态
+            # 根据服务类型处理
+            if service.service_type == 2:  # 第三方服务
+                # 第三方服务只需要更新状态，不需要创建路由
                 service.status = "running"
                 service.error_message = ""
                 service.enabled = True
                 db.commit()
                 db.refresh(service)
+                mcp_logger.info(f"第三方服务已启动: {service_uuid} - {service.name}")
                 return True
-            except Exception as e:
-                mcp_logger.error(f"启动服务失败 {service_uuid}: {str(e)}")
-                return False
+            else:  # 内置服务
+                # 检查模块是否存在
+                module = db.query(McpModule).filter(
+                    McpModule.id == service.module_id
+                ).first()
+                if not module:
+                    return False
+
+                # 创建服务路由
+                try:
+                    self._create_mcp(service, module)
+                    # 更新服务状态
+                    service.status = "running"
+                    service.error_message = ""
+                    service.enabled = True
+                    db.commit()
+                    db.refresh(service)
+                    return True
+                except Exception as e:
+                    mcp_logger.error(f"启动服务失败 {service_uuid}: {str(e)}")
+                    return False
 
     def delete_service(self, service_uuid: str, user_id: Optional[int] = None, is_admin: bool = False) -> bool:
         """完全删除MCP服务
@@ -467,7 +544,7 @@ class McpServiceManager:
         """
         with get_db() as db:
             # 构建主查询，联表查询用户和模块信息
-            query = db.query(McpService).join(
+            query = db.query(McpService).outerjoin(
                 McpModule, McpService.module_id == McpModule.id
             ).outerjoin(
                 User, McpService.user_id == User.id
@@ -479,13 +556,25 @@ class McpServiceManager:
                 
             # 权限控制：非管理员只能看到自己的服务或公开的服务，管理员可以看到所有服务
             if not is_admin and user_id is not None:
-                query = query.filter(
-                    (McpService.user_id == user_id) | (McpService.is_public == True)
+                # 非管理员只能搜索公开服务或自己的服务
+                # 对于有模块的服务，需要同时检查服务和模块的公开状态
+                # 对于第三方服务（module_id为NULL），只检查服务的公开状态
+                public_filter = (
+                    (McpService.is_public == True) & 
+                    ((McpService.module_id.is_(None)) | (McpModule.is_public == True))
                 )
+                own_filter = (McpService.user_id == user_id)
+                query = query.filter(public_filter | own_filter)
             elif is_admin:
                 pass
             else:
-                query = query.filter(McpService.is_public == True)
+                # 未登录用户只能看到公开的服务
+                # 对于有模块的服务，需要同时检查服务和模块的公开状态
+                # 对于第三方服务（module_id为NULL），只检查服务的公开状态
+                query = query.filter(
+                    (McpService.is_public == True) & 
+                    ((McpService.module_id.is_(None)) | (McpModule.is_public == True))
+                )
                 
             services = query.all()
             result = []
@@ -495,10 +584,21 @@ class McpServiceManager:
                 service_dict = service.to_dict()
                 
                 # 获取模块名称
-                module = db.query(McpModule).filter(
-                    McpModule.id == service.module_id
-                ).first()
-                service_dict["module_name"] = module.name if module else "Unknown"
+                if service.module_id:
+                    # 内置服务，从模块获取信息
+                    module = db.query(McpModule).filter(
+                        McpModule.id == service.module_id
+                    ).first()
+                    service_dict["module_name"] = (
+                        module.name if module else "Unknown"
+                    )
+                    service_dict["description"] = (
+                        module.description if module else ""
+                    )
+                else:
+                    # 第三方服务，使用服务本身的信息
+                    service_dict["module_name"] = "第三方服务"
+                    service_dict["description"] = service.description or ""
                 
                 # 替换SSE URL为完整URL
                 sse_url = service.sse_url
@@ -539,7 +639,7 @@ class McpServiceManager:
         """
         with get_db() as db:
             # 构建主查询，联表查询用户和模块信息
-            query = db.query(McpService).join(
+            query = db.query(McpService).outerjoin(
                 McpModule, McpService.module_id == McpModule.id
             ).outerjoin(
                 User, McpService.user_id == User.id
@@ -552,17 +652,21 @@ class McpServiceManager:
             # 权限控制：非管理员只能看到自己的服务或公开的服务，管理员可以看到所有服务
             if not is_admin and user_id is not None:
                 # 非管理员只能搜索公开服务或自己的服务
+                # 对于有模块的服务，需要同时检查服务和模块的公开状态
+                # 对于第三方服务（module_id为NULL），只检查服务的公开状态
                 public_filter = (
                     (McpService.is_public == True) & 
-                    (McpModule.is_public == True)
+                    ((McpService.module_id.is_(None)) | (McpModule.is_public == True))
                 )
                 own_filter = (McpService.user_id == user_id)
                 query = query.filter(public_filter | own_filter)
             elif not is_admin:
                 # 未登录用户只能看到公开的服务
+                # 对于有模块的服务，需要同时检查服务和模块的公开状态
+                # 对于第三方服务（module_id为NULL），只检查服务的公开状态
                 query = query.filter(
                     (McpService.is_public == True) & 
-                    (McpModule.is_public == True)
+                    ((McpService.module_id.is_(None)) | (McpModule.is_public == True))
                 )
                 
             # 搜索条件
@@ -594,15 +698,21 @@ class McpServiceManager:
                 service_dict = service.to_dict()
                 
                 # 获取模块名称
-                module = db.query(McpModule).filter(
-                    McpModule.id == service.module_id
-                ).first()
-                service_dict["module_name"] = (
-                    module.name if module else "Unknown"
-                )
-                service_dict["description"] = (
-                    module.description if module else ""
-                )
+                if service.module_id:
+                    # 内置服务，从模块获取信息
+                    module = db.query(McpModule).filter(
+                        McpModule.id == service.module_id
+                    ).first()
+                    service_dict["module_name"] = (
+                        module.name if module else "Unknown"
+                    )
+                    service_dict["description"] = (
+                        module.description if module else ""
+                    )
+                else:
+                    # 第三方服务，使用服务本身的信息
+                    service_dict["module_name"] = "第三方服务"
+                    service_dict["description"] = service.description or ""
                 
                 # 获取用户名称
                 user = (

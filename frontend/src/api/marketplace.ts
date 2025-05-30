@@ -277,3 +277,20 @@ export async function pageServices(params: Page) {
   const response = await api.post(`${apiPrefix}/service/page`, params);
   return response.data;
 }
+
+/**
+ * 创建第三方MCP服务
+ * @param data - 第三方服务数据
+ */
+export async function createThirdPartyService(data: {
+  service_name: string;
+  sse_url: string;
+  description?: string;
+  is_public?: boolean;
+}): Promise<ApiResponse<{
+  message: string;
+  service: McpServiceInfo;
+}>> {
+  const response = await api.post(`${apiPrefix}/service/third-party-services`, data);
+  return response.data;
+}

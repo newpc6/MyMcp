@@ -88,6 +88,8 @@ export interface McpServiceInfo {
   config_params?: Record<string, any> // 服务配置参数
   is_public?: boolean // 是否公开
   can_edit?: boolean // 是否可编辑/管理
+  service_type?: number // 服务类型：1=内置服务, 2=第三方服务
+  service_type_name?: string // 服务类型名称
 }
 
 /**

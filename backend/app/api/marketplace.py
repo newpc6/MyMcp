@@ -95,16 +95,23 @@ async def scan_repository_modules(request: Request):
 
 async def create_module(request: Request):
     """创建新的MCP模块"""
-    data = await request.json()
+    try:
+        data = await request.json()
 
-    # 获取用户信息并添加到数据中
-    user_id, is_admin = get_user_info(request)
-    if user_id:
-        data["user_id"] = user_id
+        # 获取用户信息并添加到数据中
+        user_id, is_admin = get_user_info(request)
+        if user_id:
+            data["user_id"] = user_id
 
-    result = marketplace_service.create_module(data)
-    return success_response(result, code=0, http_status_code=200)
-
+            result = marketplace_service.create_module(data)
+            return success_response(result, code=0, http_status_code=200)
+    except Exception as e:
+        mcp_logger.error(f"创建MCP模块失败: {str(e)}")
+        return error_response(
+            f"创建MCP模块失败: {str(e)}", 
+            code=400, 
+            http_status_code=400
+        )
 
 async def update_module(request: Request):
     """更新MCP模块"""
