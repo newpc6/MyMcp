@@ -1,5 +1,12 @@
 # MyMcp
 
+
+## 交流群
+qq群：979958989
+加群更及时交流、讨论
+![qq-group.png](https://img.picui.cn/free/2025/05/30/6839134886ec1.png)
+
+
 ## 介绍
 
 开源介绍 https://blog.csdn.net/u012327423/article/details/147531100
