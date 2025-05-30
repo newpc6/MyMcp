@@ -86,7 +86,7 @@ admin/eGova@2025(管理员账号请勿随意删除修改数据，主要是为了
 切换为刚创建的 conda 环境
 
 ```
-conda activate mcp-test
+conda activate mcp
 ```
 
 进入后端目录，安装 python 依赖，推荐清华源

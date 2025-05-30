@@ -102,15 +102,76 @@ def sync_db_model():
     if tables_to_create:
         tables_str = ", ".join(tables_to_create)
         mcp_logger.info(f"发现新表，准备创建: {tables_str}")
-        # 仅创建新表
-        for table_name in tables_to_create:
-            metadata.tables[table_name].create(bind=engine)
-            mcp_logger.info(f"创建表 {table_name} 成功")
+        
+        # 按外键依赖关系排序表创建顺序
+        sorted_tables = _sort_tables_by_dependencies(tables_to_create, metadata)
+        
+        # 按正确顺序创建新表
+        for table_name in sorted_tables:
+            try:
+                metadata.tables[table_name].create(bind=engine)
+                mcp_logger.info(f"创建表 {table_name} 成功")
+            except Exception as e:
+                mcp_logger.error(f"创建表 {table_name} 失败: {str(e)}")
 
     # 处理已存在的表，进行字段比对
     tables_to_sync = model_tables.intersection(existing_tables)
     for table_name in tables_to_sync:
-        sync_table_columns(table_name, inspector, metadata)
+        try:
+            sync_table_columns(table_name, inspector, metadata)
+        except Exception as e:
+            mcp_logger.error(f"同步表 {table_name} 失败: {str(e)}")
+
+
+def _sort_tables_by_dependencies(table_names, metadata):
+    """
+    根据外键依赖关系对表进行排序
+    确保被依赖的表先创建
+    """
+    # 构建依赖图
+    dependencies = {}
+    for table_name in table_names:
+        dependencies[table_name] = set()
+        table = metadata.tables[table_name]
+        
+        # 检查该表的外键依赖
+        for fk in table.foreign_keys:
+            referenced_table = fk.column.table.name
+            # 只考虑需要创建的表之间的依赖关系
+            if referenced_table in table_names:
+                dependencies[table_name].add(referenced_table)
+    
+    # 拓扑排序
+    sorted_tables = []
+    visited = set()
+    temp_visited = set()
+    
+    def visit(table_name):
+        if table_name in temp_visited:
+            # 检测到循环依赖，记录警告但继续处理
+            mcp_logger.warning(f"检测到循环依赖，涉及表: {table_name}")
+            return
+        if table_name in visited:
+            return
+            
+        temp_visited.add(table_name)
+        
+        # 先访问依赖的表
+        for dep_table in dependencies.get(table_name, set()):
+            if dep_table in table_names:  # 确保依赖的表也在待创建列表中
+                visit(dep_table)
+        
+        temp_visited.remove(table_name)
+        visited.add(table_name)
+        sorted_tables.append(table_name)
+    
+    # 对所有表进行拓扑排序
+    for table_name in table_names:
+        if table_name not in visited:
+            visit(table_name)
+    
+    mcp_logger.info(f"表创建顺序: {' -> '.join(sorted_tables)}")
+    return sorted_tables
 
 
 def sync_table_columns(table_name, inspector, metadata):
