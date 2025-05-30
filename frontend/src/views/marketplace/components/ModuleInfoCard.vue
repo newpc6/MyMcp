@@ -18,7 +18,7 @@
           <el-descriptions-item label="描述" :span="2" label-class-name="info-label" content-class-name="info-content">
             {{ moduleInfo.description }}
           </el-descriptions-item>
-          
+
           <el-descriptions-item label="标签" :span="2" label-class-name="info-label" content-class-name="info-content">
             <div class="flex flex-wrap">
               <el-tag v-for="tag in tags" :key="tag" size="small" class="mr-1 tag-item">{{ tag }}</el-tag>
@@ -30,14 +30,17 @@
               </el-tag>
             </div>
           </el-descriptions-item>
-          
-          <el-descriptions-item v-if="moduleInfo.author" label="作者" label-class-name="info-label" content-class-name="info-content">
+
+          <el-descriptions-item v-if="moduleInfo.author" label="作者" label-class-name="info-label"
+            content-class-name="info-content">
             {{ moduleInfo.author }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="moduleInfo.version" label="版本" label-class-name="info-label" content-class-name="info-content">
+          <el-descriptions-item v-if="moduleInfo.version" label="版本" label-class-name="info-label"
+            content-class-name="info-content">
             {{ moduleInfo.version }}
           </el-descriptions-item>
-          <el-descriptions-item v-if="moduleInfo.creator_name" label="创建者" label-class-name="info-label" content-class-name="info-content">
+          <el-descriptions-item v-if="moduleInfo.creator_name" label="创建者" label-class-name="info-label"
+            content-class-name="info-content">
             {{ moduleInfo.creator_name }}
           </el-descriptions-item>
           <el-descriptions-item label="状态" label-class-name="info-label" content-class-name="info-content">
@@ -59,7 +62,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { McpModuleInfo } from '../../types/marketplace';
+import type { McpModuleInfo } from '../../../types/marketplace';
 
 const props = defineProps<{
   moduleInfo: McpModuleInfo;
@@ -76,7 +79,7 @@ const emit = defineEmits<{
 const tags = computed(() => {
   if (!props.moduleInfo.tags) return [];
   if (typeof props.moduleInfo.tags === 'string') {
-    return props.moduleInfo.tags.split(',').filter(t => t.trim());
+    return props.moduleInfo.tags.split(',').filter((t: string) => t.trim());
   }
   return props.moduleInfo.tags;
 });
@@ -95,6 +98,12 @@ function getModuleIcon(module: McpModuleInfo) {
   } else {
     return 'Tools';
   }
+}
+</script>
+
+<script lang="ts">
+export default {
+  name: 'ModuleInfoCard'
 }
 </script>
 
@@ -274,21 +283,21 @@ h2 {
   .module-info-card {
     border-radius: 16px;
   }
-  
+
   :deep(.info-label),
   :deep(.info-content) {
     padding: 10px 12px !important;
   }
-  
+
   .tag-item {
     height: 24px;
     line-height: 22px;
     padding: 0 10px;
     font-size: 12px;
   }
-  
+
   h2 {
     font-size: 18px;
   }
 }
-</style> 
+</style>

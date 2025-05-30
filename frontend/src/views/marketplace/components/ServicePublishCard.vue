@@ -110,9 +110,9 @@
 <script setup lang="ts">
 import { DocumentCopy, Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import type { McpServiceInfo } from '@/types/marketplace';
+import type { McpServiceInfo } from '../../../types/marketplace';
 import { ref, onMounted } from 'vue';
-import { copyTextToClipboard } from '@/utils/copy';
+import { copyTextToClipboard } from '../../../utils/copy';
 
 const props = defineProps<{
   services: McpServiceInfo[];
@@ -187,6 +187,12 @@ const copyAsEgovakbUrl = (url: string) => {
     ElMessage.success('egovakb格式URL已复制到剪贴板');
   });
 };
+</script>
+
+<script lang="ts">
+export default {
+  name: 'ServicePublishCard'
+}
 </script>
 
 <style scoped>
@@ -466,22 +472,22 @@ h3 {
   .service-card {
     border-radius: 16px;
   }
-  
+
   :deep(.el-card__header) {
     padding: 16px 20px;
   }
-  
+
   :deep(.el-table .cell) {
     padding: 10px 12px;
   }
-  
+
   :deep(.el-button) {
     font-size: 11px;
     padding: 5px 10px;
   }
-  
+
   h3 {
     font-size: 16px;
   }
 }
-</style> 
+</style>

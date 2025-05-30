@@ -11,11 +11,17 @@
 <script setup lang="ts">
 import { defineProps } from 'vue';
 import VueMarkdownRender from 'vue-markdown-render';
-import type { McpModuleInfo } from '@/types/marketplace';
+import type { McpModuleInfo } from '../../../types/marketplace';
 
 defineProps<{
   moduleInfo: McpModuleInfo;
 }>();
+</script>
+
+<script lang="ts">
+export default {
+  name: 'ServiceDetailsPanel'
+}
 </script>
 
 <style scoped>
@@ -140,4 +146,4 @@ defineProps<{
   background-color: #e1e4e8;
   border: 0;
 }
-</style> 
+</style>

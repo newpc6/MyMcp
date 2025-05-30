@@ -74,7 +74,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Search } from '@element-plus/icons-vue';
-import type { McpToolInfo, McpToolParameter } from '@/types/marketplace';
+import type { McpToolInfo, McpToolParameter } from '../../../types/marketplace';
 
 const props = defineProps<{
   tools: McpToolInfo[];
@@ -120,14 +120,14 @@ function getToolParams(): McpToolParameter[] {
 // 测试工具
 async function testTool() {
   if (!currentTool.value) return;
-  
+
   testResult.value = null;
   testError.value = null;
   testing.value = true;
 
   try {
     const toolName = currentTool.value.function_name;
-    
+
     // 构建调用参数对象
     const params: Record<string, any> = {};
     for (const param of getToolParams()) {
@@ -194,6 +194,12 @@ function formatResult(result: any) {
 // 如果有tools数据并且没有选中工具，默认选择第一个
 if (props.tools.length > 0 && !currentTool.value) {
   selectTool(props.tools[0]);
+}
+</script>
+
+<script lang="ts">
+export default {
+  name: 'ToolTestPanel'
 }
 </script>
 
@@ -338,4 +344,4 @@ if (props.tools.length > 0 && !currentTool.value) {
 :deep(.el-form-item__label) {
   font-weight: 500;
 }
-</style> 
+</style>

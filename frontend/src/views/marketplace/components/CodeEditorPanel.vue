@@ -7,7 +7,8 @@
       <div class="code-editor-header">
         <h3 class="editor-title">模块代码</h3>
         <div class="editor-actions">
-          <el-alert v-if="!hasEditPermission" type="warning" :closable="false" show-icon title="您只能查看代码，没有编辑权限" class="mr-4" />
+          <el-alert v-if="!hasEditPermission" type="warning" :closable="false" show-icon title="您只能查看代码，没有编辑权限"
+            class="mr-4" />
           <el-button type="primary" size="small" @click="$emit('format')" :loading="saving" v-if="hasEditPermission">
             格式化代码
           </el-button>
@@ -109,6 +110,12 @@ function handleEditorCreated(payload: { view: EditorView }) {
 }
 </script>
 
+<script lang="ts">
+export default {
+  name: 'CodeEditorPanel'
+}
+</script>
+
 <style scoped>
 .code-editor {
   border-radius: 8px;
@@ -207,4 +214,4 @@ function handleEditorCreated(payload: { view: EditorView }) {
   background-color: rgba(0, 0, 0, 0.2);
   border-radius: 3px;
 }
-</style> 
+</style>

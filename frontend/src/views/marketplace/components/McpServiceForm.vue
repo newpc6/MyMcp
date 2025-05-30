@@ -436,7 +436,7 @@ const initConfigParams = () => {
   if (form.value.config_schema) {
     try {
       let schema;
-      
+
       // 处理不同格式的 config_schema
       if (typeof form.value.config_schema === 'string') {
         // 如果是字符串，尝试解析为 JSON
@@ -448,7 +448,7 @@ const initConfigParams = () => {
         console.warn('config_schema 格式不正确:', form.value.config_schema);
         return;
       }
-      
+
       // 将对象转换为参数列表
       Object.entries(schema).forEach(([key, config]: [string, any]) => {
         configParams.value.push({
@@ -461,7 +461,7 @@ const initConfigParams = () => {
           required: config.required || false
         });
       });
-      
+
       console.log('initConfigParams 2', configParams.value)
     } catch (error) {
       console.error('解析配置 Schema 失败:', error);
@@ -478,11 +478,11 @@ watch(form, (newVal) => {
 // 监听 props 变化，初始化配置参数
 watch(() => props.modelValue, (newVal, oldVal) => {
   console.log('props.modelValue', newVal)
-  
+
   // 深度比较，避免不必要的更新
   const newStr = JSON.stringify(newVal);
   const oldStr = JSON.stringify(oldVal);
-  
+
   if (newStr !== oldStr) {
     form.value = { ...newVal };
     nextTick(() => {
@@ -496,6 +496,12 @@ defineExpose({
   validate: () => formRef.value?.validate(),
   resetFields: () => formRef.value?.resetFields(),
 });
+</script>
+
+<script lang="ts">
+export default {
+  name: 'McpServiceForm'
+}
 </script>
 
 <style scoped>
