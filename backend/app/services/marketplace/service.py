@@ -23,6 +23,7 @@ from app.utils.permissions import add_edit_permission
 from app.models.group.group import McpGroup
 from app.utils.http.pagination import PageParams
 from app.utils.http.utils import build_page_response
+from app.models.tools.tool_execution import ToolExecution
 
 
 class MarketplaceService:
@@ -621,6 +622,11 @@ class MarketplaceService:
                 # 检查权限：非管理员只能删除自己创建的模块
                 if not is_admin and user_id is not None and module.user_id != user_id:
                     return False
+                
+                # 删除工具执行记录
+                db.execute(
+                    delete(ToolExecution).where(ToolExecution.module_id == module_id)
+                )
                 
                 # 删除相关工具
                 db.execute(
