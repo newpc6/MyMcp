@@ -18,3 +18,20 @@ export async function updateServiceParams(
   const response = await api.put(`${apiPrefix}/service/${id}/params`, configParams)
   return response.data
 }
+
+
+/**
+ * 更新服务可见性状态
+ * @param serviceUuid - 服务UUID
+ * @param isPublic - 是否公开
+ */
+export async function updateServiceVisibility(id: number, isPublic: boolean): Promise<
+  ApiResponse<{
+    is_public: boolean
+  }>
+> {
+  const response = await api.put(`${apiPrefix}/service/${id}/visibility`, {
+    is_public: isPublic
+  });
+  return response.data;
+}

@@ -459,10 +459,9 @@ import {
   getService,
   getModule,
   pageServices,
-  listModules,
-  updateServiceVisibility
+  listModules
 } from '../../api/marketplace';
-import { updateServiceParams as updateServiceParamsAPI } from '../../api/mcpServer';
+import { updateServiceParams as updateServiceParamsAPI, updateServiceVisibility } from '../../api/mcpServer';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 import type { McpServiceInfo } from '../../types/marketplace';
 // @ts-ignore
@@ -767,7 +766,7 @@ const handleToggleVisibility = async (service: McpServiceInfo) => {
       }
     );
 
-    await updateServiceVisibility(service.service_uuid, newVisibility);
+    await updateServiceVisibility(service.id, newVisibility);
     
     ElNotification({
       title: '成功',

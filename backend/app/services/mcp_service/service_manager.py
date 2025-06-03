@@ -421,7 +421,7 @@ class McpServiceManager:
 
         return False
 
-    def update_service_visibility(self, service_uuid: str, is_public: bool, 
+    def update_service_visibility(self, id: int, is_public: bool, 
                                 user_id: Optional[int] = None, is_admin: bool = False) -> Dict[str, Any]:
         """更新服务的公开/私有状态
 
@@ -439,7 +439,7 @@ class McpServiceManager:
         """
         with get_db() as db:
             service = db.query(McpService).filter(
-                McpService.service_uuid == service_uuid
+                McpService.id == id
             ).first()
 
             if not service:
@@ -455,7 +455,7 @@ class McpServiceManager:
             
             return {
                 "is_public": service.is_public,
-                "service_uuid": service_uuid
+                "id": service.id
             }
 
     def update_service_description(self, service_uuid: str, description: str, 

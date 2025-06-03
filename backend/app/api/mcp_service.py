@@ -419,7 +419,7 @@ async def update_service_description(request: Request):
 
 async def update_service_visibility(request: Request):
     """更新服务公开/私有状态"""
-    service_uuid = request.path_params["service_uuid"]
+    id = request.path_params["id"]
     
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
@@ -435,7 +435,7 @@ async def update_service_visibility(request: Request):
         
         # 调用service_manager更新可见性
         result = service_manager.update_service_visibility(
-            service_uuid=service_uuid,
+            id=id,
             is_public=is_public,
             user_id=user_id,
             is_admin=is_admin
@@ -520,7 +520,7 @@ def get_router():
               methods=["POST"]),
         Route("/{service_uuid}/description", update_service_description,
               methods=["PUT"]),
-        Route("/{service_uuid}/visibility", update_service_visibility,
+        Route("/{id}/visibility", update_service_visibility,
               methods=["PUT"]),
         Route("/modules_for_select", list_modules_for_select, methods=["GET"]),
         Route("/users_for_select", list_users_for_select, methods=["GET"]),
