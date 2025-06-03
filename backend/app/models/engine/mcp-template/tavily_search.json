@@ -1,0 +1,14 @@
+{
+  "name": "tavily_search",
+  "description": "使用Tavily API进行实时在线搜索",
+  "module_path": "repository.tavily_search",
+  "author": "系统",
+  "version": "1.0.0",
+  "tags": "搜索,Tavily,实时搜索,网络搜索",
+  "icon": "search",
+  "is_hosted": true,
+  "category": "搜索工具",
+  "config_schema": "{\n    \"api_key\": {\n        \"type\": \"string\",\n        \"description\": \"Tavily API密钥\",\n        \"required\": true\n    }\n}",
+  "code": "\"\"\"\nTavily搜索助手，提供实时在线搜索功能\n\"\"\"\nfrom tavily import TavilyClient\nimport json\n\ndef online_search(query):\n    \"\"\"\n    使用tavily sdk在线实时搜索\n\n    工具参数:\n    query (str): 要搜索的查询字符串。\n    \n    平台配置参数：\n    ${api_key}: 平台API密钥, 请在平台配置，平台运行时会自动替换。\n\n    返回:\n    包含搜索结果的字典列表。如果没有结果，则返回 None。\n    \"\"\"\n    tavily_client = TavilyClient(${api_key})\n    response = tavily_client.search(query)\n    \n    if response.get(\"results\"):\n        # 将Unicode转义序列解析为中文并转换为英文\n        results = []\n        for item in response.get(\"results\"):\n            # 如果结果已经是字典格式直接使用\n            if isinstance(item, dict):\n                results.append(item)\n            # 如果结果是JSON字符串需要解析\n            else:\n                try:\n                    item_dict = json.loads(item)\n                    results.append(item_dict)\n                except json.JSONDecodeError:\n                    results.append({\"content\": item})\n        \n        return json.dumps(results)\n    else:\n        return None",
+  "markdown_docs": "# Tavily搜索助手\n\n## 简介\nTavily搜索助手利用Tavily API提供实时在线搜索功能，可以获取最新的互联网内容。\n\n## 配置项\n该模块需要以下配置：\n\n| 配置项 | 类型 | 描述 | 默认值 |\n|-------|-----|------|-------|\n| api_key | 字符串 | Tavily API密钥 | 必填 |\n\n## 功能列表\n\n### 在线搜索\n根据查询词在互联网上实时搜索内容，返回相关结果。\n\n**参数：**\n- query: 搜索查询词\n\n**返回：**\n- 包含搜索结果的JSON字符串，每个结果包含内容和元数据\n- 如果没有结果，则返回None\n\n## 使用示例\n```python\n# 搜索\"人工智能最新进展\"\nresults = online_search(\"人工智能最新进展\")\n# 返回相关的搜索结果\n```\n\n## 注意事项\n1. 使用前需要在平台配置有效的Tavily API密钥\n2. 需要安装tavily-python库\n3. 结果内容可能包含HTML标记，根据需要进行处理"
+}

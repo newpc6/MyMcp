@@ -23,14 +23,16 @@ class McpGroup(Base):
     updated_at = Column(DateTime, default=now_beijing())
     user_id = Column(Integer, nullable=True, index=True)  # 创建者ID
 
-    def to_dict(self):
+    def to_dict(self, include_modules_count=True):
         """转换为字典格式"""
-        # 获取模块数量通过直接查询
-        with get_db() as db:
-            # 使用原生SQL查询避免循环导入
-            query = "SELECT COUNT(*) FROM mcp_modules WHERE category_id = :id"
-            sql = text(query).bindparams(id=self.id)
-            modules_count = db.execute(sql).scalar()
+        modules_count = 0
+        if include_modules_count:
+            # 获取模块数量通过直接查询
+            with get_db() as db:
+                # 使用原生SQL查询避免循环导入
+                query = "SELECT COUNT(*) FROM mcp_modules WHERE category_id = :id"
+                sql = text(query).bindparams(id=self.id)
+                modules_count = db.execute(sql).scalar()
 
         return {
             "id": self.id,

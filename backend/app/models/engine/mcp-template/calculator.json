@@ -1,0 +1,14 @@
+{
+  "name": "calculator",
+  "description": "简单计算工具模块",
+  "module_path": "repository.calculator",
+  "author": "系统",
+  "version": "1.0.0",
+  "tags": "计算,数学,工具",
+  "icon": "calculator",
+  "is_hosted": true,
+  "category": "开发者工具",
+  "config_schema": null,
+  "code": "\"\"\"\n计算工具模块，提供基本的数学计算功能\n\"\"\"\nfrom typing import List, Union, Dict, Any\n\n\ndef add_numbers(numbers: List[int]) -> int:\n    \"\"\"\n    计算一组数字的和\n    \n    参数:\n        numbers: 需要求和的数字列表\n        \n    返回:\n        所有数字的和\n    \"\"\"\n    return sum(numbers)\n\n\ndef multiply_numbers(numbers: List[int]) -> int:\n    \"\"\"\n    计算一组数字的乘积\n    \n    参数:\n        numbers: 需要相乘的数字列表\n        \n    返回:\n        所有数字的乘积\n    \"\"\"\n    if not numbers:\n        return 0\n    \n    result = 1\n    for num in numbers:\n        result *= num\n    return result\n\n\ndef calculate_expression(expression: str) -> Dict[str, Any]:\n    \"\"\"\n    计算数学表达式\n    \n    参数:\n        expression: 数学表达式字符串，如 \"1 + 2 * 3\"\n        \n    返回:\n        计算结果和解析过程\n    \"\"\"\n    try:\n        # 安全的表达式评估\n        result = eval(expression, {\"__builtins__\": {}})\n        \n        return {\n            \"expression\": expression,\n            \"result\": result,\n            \"success\": True\n        }\n    except Exception as e:\n        return {\n            \"expression\": expression,\n            \"error\": str(e),\n            \"success\": False\n        }",
+  "markdown_docs": "# 计算工具模块\n\n## 简介\n计算工具模块提供基本的数学计算功能，包括加法、乘法和复杂表达式计算。\n\n## 功能列表\n本模块提供以下工具函数：\n\n### 1. 数字求和\n将一组数字相加，返回它们的总和。\n\n### 2. 数字乘积\n计算一组数字的乘积，返回它们相乘的结果。\n\n### 3. 表达式计算\n支持计算复杂的数学表达式，如`1 + 2 * 3`等。\n\n## 使用示例\n```python\n# 计算数字之和\nresult = add_numbers([1, 2, 3, 4, 5])  # 返回 15\n\n# 计算数字乘积\nproduct = multiply_numbers([2, 3, 4])  # 返回 24\n\n# 计算表达式\nexpr_result = calculate_expression(\"2 + 3 * 4\")  \n# 返回 {'expression': '2 + 3 * 4', 'result': 14, 'success': True}\n```\n\n## 注意事项\n表达式计算功能出于安全考虑使用了受限的环境，不支持导入模块和执行系统命令。"
+}
