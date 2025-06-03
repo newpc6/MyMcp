@@ -43,7 +43,7 @@
                 :label="module.name" 
                 :value="module.id"
               >
-                <span class="option-text">{{ module.name }}</span>
+                <span class="option-text">{{ index + 1 }}. {{ module.name }}</span>
               </el-option>
             </el-select>
             
@@ -69,12 +69,12 @@
               class="filter-select"
             >
               <el-option 
-                v-for="user in users" 
+                v-for="(user, index) in users" 
                 :key="user.id" 
                 :label="user.username" 
                 :value="user.id"
               >
-                <span class="option-text">{{ user.username }}</span>
+                <span class="option-text">{{ index + 1 }}. {{ user.username }}</span>
                 <el-icon v-if="user.is_admin" class="admin-icon">
                   <UserFilled />
                 </el-icon>
@@ -142,13 +142,20 @@
             </div>
             
             <div class="visibility-badge">
-              <el-tag 
-                :type="service.is_public ? 'success' : 'info'" 
-                size="small" 
-                effect="light"
+              <el-tooltip 
+                :content="canManageService(service) ? '点击切换公开/私有状态' : (service.is_public ? '公开服务' : '私有服务')" 
+                placement="top"
               >
-                {{ service.is_public ? '公开' : '私有' }}
-              </el-tag>
+                <el-tag 
+                  :type="service.is_public ? 'success' : 'info'" 
+                  size="small" 
+                  effect="light"
+                  @click.stop="canManageService(service) ? handleToggleVisibility(service) : null"
+                  :class="{ 'clickable-tag': canManageService(service) }"
+                >
+                  {{ service.is_public ? '公开' : '私有' }}
+                </el-tag>
+              </el-tooltip>
             </div>
           </div>
 
@@ -452,7 +459,8 @@ import {
   getService,
   getModule,
   pageServices,
-  listModules
+  listModules,
+  updateServiceVisibility
 } from '../../api/marketplace';
 import { updateServiceParams as updateServiceParamsAPI } from '../../api/mcpServer';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
@@ -724,6 +732,56 @@ const handleUninstallService = async (service: McpServiceInfo) => {
       ElNotification({
         title: '错误',
         message: `卸载服务失败: ${error.message || '未知错误'}`,
+        type: 'error'
+      });
+    }
+  }
+};
+
+// 切换服务可见性状态
+const handleToggleVisibility = async (service: McpServiceInfo) => {
+  // 阻止事件冒泡
+  event?.stopPropagation();
+
+  // 检查权限
+  if (!canManageService(service)) {
+    ElMessageBox.alert(
+      '您没有权限操作此服务，只有管理员或服务创建者才能操作。',
+      '权限不足',
+      { type: 'warning' }
+    );
+    return;
+  }
+
+  const newVisibility = !service.is_public;
+  const actionText = newVisibility ? '公开' : '私有';
+
+  try {
+    await ElMessageBox.confirm(
+      `确认要将服务 ${service.name || service.module_name || '未命名服务'} 设置为${actionText}吗？`,
+      '修改可见性',
+      {
+        confirmButtonText: '确认',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    );
+
+    await updateServiceVisibility(service.service_uuid, newVisibility);
+    
+    ElNotification({
+      title: '成功',
+      message: `服务已设置为${actionText}`,
+      type: 'success'
+    });
+    
+    // 重新加载服务列表
+    await loadServices();
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      ElNotification({
+        title: '错误',
+        message: `修改服务可见性失败: ${error.message || '未知错误'}`,
         type: 'error'
       });
     }
@@ -1150,13 +1208,13 @@ onMounted(() => {
 }
 
 .service-card:hover::before {
-  opacity: 1;
+  /* opacity: 1; */
 }
 
 .service-card:hover {
-  transform: translateY(-12px) scale(1.02);
+  /* transform: translateY(-12px) scale(1.02);
   box-shadow: 0 25px 50px rgba(25, 118, 210, 0.2);
-  border-color: rgba(25, 118, 210, 0.3);
+  border-color: rgba(25, 118, 210, 0.3); */
 }
 
 .service-running {
@@ -1289,6 +1347,16 @@ onMounted(() => {
   font-weight: 600;
   padding: 6px 12px;
   border: none;
+}
+
+.clickable-tag {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clickable-tag:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .action-section {

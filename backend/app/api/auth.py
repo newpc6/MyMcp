@@ -146,16 +146,22 @@ async def get_current_user(request: Request):
 
 
 async def get_users(request: Request):
-    """获取所有用户（仅管理员）"""
-    # 检查管理员权限
+    """获取用户信息（管理员可获取所有用户，普通用户只能获取自己）"""
+    # 检查登录状态
     if not hasattr(request.state, 'user'):
         return error_response("未登录", code=401, http_status_code=401)
     
-    is_admin = request.state.user.get("is_admin", False)
-    if not is_admin:
-        return error_response("需要管理员权限", code=403, http_status_code=403)
+    current_user = request.state.user
+    is_admin = current_user.get("is_admin", False)
+    current_user_id = current_user.get("user_id")
     
-    users = UserService.get_all_users()
+    if is_admin:
+        # 管理员可以获取所有用户
+        users = UserService.get_all_users()
+    else:
+        # 普通用户只能获取自己的信息
+        user = UserService.get_user_by_id(current_user_id)
+        users = [user] if user else []
     
     user_list = []
     for user in users:

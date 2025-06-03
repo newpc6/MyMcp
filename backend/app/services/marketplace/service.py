@@ -76,7 +76,7 @@ class MarketplaceService:
             # 非管理员用户只能看到自己创建的和公开的模块
             if not is_admin and user_id is not None:
                 query = query.where(
-                    (McpModule.is_public) |
+                    McpModule.is_public |
                     (McpModule.user_id == user_id)
                 )
             elif not is_admin:
@@ -145,7 +145,7 @@ class MarketplaceService:
             # 非管理员用户只能看到自己创建的和公开的模块
             if not is_admin and user_id is not None:
                 query = query.where(
-                    (McpModule.is_public is True) |
+                    McpModule.is_public |
                     (McpModule.user_id == user_id)
                 )
                 

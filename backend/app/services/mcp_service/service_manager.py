@@ -421,6 +421,89 @@ class McpServiceManager:
 
         return False
 
+    def update_service_visibility(self, service_uuid: str, is_public: bool, 
+                                user_id: Optional[int] = None, is_admin: bool = False) -> Dict[str, Any]:
+        """更新服务的公开/私有状态
+
+        Args:
+            service_uuid: 服务UUID
+            is_public: 是否公开
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+
+        Returns:
+            Dict: 包含更新结果的字典
+
+        Raises:
+            ValueError: 当服务不存在或权限不足时
+        """
+        with get_db() as db:
+            service = db.query(McpService).filter(
+                McpService.service_uuid == service_uuid
+            ).first()
+
+            if not service:
+                raise ValueError("服务不存在")
+
+            # 检查权限：非管理员只能修改自己创建的服务
+            if not is_admin and user_id is not None and service.user_id != user_id:
+                raise ValueError("没有权限修改此服务")
+
+            # 更新可见性状态
+            service.is_public = bool(is_public)
+            db.commit()
+            
+            return {
+                "is_public": service.is_public,
+                "service_uuid": service_uuid
+            }
+
+    def update_service_description(self, service_uuid: str, description: str, 
+                                 user_id: Optional[int] = None, is_admin: bool = False) -> bool:
+        """更新服务描述
+
+        Args:
+            service_uuid: 服务UUID
+            description: 新的描述
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+
+        Returns:
+            bool: 是否更新成功
+
+        Raises:
+            ValueError: 当服务不存在、权限不足或模块不存在时
+        """
+        with get_db() as db:
+            service = db.query(McpService).filter(
+                McpService.service_uuid == service_uuid
+            ).first()
+
+            if not service:
+                raise ValueError("服务不存在")
+
+            # 检查权限：非管理员只能修改自己创建的服务
+            if not is_admin and user_id is not None and service.user_id != user_id:
+                raise ValueError("没有权限修改此服务")
+
+            # 如果是第三方服务，直接更新服务的描述
+            if service.service_type == 2:
+                service.description = description
+                db.commit()
+                return True
+            else:
+                # 内置服务，更新关联的模块描述
+                module = db.query(McpModule).filter(
+                    McpModule.id == service.module_id
+                ).first()
+
+                if not module:
+                    raise ValueError("未找到关联模块")
+
+                module.description = description
+                db.commit()
+                return True
+
     def get_service_by_module_id(self, module_id: int) -> Optional[McpService]:
         """获取指定模块ID的服务
 
@@ -992,6 +1075,72 @@ class McpServiceManager:
             if hasattr(route, 'path') and route.path in routes_to_remove:
                 mcp_logger.info(f"移除路由: {route.path}")
                 self._main_app.routes.remove(route)
+
+    def get_modules_for_select(self, user_id: Optional[int] = None, is_admin: bool = False) -> List[Dict[str, Any]]:
+        """获取模块列表用于下拉选择器
+
+        Args:
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+
+        Returns:
+            List[Dict]: 模块列表
+        """
+        with get_db() as db:
+            # 构建查询
+            query = db.query(McpModule)
+
+            # 权限控制：非管理员只能看到公开模块或自己创建的模块
+            if not is_admin and user_id is not None:
+                query = query.filter(
+                    (McpModule.is_public.is_(True)) |
+                    (McpModule.user_id == user_id)
+                )
+            elif not is_admin:
+                # 未登录用户只能看到公开模块
+                query = query.filter(McpModule.is_public.is_(True))
+
+            modules = query.order_by(McpModule.name).all()
+
+            # 转换为简单的选项格式
+            return [
+                {
+                    "id": module.id,
+                    "name": module.name,
+                    "description": module.description or ""
+                }
+                for module in modules
+            ]
+
+    def get_users_for_select(self, user_id: Optional[int] = None, is_admin: bool = False) -> List[Dict[str, Any]]:
+        """获取用户列表用于下拉选择器
+
+        Args:
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+
+        Returns:
+            List[Dict]: 用户列表
+
+        Raises:
+            ValueError: 当权限不足时
+        """
+        # 只有管理员可以查看所有用户列表
+        if not is_admin:
+            raise ValueError("权限不足")
+
+        with get_db() as db:
+            users = db.query(User).order_by(User.username).all()
+
+            # 转换为简单的选项格式
+            return [
+                {
+                    "id": user.id,
+                    "name": user.username,
+                    "is_admin": getattr(user, 'is_admin', False)
+                }
+                for user in users
+            ]
 
 
 # 创建全局实例

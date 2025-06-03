@@ -385,38 +385,74 @@ async def uninstall_service(request: Request):
 async def update_service_description(request: Request):
     """更新服务描述"""
     service_uuid = request.path_params["service_uuid"]
-    data = await request.json()
-    description = data.get("description", "")
-
+    
+    # 获取用户信息
+    user_id, is_admin = get_user_info(request)
+    
     try:
-        from app.models.engine import get_db
-        from app.models.modules.mcp_services import McpService
+        data = await request.json()
+        description = data.get("description", "")
 
-        with get_db() as db:
-            service = db.query(McpService).filter(
-                McpService.service_uuid == service_uuid
-            ).first()
-
-            if not service:
-                msg = "服务不存在"
-                return error_response(msg, code=404, http_status_code=404)
-
-            # 获取关联的模块并更新描述
-            from app.models.modules.mcp_marketplace import McpModule
-            module = db.query(McpModule).filter(
-                McpModule.id == service.module_id
-            ).first()
-
-            if module:
-                module.description = description
-                db.commit()
-                return success_response(message="服务说明已更新")
-            else:
-                msg = "未找到关联模块"
-                return error_response(msg, code=404, http_status_code=404)
+        # 调用service_manager更新描述
+        success = service_manager.update_service_description(
+            service_uuid=service_uuid,
+            description=description,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        
+        if success:
+            return success_response(message="服务说明已更新")
+        else:
+            return error_response(
+                "更新服务说明失败", code=500, http_status_code=500
+            )
+            
+    except ValueError as e:
+        return error_response(str(e), code=400, http_status_code=400)
     except Exception as e:
+        mcp_logger.error(f"更新服务说明失败: {str(e)}")
         return error_response(
             f"更新服务说明失败: {str(e)}", code=500, http_status_code=500
+        )
+
+
+async def update_service_visibility(request: Request):
+    """更新服务公开/私有状态"""
+    service_uuid = request.path_params["service_uuid"]
+    
+    # 获取用户信息
+    user_id, is_admin = get_user_info(request)
+    
+    try:
+        data = await request.json()
+        is_public = data.get("is_public")
+        
+        if is_public is None:
+            return error_response(
+                "缺少is_public参数", code=400, http_status_code=400
+            )
+        
+        # 调用service_manager更新可见性
+        result = service_manager.update_service_visibility(
+            service_uuid=service_uuid,
+            is_public=is_public,
+            user_id=user_id,
+            is_admin=is_admin
+        )
+        
+        visibility_text = "公开" if result["is_public"] else "私有"
+        return success_response(
+            result, 
+            message=f"服务已设置为{visibility_text}"
+        )
+            
+    except ValueError as e:
+        return error_response(str(e), code=400, http_status_code=400)
+    except Exception as e:
+        mcp_logger.error(f"更新服务可见性失败: {str(e)}")
+        return error_response(
+            f"更新服务可见性失败: {str(e)}", code=500, http_status_code=500
         )
 
 
@@ -426,34 +462,11 @@ async def list_modules_for_select(request: Request):
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
 
-        from app.models.engine import get_db
-        from app.models.modules.mcp_marketplace import McpModule
-
-        with get_db() as db:
-            # 构建查询
-            query = db.query(McpModule)
-
-            # 权限控制：非管理员只能看到公开模块或自己创建的模块
-            if not is_admin and user_id is not None:
-                query = query.filter(
-                    (McpModule.is_public == True) |
-                    (McpModule.user_id == user_id)
-                )
-            elif not is_admin:
-                # 未登录用户只能看到公开模块
-                query = query.filter(McpModule.is_public == True)
-
-            modules = query.order_by(McpModule.name).all()
-
-            # 转换为简单的选项格式
-            result = [
-                {
-                    "id": module.id,
-                    "name": module.name,
-                    "description": module.description or ""
-                }
-                for module in modules
-            ]
+        # 调用service_manager获取模块列表
+        result = service_manager.get_modules_for_select(
+            user_id=user_id,
+            is_admin=is_admin
+        )
 
         return success_response(result)
     except Exception as e:
@@ -469,29 +482,15 @@ async def list_users_for_select(request: Request):
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
 
-        # 只有管理员可以查看所有用户列表
-        if not is_admin:
-            return error_response(
-                "权限不足", code=403, http_status_code=403
-            )
-
-        from app.models.engine import get_db
-        from app.models.modules.users import User
-
-        with get_db() as db:
-            users = db.query(User).order_by(User.username).all()
-
-            # 转换为简单的选项格式
-            result = [
-                {
-                    "id": user.id,
-                    "name": user.username,
-                    "is_admin": getattr(user, 'is_admin', False)
-                }
-                for user in users
-            ]
+        # 调用service_manager获取用户列表
+        result = service_manager.get_users_for_select(
+            user_id=user_id,
+            is_admin=is_admin
+        )
 
         return success_response(result)
+    except ValueError as e:
+        return error_response(str(e), code=403, http_status_code=403)
     except Exception as e:
         mcp_logger.error(f"获取用户列表失败: {str(e)}")
         return error_response(
@@ -520,6 +519,8 @@ def get_router():
         Route("/{service_uuid}/uninstall", uninstall_service,
               methods=["POST"]),
         Route("/{service_uuid}/description", update_service_description,
+              methods=["PUT"]),
+        Route("/{service_uuid}/visibility", update_service_visibility,
               methods=["PUT"]),
         Route("/modules_for_select", list_modules_for_select, methods=["GET"]),
         Route("/users_for_select", list_users_for_select, methods=["GET"]),

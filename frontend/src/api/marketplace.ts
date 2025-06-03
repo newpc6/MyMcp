@@ -271,6 +271,22 @@ export async function updateServiceParams(serviceId: number, configParams: Recor
 }
 
 /**
+ * 更新服务可见性状态
+ * @param serviceUuid - 服务UUID
+ * @param isPublic - 是否公开
+ */
+export async function updateServiceVisibility(serviceUuid: string, isPublic: boolean): Promise<
+  ApiResponse<{
+    is_public: boolean
+  }>
+> {
+  const response = await api.put(`${apiPrefix}/service/${serviceUuid}/visibility`, {
+    is_public: isPublic
+  });
+  return response.data;
+}
+
+/**
  * 分页查询服务列表
  */
 export async function pageServices(params: Page) {
