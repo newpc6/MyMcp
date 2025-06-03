@@ -24,6 +24,7 @@ from app.models.group.group import McpGroup
 from app.utils.http.pagination import PageParams
 from app.utils.http.utils import build_page_response
 from app.models.tools.tool_execution import ToolExecution
+from app.models.modules.users import User
 
 
 class MarketplaceService:
@@ -40,7 +41,7 @@ class MarketplaceService:
         
         参数:
             page_params: 分页参数
-            category_id: 分类ID，可选
+            condition: 搜索条件，包含category_id、name、user_id等
             user_id: 当前用户ID，可选
             is_admin: 是否为管理员用户
             
@@ -48,24 +49,39 @@ class MarketplaceService:
             分页结果
         """
         with get_db() as db:
+            # 构建主查询
             query = select(McpModule)
             
             # 如果指定了分组ID，按分组过滤
-            if condition.get("category_id"):
+            if condition and condition.get("category_id"):
                 if condition.get("category_id") == "all":
                     pass
                 else:
-                    query = query.where(McpModule.category_id == condition.get("category_id"))
+                    category_id = condition.get("category_id")
+                    query = query.where(McpModule.category_id == category_id)
+            
+            # 按模板名称搜索
+            if condition and condition.get("name"):
+                name_pattern = f'%{condition.get("name")}%'
+                query = query.where(McpModule.name.like(name_pattern))
+            
+            # 按创建者搜索
+            if condition and condition.get("user_id"):
+                user_id = condition.get("user_id")
+                if user_id == 0:
+                    pass
+                else:
+                    query = query.where(McpModule.user_id == user_id)
             
             # 非管理员用户只能看到自己创建的和公开的模块
             if not is_admin and user_id is not None:
                 query = query.where(
-                    (McpModule.is_public == True) |
+                    (McpModule.is_public) |
                     (McpModule.user_id == user_id)
                 )
             elif not is_admin:
                 # 未登录用户只能看到公开模块
-                query = query.where(McpModule.is_public == True)
+                query = query.where(McpModule.is_public)
             
             # 获取总数
             total_count = db.execute(

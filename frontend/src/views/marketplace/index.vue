@@ -55,13 +55,66 @@
 
     <!-- 右侧内容 -->
     <el-main class="p-4">
-      <el-page-header class="mb-4"
-        :title="activeCategory && activeCategory.id !== 'all' ? activeCategory.name : 'MCP 广场'">
-        <template #extra>
-          <el-button type="success" @click="showCreateDialog" class="mr-2">新建MCP服务</el-button>
-          <el-button type="primary" @click="loadModules" :loading="scanning">刷新</el-button>
-        </template>
-      </el-page-header>
+      <!-- 操作和搜索区域 -->
+      <el-card shadow="never" class="mb-4 action-search-card">
+        <div class="action-search-container">
+          <!-- 左侧操作按钮 -->
+          <div class="action-buttons">
+            <el-button type="success" @click="showCreateDialog" class="mr-2">
+              <el-icon><Plus /></el-icon>
+              新建MCP服务
+            </el-button>
+          </div>
+          
+          <!-- 右侧搜索表单 -->
+          <div class="search-form">
+            <el-input
+              v-model="searchForm.name"
+              placeholder="搜索模板名称"
+              clearable
+              @clear="handleSearch"
+              @keyup.enter="handleSearch"
+              style="width: 200px"
+              class="search-input"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+            
+            <el-select
+              v-model="searchForm.user_id"
+              placeholder="选择创建者"
+              clearable
+              @clear="handleSearch"
+              @change="handleSearch"
+              style="width: 180px"
+              filterable
+              class="creator-select"
+            >
+              <el-option
+                v-for="user in users"
+                :key="user.id"
+                :label="user.username"
+                :value="user.id"
+              >
+                <span class="option-text">{{ user.username }}</span>
+                <el-tag v-if="user.is_admin" size="small" type="warning" class="ml-2">管理员</el-tag>
+              </el-option>
+            </el-select>
+            
+            <el-button type="primary" @click="handleSearch" :loading="loading">
+              <el-icon><Search /></el-icon>
+              搜索
+            </el-button>
+            
+            <el-button @click="handleResetSearch">
+              <el-icon><Refresh /></el-icon>
+              重置
+            </el-button>
+          </div>
+        </div>
+      </el-card>
 
       <!-- 一行三列的卡片网格 -->
       <div class="module-grid">
@@ -215,12 +268,13 @@ import { ElNotification, ElMessageBox, ElMessage } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
 import {
   Tools, Menu, Collection, Plus, MoreFilled, Folder, Edit,
-  Star, Box, Monitor, Setting, Document, View, CopyDocument, Delete
+  Star, Box, Monitor, Setting, Document, View, CopyDocument, Delete, Search, User, Refresh
 } from '@element-plus/icons-vue';
 import {
   pageModules, listGroup, createModule, deleteModule, cloneModule,
   createGroup, updateGroup, deleteGroup
 } from '../../api/marketplace';
+import { getAllUsers } from '../../api/auth';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 import { defineAsyncComponent } from 'vue';
 import { Page } from '../../types/page';
@@ -238,7 +292,9 @@ const queryPage = ref<Page>({
     size: 9
   },
   condition: {
-    category_id: null
+    category_id: null,
+    name: null,
+    user_id: null
   }
 });
 
@@ -503,7 +559,9 @@ async function loadCategories() {
 // 处理分组选择
 function handleCategorySelect(categoryId: string) {
   selectedCategoryId.value = categoryId;
-  queryPage.value.condition.category_id = categoryId;
+  queryPage.value.condition.category_id = categoryId === 'all' ? null : categoryId;
+  // 重置到第一页，但保持搜索条件
+  queryPage.value.paging.page = 1;
   loadModules();
 }
 
@@ -910,10 +968,11 @@ onMounted(async () => {
   }
   
   try {
-    // 并行加载分类和模块数据
+    // 并行加载分类、模块和用户数据
     await Promise.all([
       loadCategories(),
-      loadModules()
+      loadModules(),
+      loadUsers()
     ]);
   } catch (error) {
     console.error('页面初始化失败:', error);
@@ -923,6 +982,58 @@ onMounted(async () => {
 });
 
 const McpServiceForm = defineAsyncComponent(() => import('./components/McpServiceForm.vue'));
+
+// 搜索相关
+const searchForm = ref<{
+  name: string;
+  user_id: number | null;
+}>({
+  name: '',
+  user_id: null
+});
+
+// 用户数据用于创建者下拉选择
+const users = ref<{ id: number, username: string, is_admin: boolean }[]>([]);
+
+// 加载用户数据
+const loadUsers = async () => {
+  try {
+    const response = await getAllUsers();
+    if (response && response.data) {
+      users.value = response.data;
+    }
+  } catch (error: any) {
+    // 非管理员可能没有权限查看用户列表，这是正常的
+    console.log('获取用户列表失败（可能无权限）', error.message);
+  }
+};
+
+// 处理搜索
+function handleSearch() {
+  // 更新查询条件
+  queryPage.value.condition.name = searchForm.value.name.trim() || null;
+  queryPage.value.condition.user_id = searchForm.value.user_id || null;
+  // 重置到第一页
+  queryPage.value.paging.page = 1;
+  // 执行搜索
+  loadModules();
+}
+
+// 重置搜索
+function handleResetSearch() {
+  // 重置搜索表单
+  searchForm.value = {
+    name: '',
+    user_id: null
+  };
+  // 清空查询条件
+  queryPage.value.condition.name = null;
+  queryPage.value.condition.user_id = null;
+  // 重置到第一页
+  queryPage.value.paging.page = 1;
+  // 重新加载数据
+  loadModules();
+}
 </script>
 
 <style scoped>
@@ -1238,14 +1349,6 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   border: 2px solid #ffffff;
 }
 
-.el-page-header {
-  background-color: white;
-  padding: 16px;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
-}
-
 .el-main {
   padding: 24px;
 }
@@ -1353,4 +1456,231 @@ const McpServiceForm = defineAsyncComponent(() => import('./components/McpServic
   background: linear-gradient(135deg, #a5c4fa 0%, #3575ff 100%);
   color: #ffffff;
 }
+
+.search-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.search-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #10b981 0%, #059669 50%, #047857 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+
+.search-form .el-form-item {
+  margin-bottom: 0;
+}
+
+.search-form .el-form-item__label {
+  font-weight: 500;
+  color: #374151;
+}
+
+:deep(.search-form .el-input__wrapper) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+:deep(.search-form .el-input__wrapper:hover) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.search-form .el-input__wrapper.is-focus) {
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
+  border-color: #4f8ef7;
+}
+
+.search-form .el-button {
+  border-radius: 12px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+}
+
+.search-form .el-button--primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  border: none;
+}
+
+.search-form .el-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.search-form .el-button:not(.el-button--primary) {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.search-form .el-button:not(.el-button--primary):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 用户下拉选择器样式 */
+:deep(.el-select-dropdown__item) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+}
+
+:deep(.el-select-dropdown__item .option-text) {
+  flex: 1;
+  font-weight: 500;
+}
+
+:deep(.el-select-dropdown__item .el-tag) {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 6px;
+}
+
+/* 操作和搜索卡片样式 */
+.action-search-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-search-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.action-search-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 32px !important;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.action-buttons .el-button {
+  border-radius: 12px;
+  font-weight: 500;
+  padding: 10px 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.action-buttons .el-button--success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  border: none;
+}
+
+.action-buttons .el-button--success:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.action-buttons .el-button--primary {
+  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+  border: none;
+}
+
+.action-buttons .el-button--primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-form .search-input :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.search-form .search-input :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-form .search-input :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
+  border-color: #4f8ef7;
+}
+
+.search-form .creator-select :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.search-form .creator-select :deep(.el-input__wrapper:hover) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-form .creator-select :deep(.el-input__wrapper.is-focus) {
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
+  border-color: #4f8ef7;
+}
+
+.search-form .el-button {
+  border-radius: 12px;
+  font-weight: 500;
+  padding: 8px 16px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.search-form .el-button--primary {
+  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+  border: none;
+}
+
+.search-form .el-button--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.search-form .el-button:not(.el-button--primary) {
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.search-form .el-button:not(.el-button--primary):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* 用户下拉选择器样式 */
 </style>
