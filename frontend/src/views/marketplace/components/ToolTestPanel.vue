@@ -37,30 +37,55 @@
 
             <el-form :model="testParams" label-position="top">
               <el-form-item v-for="param in getToolParams()" :key="param.name"
-                :label="param.name + (param.required ? ' (必填)' : '')">
+                :label="param.name + (param.required ? ' (必填)' : '')"
+                :class="{ 'required-param': param.required }">
                 <div class="text-sm text-gray-500 mb-1">{{ param.type }}</div>
-                <el-input v-model="testParams[param.name]" :placeholder="'请输入' + param.name" />
+                <el-input 
+                  v-model="testParams[param.name]" 
+                  :placeholder="'请输入' + param.name"
+                  :class="{ 'required-input': param.required && (!testParams[param.name] || String(testParams[param.name]).trim() === '') }"
+                />
               </el-form-item>
 
               <el-form-item>
-                <el-button type="primary" @click="testTool" :loading="testing" class="w-full test-button">
+                <el-button type="primary" @click="testTool" :loading="testing" :disabled="!canExecuteTest" class="w-full test-button">
                   执行测试
                 </el-button>
+                
+                <!-- 必填参数提示 -->
+                <div v-if="!canExecuteTest && hasRequiredParams" class="mt-2">
+                  <el-alert 
+                    type="warning" 
+                    :closable="false" 
+                    show-icon
+                    size="small"
+                    class="required-params-alert"
+                  >
+                    <template #title>
+                      <span class="text-sm">请填写所有必填参数后再执行测试</span>
+                    </template>
+                  </el-alert>
+                </div>
               </el-form-item>
             </el-form>
           </el-card>
 
           <!-- 测试结果 -->
-          <el-card v-if="testResult || testError" shadow="hover" class="result-card">
+          <el-card v-if="testResult !== null || testError" shadow="hover" class="result-card">
             <template #header>
               <div class="flex justify-between items-center">
                 <span class="font-medium">测试结果</span>
+                <el-tag v-if="testResult !== null && !testError" type="success" size="small">成功</el-tag>
+                <el-tag v-else-if="testError" type="danger" size="small">失败</el-tag>
               </div>
             </template>
 
             <el-alert v-if="testError" :title="testError" type="error" show-icon class="mb-3" />
-            <div v-else class="result-content-wrapper">
+            <div v-else-if="testResult !== null" class="result-content-wrapper">
               <pre class="whitespace-pre-wrap result-content">{{ formatResult(testResult) }}</pre>
+            </div>
+            <div v-else class="result-content-wrapper">
+              <el-text type="info">暂无测试结果</el-text>
             </div>
           </el-card>
         </div>
@@ -82,7 +107,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'test', toolName: string, params: Record<string, any>): Promise<any>;
+  (e: 'test', toolName: string, params: Record<string, any>, callback: (result: any, error?: any) => void): void;
 }>();
 
 const searchQuery = ref('');
@@ -101,6 +126,24 @@ const filteredTools = computed(() => {
     tool.name.toLowerCase().includes(query) ||
     tool.description.toLowerCase().includes(query)
   );
+});
+
+// 检查是否所有必填参数都已填写
+const canExecuteTest = computed(() => {
+  if (!currentTool.value) return false;
+  
+  const requiredParams = getToolParams().filter(param => param.required);
+  if (requiredParams.length === 0) return true; // 没有必填参数时可以执行
+  
+  return requiredParams.every(param => {
+    const value = testParams.value[param.name];
+    return value !== undefined && value !== null && String(value).trim() !== '';
+  });
+});
+
+// 检查是否有必填参数
+const hasRequiredParams = computed(() => {
+  return getToolParams().some(param => param.required);
 });
 
 // 选择工具
@@ -173,22 +216,48 @@ async function testTool() {
       }
     }
 
-    const result = await emit('test', toolName, params);
-    testResult.value = result;
+    console.log('发送测试请求:', { toolName, params });
+    
+    const callback = (result: any, error?: any) => {
+      if (error) {
+        console.error("工具测试失败", error);
+        testError.value = error.response?.data?.detail || error.message || '执行失败';
+      } else {
+        console.log('接收到测试结果:', result);
+        testResult.value = result;
+        console.log('测试结果已设置:', testResult.value);
+      }
+      testing.value = false;
+    };
+    
+    emit('test', toolName, params, callback);
   } catch (error: any) {
     console.error("工具测试失败", error);
     testError.value = error.response?.data?.detail || error.message || '执行失败';
-  } finally {
     testing.value = false;
   }
 }
 
 // 格式化结果显示
 function formatResult(result: any) {
+  if (result === null || result === undefined) {
+    return '无结果';
+  }
+  
   if (typeof result === 'object') {
+    // 如果是标准的接口响应格式 {code, message, data}
+    if (result.hasOwnProperty('code') && result.hasOwnProperty('message')) {
+      const formatted = {
+        状态码: result.code,
+        消息: result.message,
+        数据: result.data || '无数据'
+      };
+      return JSON.stringify(formatted, null, 2);
+    }
     return JSON.stringify(result, null, 2);
   }
-  return result;
+  
+  return String(result);
 }
 
 // 如果有tools数据并且没有选中工具，默认选择第一个
@@ -335,6 +404,49 @@ export default {
   transform: translateY(-2px);
   box-shadow: 0 6px 16px rgba(64, 158, 255, 0.4);
   background: linear-gradient(90deg, #409eff, #a0cfff);
+}
+
+:deep(.el-button.test-button.is-disabled) {
+  background: linear-gradient(90deg, #c0c4cc, #d3d4d6) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: not-allowed !important;
+}
+
+.required-params-alert {
+  border-radius: 8px;
+  border: 1px solid #f0ad4e;
+  background: rgba(255, 193, 7, 0.1);
+}
+
+.required-params-alert :deep(.el-alert__icon) {
+  color: #f0ad4e;
+}
+
+.required-params-alert :deep(.el-alert__title) {
+  color: #856404;
+  font-weight: 500;
+}
+
+.required-param :deep(.el-form-item__label) {
+  position: relative;
+}
+
+.required-param :deep(.el-form-item__label::before) {
+  content: "*";
+  color: #f56c6c;
+  margin-right: 4px;
+  font-weight: bold;
+}
+
+.required-input :deep(.el-input__wrapper) {
+  border: 2px solid #f56c6c !important;
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.2) !important;
+}
+
+.required-input :deep(.el-input__wrapper:hover) {
+  border-color: #f56c6c !important;
+  box-shadow: 0 0 0 2px rgba(245, 108, 108, 0.3) !important;
 }
 
 :deep(.el-input__inner) {

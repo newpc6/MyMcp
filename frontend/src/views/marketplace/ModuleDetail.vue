@@ -744,13 +744,14 @@ const updateServiceParamsFunc = async () => {
 };
 
 // 工具测试包装函数
-const handleToolTest = async (toolName: string, params: Record<string, any>): Promise<any> => {
-  try {
-    const response = await testModuleFunction(moduleId.value, toolName, params);
-    return response.data;
-  } catch (error) {
-    throw error;
-  }
+const handleToolTest = (toolName: string, params: Record<string, any>, callback: (result: any, error?: any) => void) => {
+  testModuleFunction(moduleId.value, toolName, params)
+    .then(response => {
+      callback(response.data);
+    })
+    .catch(error => {
+      callback(null, error);
+    });
 };
 
 // 页面加载时获取模块详情
