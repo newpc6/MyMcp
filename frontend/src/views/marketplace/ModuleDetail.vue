@@ -27,19 +27,28 @@
           <div class="tabs-section">
             <el-card shadow="never" class="tabs-card">
               <el-tabs v-model="activeTab" class="detail-tabs">
-                <el-tab-pane label="服务详情" name="service-details">
+                <el-tab-pane name="service-details">
+                  <template #label>
+                    <span style="padding-left: 24px;">服务详情</span>
+                  </template>
                   <div class="tab-content">
                     <ServiceDetailsPanel :moduleInfo="moduleInfo" />
                   </div>
                 </el-tab-pane>
 
-                <el-tab-pane label="工具测试" name="tool-test">
+                <el-tab-pane name="tool-test">
+                  <template #label>
+                    <span>工具测试</span>
+                  </template>
                   <div class="tab-content">
-                    <ToolTestPanel :tools="moduleTools" :moduleId="moduleId" @test="handleToolTest" />
+                    <ToolTestPanel :tools="moduleTools" :moduleId="moduleId" :configSchema="moduleInfo.config_schema" @test="handleToolTest" />
                   </div>
                 </el-tab-pane>
 
-                <el-tab-pane label="代码查看/编辑" name="code-edit">
+                <el-tab-pane name="code-edit">
+                  <template #label>
+                    <span style="padding-right: 24px;">代码查看/编辑</span>
+                  </template>
                   <div class="tab-content">
                     <CodeEditorPanel v-model="codeContent" :originalCode="originalCode"
                       :hasEditPermission="hasEditPermission" :saving="saving" :code="!!moduleInfo.code"
@@ -744,8 +753,8 @@ const updateServiceParamsFunc = async () => {
 };
 
 // 工具测试包装函数
-const handleToolTest = (toolName: string, params: Record<string, any>, callback: (result: any, error?: any) => void) => {
-  testModuleFunction(moduleId.value, toolName, params)
+const handleToolTest = (toolName: string, params: Record<string, any>, configParams: Record<string, any>, callback: (result: any, error?: any) => void) => {
+  testModuleFunction(moduleId.value, toolName, params, configParams)
     .then(response => {
       callback(response.data);
     })
@@ -915,6 +924,10 @@ onMounted(() => {
 .tab-content {
   padding: 24px;
   min-height: 400px;
+}
+
+.service-tab {
+  padding: 20px;
 }
 
 /* 对话框样式 */

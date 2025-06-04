@@ -3,9 +3,7 @@
 """
 import importlib
 import sys
-import tempfile
 import os
-import json
 from datetime import datetime
 from starlette.routing import Route
 from starlette.requests import Request
@@ -16,6 +14,7 @@ from app.models.modules.mcp_marketplace import McpTool, McpModule
 from app.services.execution.executor import execute_tool_by_name
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.logging import mcp_logger
+
 
 async def execute_tool(request: Request):
     """
@@ -31,10 +30,18 @@ async def execute_tool(request: Request):
     try:
         result = await execute_tool_by_name(tool_name, params)
         if "error" in result:
-            return error_response(result["error"], code=400, http_status_code=400)
+            return error_response(
+                result["error"], 
+                code=400, 
+                http_status_code=400
+            )
         return success_response({"result": result})
     except Exception as e:
-        return error_response(f"执行失败: {str(e)}", code=500, http_status_code=500)
+        return error_response(
+            f"执行失败: {str(e)}", 
+            code=500, 
+            http_status_code=500
+        )
 
 
 async def execute_tool_by_id(request: Request):
@@ -70,7 +77,11 @@ async def execute_tool_by_id(request: Request):
             # 返回结果
             return success_response({"result": result})
     except Exception as e:
-        return error_response(f"执行失败: {str(e)}", code=500, http_status_code=500)
+        return error_response(
+            f"执行失败: {str(e)}", 
+            code=500, 
+            http_status_code=500
+        )
 
 
 async def execute_module_function(request: Request):
@@ -80,36 +91,35 @@ async def execute_module_function(request: Request):
     Args:
         module_id: 模块ID
         function_name: 函数名
-        params: 工具参数
+        params: 工具参数（包含_config_params配置参数）
     """
     module_id = int(request.path_params["module_id"])
     function_name = request.path_params["function_name"]
     params = await request.json()
     user = request.state.user
     user_id = user.get("user_id") if user else None
+    
     try:
         with get_db() as db:
             # 从数据库获取模块信息
-            module = db.query(McpModule).filter(McpModule.id == module_id).first()
+            module = db.query(McpModule).filter(
+                McpModule.id == module_id
+            ).first()
             if not module:
                 return error_response("模块不存在", code=404, http_status_code=404)
             
             if not module.code:
                 return error_response("模块代码为空", code=400, http_status_code=400)
             
+            # 从参数中提取配置参数
+            config_params = params.pop("_config_params", None)
+            
             # 处理代码中的配置参数替换
             code = module.code
-            if code.find("${") != -1:
-                service = service_manager.get_service_by_module_id(module_id)
-                if service and service.config_params and code:
-                    config_params = None
-                    if isinstance(service.config_params, str):
-                        config_params = json.loads(service.config_params)
-                    else:
-                        config_params = service.config_params
-                    code = service_manager.replace_config_params(
-                        code, config_params
-                    )
+            if code.find("${") != -1 and config_params:
+                code = service_manager.replace_config_params(
+                    code, config_params
+                )
             
             # 创建当天日期文件夹
             today = datetime.now().strftime("%Y-%m-%d")
@@ -138,7 +148,11 @@ async def execute_module_function(request: Request):
                 spec = importlib.util.find_spec(module_name)
                 if not spec:
                     mcp_logger.error(f"无法加载模块: {module_name}")
-                    return error_response("无法加载模块", code=500, http_status_code=500)
+                    return error_response(
+                        "无法加载模块", 
+                        code=500, 
+                        http_status_code=500
+                    )
                 
                 imported_module = importlib.import_module(module_name)
                 
@@ -153,7 +167,7 @@ async def execute_module_function(request: Request):
                 # 获取函数对象
                 func = getattr(imported_module, function_name)
                 
-                # 执行函数
+                # 执行函数（使用处理后的params，已移除_config_params）
                 result = func(**params)
                 
                 # 返回结果
@@ -183,7 +197,11 @@ def get_router():
     routes = [
         Route("/{tool_name}", endpoint=execute_tool, methods=["POST"]),
         Route("/tool/{tool_id}", endpoint=execute_tool_by_id, methods=["POST"]),
-        Route("/module/{module_id}/function/{function_name}", endpoint=execute_module_function, methods=["POST"])
+        Route(
+            "/module/{module_id}/function/{function_name}", 
+            endpoint=execute_module_function, 
+            methods=["POST"]
+        )
     ]
     
     return routes

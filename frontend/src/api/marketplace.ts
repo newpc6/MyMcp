@@ -148,9 +148,19 @@ export async function testModuleTool(toolId: number, params: any): Promise<ApiRe
  * @param moduleId - 模块ID
  * @param functionName - 函数名称
  * @param params - 工具参数
+ * @param configParams - 配置参数（可选）
  */
-export async function testModuleFunction(moduleId: number, functionName: string, params: any): Promise<ApiResponse<any>> {
-  const response = await api.post(`${apiPrefix}/execute/module/${moduleId}/function/${functionName}`, params)
+export async function testModuleFunction(
+  moduleId: number, 
+  functionName: string, 
+  params: any, 
+  configParams?: Record<string, any>
+): Promise<ApiResponse<any>> {
+  const requestData = {
+    ...params,
+    ...(configParams && { _config_params: configParams })
+  };
+  const response = await api.post(`${apiPrefix}/execute/module/${moduleId}/function/${functionName}`, requestData)
   return response.data
 }
 

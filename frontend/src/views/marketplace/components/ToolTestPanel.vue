@@ -27,6 +27,69 @@
           <h2 class="text-xl font-bold mb-2 text-primary">{{ currentTool.name }}</h2>
           <p class="text-gray-600 mb-4 whitespace-pre-line">{{ currentTool.description }}</p>
 
+          <!-- 模板配置参数 -->
+          <el-card v-if="hasConfigParams" shadow="hover" class="mb-4 config-params-card">
+            <template #header>
+              <div class="flex justify-between items-center">
+                <span class="font-medium">模板配置参数</span>
+                <div class="flex items-center gap-2">
+                  <el-tag type="info" size="small">测试环境配置</el-tag>
+                  <el-button 
+                    type="danger" 
+                    size="small" 
+                    text 
+                    @click="clearConfigParams"
+                    class="clear-config-btn"
+                  >
+                    清空
+                  </el-button>
+                </div>
+              </div>
+            </template>
+
+            <el-alert 
+              type="warning" 
+              :closable="false" 
+              show-icon
+              title="请配置以下参数用于测试，这些参数会替换工具代码中的占位符"
+              class="mb-4"
+            />
+
+            <el-form :model="configParams" label-position="top">
+              <el-form-item 
+                v-for="param in getConfigParams()" 
+                :key="param.key"
+                :label="param.title || param.key + (param.required ? ' (必填)' : '')"
+                :class="{ 'required-param': param.required }"
+              >
+                <div class="text-sm text-gray-500 mb-1">
+                  {{ param.description || '无描述' }} ({{ param.type || 'string' }})
+                </div>
+                <el-input 
+                  v-if="param.type === 'password'"
+                  v-model="configParams[param.key]" 
+                  :placeholder="param.placeholder || `请输入${param.title || param.key}`"
+                  type="password"
+                  show-password
+                  :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }"
+                />
+                <el-input-number 
+                  v-else-if="param.type === 'integer'"
+                  v-model="configParams[param.key]" 
+                  :placeholder="param.placeholder || `请输入${param.title || param.key}`"
+                  class="w-full"
+                  :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }"
+                />
+                <el-input 
+                  v-else
+                  v-model="configParams[param.key]" 
+                  :placeholder="param.placeholder || `请输入${param.title || param.key}`"
+                  :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }"
+                />
+              </el-form-item>
+            </el-form>
+          </el-card>
+
           <!-- 参数输入表单 -->
           <el-card shadow="hover" class="mb-4 tool-params-card">
             <template #header>
@@ -53,7 +116,7 @@
                 </el-button>
                 
                 <!-- 必填参数提示 -->
-                <div v-if="!canExecuteTest && hasRequiredParams" class="mt-2">
+                <div v-if="!canExecuteTest && (hasRequiredParams || hasConfigParams)" class="mt-2">
                   <el-alert 
                     type="warning" 
                     :closable="false" 
@@ -62,7 +125,11 @@
                     class="required-params-alert"
                   >
                     <template #title>
-                      <span class="text-sm">请填写所有必填参数后再执行测试</span>
+                      <span class="text-sm">
+                        请填写所有必填参数
+                        <span v-if="hasConfigParams && !configParamsValid">和配置参数</span>
+                        后再执行测试
+                      </span>
                     </template>
                   </el-alert>
                 </div>
@@ -97,22 +164,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { Search } from '@element-plus/icons-vue';
 import type { McpToolInfo, McpToolParameter } from '../../../types/marketplace';
 
 const props = defineProps<{
   tools: McpToolInfo[];
   moduleId: number;
+  configSchema?: Record<string, any>;
 }>();
 
 const emit = defineEmits<{
-  (e: 'test', toolName: string, params: Record<string, any>, callback: (result: any, error?: any) => void): void;
+  (e: 'test', toolName: string, params: Record<string, any>, configParams: Record<string, any>, callback: (result: any, error?: any) => void): void;
 }>();
 
 const searchQuery = ref('');
 const currentTool = ref<McpToolInfo | null>(null);
 const testParams = ref<Record<string, any>>({});
+const configParams = ref<Record<string, any>>({});
 const testResult = ref<any>(null);
 const testError = ref<string | null>(null);
 const testing = ref(false);
@@ -132,13 +201,15 @@ const filteredTools = computed(() => {
 const canExecuteTest = computed(() => {
   if (!currentTool.value) return false;
   
+  // 检查工具参数
   const requiredParams = getToolParams().filter(param => param.required);
-  if (requiredParams.length === 0) return true; // 没有必填参数时可以执行
-  
-  return requiredParams.every(param => {
+  const toolParamsValid = requiredParams.every(param => {
     const value = testParams.value[param.name];
     return value !== undefined && value !== null && String(value).trim() !== '';
   });
+  
+  // 检查配置参数
+  return toolParamsValid && configParamsValid.value;
 });
 
 // 检查是否有必填参数
@@ -146,10 +217,37 @@ const hasRequiredParams = computed(() => {
   return getToolParams().some(param => param.required);
 });
 
+// 检查是否有配置参数
+const hasConfigParams = computed(() => {
+  return props.configSchema && Object.keys(props.configSchema).length > 0;
+});
+
+// 获取配置参数列表
+const getConfigParams = () => {
+  if (!props.configSchema) return [];
+  return Object.entries(props.configSchema).map(([key, schema]: [string, any]) => ({
+    key,
+    ...schema
+  }));
+};
+
+// 检查配置参数是否填写完整
+const configParamsValid = computed(() => {
+  if (!hasConfigParams.value) return true;
+  
+  const requiredConfigParams = getConfigParams().filter(param => param.required);
+  return requiredConfigParams.every(param => {
+    const value = configParams.value[param.key];
+    return value !== undefined && value !== null && String(value).trim() !== '';
+  });
+});
+
 // 选择工具
 function selectTool(tool: McpToolInfo) {
   currentTool.value = tool;
   testParams.value = {};
+  // 注释掉重置配置参数的代码，让配置参数在切换工具时保持不变
+  // configParams.value = {};
   testResult.value = null;
   testError.value = null;
 }
@@ -217,6 +315,7 @@ async function testTool() {
     }
 
     console.log('发送测试请求:', { toolName, params });
+    console.log('配置参数:', configParams.value);
     
     const callback = (result: any, error?: any) => {
       if (error) {
@@ -230,7 +329,7 @@ async function testTool() {
       testing.value = false;
     };
     
-    emit('test', toolName, params, callback);
+    emit('test', toolName, params, configParams.value, callback);
   } catch (error: any) {
     console.error("工具测试失败", error);
     testError.value = error.response?.data?.detail || error.message || '执行失败';
@@ -263,6 +362,24 @@ function formatResult(result: any) {
 // 如果有tools数据并且没有选中工具，默认选择第一个
 if (props.tools.length > 0 && !currentTool.value) {
   selectTool(props.tools[0]);
+}
+
+// 监听配置参数变化，初始化默认值
+watch(() => props.configSchema, (newSchema) => {
+  if (newSchema) {
+    // 不再重置整个configParams，而是只为新增的参数设置默认值
+    Object.entries(newSchema).forEach(([key, schema]: [string, any]) => {
+      // 只有当参数不存在且有默认值时才设置
+      if (!(key in configParams.value) && schema.default !== undefined) {
+        configParams.value[key] = schema.default;
+      }
+    });
+  }
+}, { immediate: true });
+
+// 清空配置参数
+function clearConfigParams() {
+  configParams.value = {};
 }
 </script>
 
@@ -332,6 +449,20 @@ export default {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: linear-gradient(135deg, #fff, #f9fdff);
+}
+
+.config-params-card {
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 182, 91, 0.3);
+  background: linear-gradient(135deg, #fff8f0, #fffcf5);
+}
+
+.config-params-card :deep(.el-card__header) {
+  background: linear-gradient(135deg, #fff4e6, #fff8f0);
+  border-bottom: 1px solid rgba(255, 182, 91, 0.2);
 }
 
 .result-card {
@@ -455,5 +586,12 @@ export default {
 
 :deep(.el-form-item__label) {
   font-weight: 500;
+}
+
+.clear-config-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+  height: auto;
+  min-height: auto;
 }
 </style>
