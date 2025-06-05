@@ -4,6 +4,7 @@
 ## 交流群
 qq群：979958989
 加群更及时交流、讨论
+
 ![qq-group.png](https://img.picui.cn/free/2025/05/30/6839134886ec1.png)
 
 
@@ -30,6 +31,11 @@ qq群：979958989
 ![detail-v2.jpg](https://img.picui.cn/free/2025/05/29/683857a0d89fd.jpg)
 
 #### MCP 模板-工具测试
+展示了 
+- 工具列表
+- 测试参数（模板中如果配置了，可以配置参数是否必填）
+- 工具执行（如果配置了工具函数参数，需要填写）
+- 工具函数代码（了解工具执行原理）
 
 ![tool-test.jpg](https://img.picui.cn/free/2025/06/05/684128b905ecf.jpg)
 
@@ -46,8 +52,13 @@ qq群：979958989
 ![detail-code.jpg](https://img.picui.cn/free/2025/05/29/6838697497d13.jpg)
 
 ### MCP 服务
+支持管理内置服务
+支持新增第三方 http sse地址
+![mcp-service-v2-1.jpg](https://img.picui.cn/free/2025/06/05/6841298f67bbb.jpg)
 
-![mcp-service-v2.jpg](https://img.picui.cn/free/2025/05/29/68381d521f1c5.jpg)
+![mcp-service-v2-2.jpg](https://img.picui.cn/free/2025/06/05/6841298f21d28.jpg)
+
+![mcp-service-v2-third.jpg](https://img.picui.cn/free/2025/06/05/684129db39ed6.jpg)
 
 ### MCP 统计
 
