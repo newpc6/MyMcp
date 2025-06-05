@@ -65,6 +65,7 @@ export interface McpToolInfo {
   updated_at?: string
   is_enabled: boolean
   module_name?: string
+  source_code?: string // 工具函数源代码
 }
 
 /**

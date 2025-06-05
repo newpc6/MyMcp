@@ -61,7 +61,8 @@
                 </el-form>
             </el-card>
         </div>
-        <!-- 右侧工具详情 -->
+        
+        <!-- 中间区域：工具测试 -->
         <div class="tool-test-content">
             <div v-if="currentTool" class="tool-test-area">
                 <div class="mb-6">
@@ -141,12 +142,56 @@
 
             <el-empty v-else description="请选择要测试的工具" />
         </div>
+
+        <!-- 右侧代码展示区域 -->
+        <div class="code-display-section">
+            <el-card shadow="hover" class="code-display-card">
+                <template #header>
+                    <div class="flex justify-between items-center">
+                        <span class="font-medium">
+                            {{ currentTool ? `${currentTool.name} 函数代码` : '工具代码' }}
+                        </span>
+                        <el-tag v-if="currentToolCode" type="info" size="small">只读</el-tag>
+                    </div>
+                </template>
+
+                <div v-if="!currentTool" class="code-empty">
+                    <el-empty description="请选择工具查看代码" :image-size="60" />
+                </div>
+                <div v-else-if="currentToolCode" class="code-editor-wrapper">
+                    <Codemirror 
+                        v-model="currentToolCode" 
+                        :extensions="codeExtensions" 
+                        class="code-editor" 
+                        :readonly="true"
+                        style="height: 500px;" 
+                    />
+                </div>
+                <div v-else class="code-empty">
+                    <el-empty description="该工具暂无代码可显示" :image-size="60" />
+                </div>
+            </el-card>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { Search } from '@element-plus/icons-vue';
+import Codemirror from 'vue-codemirror6';
+import { python } from '@codemirror/lang-python';
+import { oneDark } from '@codemirror/theme-one-dark';
+import { keymap } from '@codemirror/view';
+import { defaultKeymap } from '@codemirror/commands';
+import { lintGutter } from '@codemirror/lint';
+import { indentUnit } from '@codemirror/language';
+import { indentWithTab } from '@codemirror/commands';
+import { EditorView } from '@codemirror/view';
+import { basicSetup } from 'codemirror';
+import { lineNumbers, highlightActiveLineGutter } from '@codemirror/view';
+import { searchKeymap, search } from '@codemirror/search';
+import { history, historyKeymap } from '@codemirror/commands';
+import { bracketMatching, indentOnInput, foldGutter } from '@codemirror/language';
 import type { McpToolInfo, McpToolParameter } from '../../../types/marketplace';
 
 const props = defineProps<{
@@ -166,6 +211,40 @@ const configParams = ref<Record<string, any>>({});
 const testResult = ref<any>(null);
 const testError = ref<string | null>(null);
 const testing = ref(false);
+
+// 计算当前工具的代码
+const currentToolCode = computed(() => {
+    return currentTool.value?.source_code || '';
+});
+
+// CodeMirror 扩展配置（只读模式）
+const codeExtensions = [
+    basicSetup,
+    python(),
+    oneDark,
+    keymap.of(defaultKeymap),
+    keymap.of([indentWithTab]),
+    indentUnit.of('    '),
+    keymap.of(searchKeymap),
+    keymap.of(historyKeymap),
+    history(),
+    search(),
+    bracketMatching(),
+    indentOnInput(),
+    foldGutter(),
+    lineNumbers(),
+    highlightActiveLineGutter(),
+    lintGutter(),
+    EditorView.theme({
+        ".cm-scroller": { overflow: "auto" },
+        ".cm-editor": { 
+            backgroundColor: "rgba(30, 30, 30, 0.95)",
+        },
+        ".cm-content": {
+            color: "#d4d4d4"
+        }
+    })
+];
 
 // 过滤工具列表
 const filteredTools = computed(() => {
@@ -370,13 +449,118 @@ export default {
 
 <style scoped>
 .mcp-tool-list {
-    width: 400px;
+    width: 350px;
     padding-right: 20px;
 }
 
 .tool-test-content {
     flex: 1;
     padding-left: 24px;
+    padding-right: 24px;
+}
+
+.code-display-section {
+    width: 400px;
+    padding-left: 20px;
+    border-left: 1px solid #e8e8e8;
+}
+
+.code-display-card {
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #fff, #f9fdff);
+    height: fit-content;
+}
+
+.code-display-card :deep(.el-card__body) {
+    padding: 0;
+}
+
+.code-editor-wrapper {
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
+    background: rgba(30, 30, 30, 0.95);
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+}
+
+.code-loading {
+    padding: 20px;
+}
+
+.code-empty {
+    padding: 40px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+}
+
+:deep(.code-editor) {
+    border-radius: 8px;
+    font-family: 'Fira Code', 'JetBrains Mono', monospace;
+    font-size: 14px;
+    height: 100%;
+    overflow: auto;
+}
+
+:deep(.code-editor .cm-editor) {
+    height: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+:deep(.code-editor .cm-scroller) {
+    overflow: auto;
+    border-radius: 8px;
+    max-height: 100%;
+}
+
+:deep(.code-editor .cm-gutters) {
+    background-color: rgba(45, 45, 45, 0.95);
+    border-right: 1px solid rgba(80, 80, 80, 0.3);
+    border-top-left-radius: 8px;
+    border-bottom-left-radius: 8px;
+}
+
+:deep(.code-editor .cm-activeLineGutter) {
+    background-color: rgba(70, 70, 70, 0.5);
+}
+
+:deep(.code-editor .cm-activeLine) {
+    background-color: rgba(60, 60, 60, 0.5);
+}
+
+:deep(.code-editor .cm-content) {
+    padding: 8px 0;
+}
+
+:deep(.code-editor .cm-lineNumbers) {
+    color: rgba(150, 150, 150, 0.7);
+}
+
+:deep(.code-editor .cm-scroller::-webkit-scrollbar) {
+    width: 6px;
+    height: 6px;
+}
+
+:deep(.code-editor .cm-scroller::-webkit-scrollbar-thumb) {
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+:deep(.code-editor .cm-scroller::-webkit-scrollbar-thumb:hover) {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+:deep(.code-editor .cm-scroller::-webkit-scrollbar-track) {
+    background-color: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
 }
 
 .tool-card {
@@ -641,6 +825,12 @@ export default {
 }
 
 /* 响应式布局 */
+@media (max-width: 1400px) {
+    .code-display-section {
+        width: 350px;
+    }
+}
+
 @media (max-width: 1200px) {
     .params-layout {
         flex-direction: column;
@@ -652,6 +842,35 @@ export default {
         flex: none;
         max-width: none;
         min-width: auto;
+    }
+    
+    .mcp-tool-list {
+        width: 300px;
+    }
+    
+    .code-display-section {
+        width: 300px;
+    }
+}
+
+@media (max-width: 992px) {
+    .flex {
+        flex-direction: column;
+    }
+    
+    .mcp-tool-list,
+    .tool-test-content,
+    .code-display-section {
+        width: 100%;
+        padding: 0;
+        margin-bottom: 20px;
+        border: none;
+    }
+    
+    .config-params-section {
+        margin-left: 0;
+        border-right: none;
+        padding-right: 0;
     }
 }
 </style>

@@ -31,7 +31,7 @@ qq群：979958989
 
 #### MCP 模板-工具测试
 
-![detail-test.jpg](https://img.picui.cn/free/2025/05/29/68386974ba5ae.jpg)
+![tool-test.jpg](https://img.picui.cn/free/2025/06/05/684128b905ecf.jpg)
 
 #### MCP 模板-参数配置
 
@@ -55,7 +55,7 @@ qq群：979958989
 
 ### 用户管理
 
-![user-v2.jpg](https://img.picui.cn/free/2025/05/29/6838658c133f8.jpg)
+![user-v2.jpg](https://img.picui.cn/free/2025/06/05/684128b87258f.jpg)
 
 ### 租户管理
 
@@ -67,7 +67,7 @@ http://111.4.141.154:7002
 
 guest/123456
 
-admin/eGova@2025(管理员账号请勿随意删除修改数据，主要是为了看功能)
+admin/mcp@12345(管理员账号请勿随意删除修改数据，主要是为了看功能)
 
 ## 安装教程
 

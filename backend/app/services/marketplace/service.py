@@ -6,16 +6,17 @@ import json
 from typing import List, Dict, Any, Optional
 import os
 import sys
-import inspect
-import importlib.util
 import importlib
 import tempfile
+import ast
 
 from sqlalchemy import select, update, delete, func
 from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
 
 from app.models.engine import get_db
 from app.models.modules.mcp_marketplace import McpModule, McpTool
+from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
 from app.services.mcp_service.service_manager import service_manager
@@ -211,7 +212,10 @@ class MarketplaceService:
                 import os
                 # 创建当天日期文件夹
                 today = datetime.now().strftime("%Y-%m-%d")
-                publish_dir = os.path.join(os.path.dirname(__file__), '..', '..', '..', 'data', 'script', 'publish', today)
+                publish_dir = os.path.join(
+                    os.path.dirname(__file__), '..', '..', '..',
+                    'data', 'script', 'publish', today
+                )
                 if not os.path.exists(publish_dir):
                     os.makedirs(publish_dir)
                 
@@ -224,17 +228,52 @@ class MarketplaceService:
                             config_params = json.loads(service.config_params)
                         else:
                             config_params = service.config_params
-                        code = service_manager.replace_config_params(code, config_params)
+                        code = service_manager.replace_config_params(
+                            code, config_params
+                        )
+                
+                # 解析AST来获取函数源代码
+                def extract_function_source(
+                    source_code: str, function_name: str
+                ) -> str:
+                    """从源代码中提取指定函数的源代码"""
+                    try:
+                        tree = ast.parse(source_code)
+                        lines = source_code.split('\n')
+                        
+                        for node in ast.walk(tree):
+                            if (isinstance(node, ast.FunctionDef) and 
+                                node.name == function_name):
+                                # 获取函数的起始和结束行号
+                                start_line = node.lineno - 1
+                                end_line = (node.end_lineno if 
+                                          hasattr(node, 'end_lineno') 
+                                          else start_line + 1)
+                                
+                                # 提取函数源代码
+                                function_lines = lines[start_line:end_line]
+                                return '\n'.join(function_lines)
+                    except Exception as e:
+                        mcp_logger.warning(
+                            f"提取函数 {function_name} 源代码失败: {str(e)}"
+                        )
+                        return ""
+                    return ""
                 
                 # 创建临时文件并写入代码
-                with tempfile.NamedTemporaryFile(suffix='.py', prefix=f'module_{module_id}_', delete=False, dir=publish_dir) as temp:
+                with tempfile.NamedTemporaryFile(
+                    suffix='.py', prefix=f'module_{module_id}_', 
+                    delete=False, dir=publish_dir
+                ) as temp:
                     temp_path = temp.name
                     temp.write(code.encode('utf-8'))
                 
                 try:
                     # 动态加载模块
                     module_name = f"temp_module_{module_id}"
-                    spec = importlib.util.spec_from_file_location(module_name, temp_path)
+                    spec = importlib.util.spec_from_file_location(
+                        module_name, temp_path
+                    )
                     if not spec or not spec.loader:
                         return []
                     
@@ -271,19 +310,33 @@ class MarketplaceService:
                                     )
                                 
                                 # 判断参数是否必填
-                                required = param.default == inspect.Parameter.empty
+                                required = (param.default == 
+                                          inspect.Parameter.empty)
                                 
                                 param_info.append({
                                     "name": param_name,
                                     "type": (
                                         param_type_str 
-                                        if param_type_str != '_empty' else 'Any'
+                                        if param_type_str != '_empty' 
+                                        else 'Any'
                                     ),
                                     "required": required,
                                     "default": (
-                                        repr(param.default) if not required else None
+                                        repr(param.default) 
+                                        if not required else None
                                     )
                                 })
+                            
+                            # 获取函数源代码
+                            function_source = ""
+                            try:
+                                # 首先尝试使用inspect.getsource
+                                function_source = inspect.getsource(obj)
+                            except (OSError, TypeError):
+                                # 如果失败，使用AST解析
+                                function_source = extract_function_source(
+                                    code, name
+                                )
                             
                             # 构建工具信息
                             tool_info = {
@@ -298,7 +351,8 @@ class MarketplaceService:
                                     else 'Any'
                                 ),
                                 "module_id": module_id,
-                                "is_enabled": True
+                                "is_enabled": True,
+                                "source_code": function_source
                             }
                             tools.append(tool_info)
                 finally:
