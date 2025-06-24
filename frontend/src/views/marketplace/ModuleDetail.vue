@@ -83,6 +83,24 @@
           :rules="[{ required: true, message: '请输入服务名称', trigger: 'blur' }]">
           <el-input v-model="configForm.service_name" placeholder="请输入服务名称" class="form-input"></el-input>
         </el-form-item>
+        
+        <el-form-item label="协议类型" prop="protocol_type">
+          <el-radio-group v-model="configForm.protocol_type" class="protocol-radio-group">
+            <el-radio :value="1" class="protocol-radio">
+              <div class="protocol-option">
+                <div class="protocol-title">服务器发送事件 (SSE)</div>
+                <div class="protocol-desc">适用于实时数据推送和长连接场景</div>
+              </div>
+            </el-radio>
+            <el-radio :value="2" class="protocol-radio">
+              <div class="protocol-option">
+                <div class="protocol-title">可流式传输的HTTP (StreamableHttp)</div>
+                <div class="protocol-desc">适用于HTTP流式响应和普通REST API场景</div>
+              </div>
+            </el-radio>
+          </el-radio-group>
+        </el-form-item>
+        
         <el-form-item label="是否公开" prop="is_public">
           <el-switch v-model="configForm.is_public" class="form-switch" />
         </el-form-item>
@@ -235,11 +253,19 @@ const currentUser = ref<{
 const hasEditPermission = computed((): boolean => {
   // 如果是管理员，有权限
   if (currentUser.value.is_admin) {
+    console.log('Admin user detected, granting edit permission');
     return true;
   }
 
   // 非管理员只能编辑自己创建的服务
-  return moduleInfo.value.user_id === currentUser.value.user_id;
+  const canEdit = moduleInfo.value.user_id === currentUser.value.user_id;
+  console.log('Edit permission check:', {
+    is_admin: currentUser.value.is_admin,
+    current_user_id: currentUser.value.user_id,
+    module_user_id: moduleInfo.value.user_id,
+    canEdit: canEdit
+  });
+  return canEdit;
 });
 
 // 配置参数相关
@@ -259,10 +285,12 @@ const configFormRef = ref<any>();
 const configForm = ref<{
   service_name: string;
   is_public: boolean;
+  protocol_type: number;
   config_params: Record<string, any>;
 }>({
   service_name: '',
   is_public: false,
+  protocol_type: 1, // 默认为SSE
   config_params: {}
 });
 const configRules = ref<Record<string, any>>({});
@@ -301,8 +329,19 @@ async function loadModuleInfo() {
 
     // 如果模块有代码，初始化编辑器内容
     if (moduleInfo.value.code) {
-      codeContent.value = moduleInfo.value.code;
-      originalCode.value = moduleInfo.value.code;
+      const moduleCode = typeof moduleInfo.value.code === 'string' ? moduleInfo.value.code : '';
+      codeContent.value = moduleCode;
+      originalCode.value = moduleCode;
+      console.log('Initialized code editor:', {
+        codeLength: moduleCode.length,
+        hasEditPermission: hasEditPermission.value,
+        userIsAdmin: currentUser.value.is_admin
+      });
+    } else {
+      // 如果没有代码，确保设置为空字符串
+      codeContent.value = '';
+      originalCode.value = '';
+      console.log('No code found, initialized with empty strings');
     }
   } catch (error) {
     console.error("加载模块详情失败", error);
@@ -353,10 +392,16 @@ const loadUserInfo = () => {
 
 // 保存模块代码
 async function saveModuleCode() {
+  console.log('Starting saveModuleCode:', {
+    codeContent: codeContent.value?.length || 0,
+    originalCode: originalCode.value?.length || 0
+  });
+  
   saving.value = true;
   try {
     await updateModule(moduleId.value, { code: codeContent.value });
     originalCode.value = codeContent.value;
+    console.log('Code saved successfully, updated originalCode to:', originalCode.value?.length || 0);
     ElNotification({
       title: '成功',
       message: '模块代码已保存',
@@ -397,10 +442,12 @@ function initConfigForm() {
   configForm.value = {
     service_name: `${moduleInfo.value.name}-实例-${new Date().getTime().toString().slice(-6)}`, // 默认服务名称
     is_public: false,
+    protocol_type: 1, // 默认为SSE
     config_params: {}
   };
   configRules.value = {
-    service_name: [{ required: true, message: '请输入服务名称', trigger: 'blur' }]
+    service_name: [{ required: true, message: '请输入服务名称', trigger: 'blur' }],
+    protocol_type: [{ required: true, message: '请选择协议类型', trigger: 'change' }]
   };
 
   if (moduleInfo.value.config_schema) {
@@ -1000,6 +1047,119 @@ onMounted(() => {
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
+/* 协议类型选择样式 */
+.protocol-radio-group {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.protocol-radio {
+  width: 100%;
+  margin: 0;
+  border: 2px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 20px 60px 20px 20px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: 80px;
+  display: flex;
+  align-items: flex-start;
+}
+
+.protocol-radio::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 197, 253, 0.05) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.protocol-radio:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
+  transform: translateY(-2px);
+}
+
+.protocol-radio:hover::before {
+  opacity: 1;
+}
+
+.protocol-radio.is-checked {
+  border-color: #3b82f6;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 197, 253, 0.1) 100%);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px);
+}
+
+.protocol-radio :deep(.el-radio__input) {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.protocol-radio :deep(.el-radio__input .el-radio__inner) {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d1d5db;
+  background: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.protocol-radio :deep(.el-radio__input.is-checked .el-radio__inner) {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.protocol-radio :deep(.el-radio__input.is-checked .el-radio__inner::after) {
+  width: 8px;
+  height: 8px;
+  background: #ffffff;
+  border-radius: 50%;
+}
+
+.protocol-radio :deep(.el-radio__label) {
+  padding-left: 0;
+  width: calc(100% - 50px);
+  display: block;
+}
+
+.protocol-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.protocol-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  font-weight: 400;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+.protocol-option {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+  width: 100%;
+}
+
 /* 警告和提示样式 */
 .no-config-alert,
 .config-alert {
@@ -1136,6 +1296,29 @@ onMounted(() => {
   :deep(.el-tabs__item) {
     padding: 0 16px;
     font-size: 14px;
+  }
+
+  /* 协议选择响应式样式 */
+  .protocol-radio {
+    padding: 16px 50px 16px 16px;
+    min-height: 70px;
+  }
+
+  .protocol-radio :deep(.el-radio__input) {
+    top: 16px;
+    right: 16px;
+  }
+
+  .protocol-radio :deep(.el-radio__label) {
+    width: calc(100% - 40px);
+  }
+
+  .protocol-title {
+    font-size: 15px;
+  }
+
+  .protocol-desc {
+    font-size: 13px;
   }
 }
 

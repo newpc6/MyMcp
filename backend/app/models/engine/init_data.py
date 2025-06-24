@@ -125,7 +125,9 @@ def auto_categorize_modules():
                 "浏览器自动化": ["浏览器", "browser", "自动化", "网页"],
                 "搜索工具": ["搜索", "search", "查询", "query", "find", "tavily"],
                 "交流协作工具": ["交流", "协作", "chat", "社交"],
-                "开发者工具": ["开发", "developer", "编程", "代码", "github", "计算", "calculator", "文件", "file", "文本", "text"],
+                "开发者工具": ["开发", "developer", "编程", "代码", "github",
+                              "计算", "calculator", "文件", "file", "文本",
+                              "text"],
                 "娱乐与多媒体": ["娱乐", "多媒体", "视频", "音乐", "图片"],
                 "文件系统": ["文件", "file", "存储", "目录", "folder"],
                 "金融": ["金融", "finance", "支付", "金钱", "财务"],
@@ -134,8 +136,10 @@ def auto_categorize_modules():
                 "文化与艺术": ["文化", "艺术", "design", "设计"],
                 "学术研究": ["学术", "研究", "academic", "论文"],
                 "日程管理": ["日程", "schedule", "日历", "任务"],
-                "数据库工具": ["数据库", "database", "mysql", "sql", "查询", "db_utils"],
-                "网络工具": ["网络", "http", "api", "请求", "client", "url", "下载"],
+                "数据库工具": ["数据库", "database", "mysql", "sql", "查询",
+                              "db_utils"],
+                "网络工具": ["网络", "http", "api", "请求", "client", "url",
+                            "下载"],
                 "数据处理工具": ["数据", "json", "处理", "格式化", "验证", "分析"],
             }
 
@@ -189,68 +193,92 @@ def auto_categorize_modules():
 
 def init_demo_modules():
     """初始化演示模块数据"""
-    import os
     import json
     from pathlib import Path
     
     try:
         with get_db() as db:
-            # 检查是否已有模块
-            count_query = select(McpModule)
-            modules_count = len(db.execute(count_query).scalars().all())
-
-            # 如果没有模块，从模板文件夹加载模块
-            if modules_count == 0:
-                # 模板文件夹路径
-                template_dir = Path(__file__).parent / "mcp-template"
-                
-                if not template_dir.exists():
-                    mcp_logger.warning(f"模板目录不存在: {template_dir}")
-                    return
-                
-                # 获取所有分类，建立名称到ID的映射
-                categories = db.execute(select(McpGroup)).scalars().all()
-                category_map = {cat.name: cat.id for cat in categories}
-                
-                # 遍历模板文件
-                for template_file in template_dir.glob("*.json"):
-                    try:
-                        with open(template_file, 'r', encoding='utf-8') as f:
-                            template_data = json.load(f)
-                        
-                        # 获取分类ID
-                        category_name = template_data.get("category", "开发者工具")
-                        category_id = category_map.get(category_name)
-                        
-                        if not category_id:
-                            # 如果分类不存在，使用默认分类
-                            category_id = category_map.get("开发者工具")
-                        
-                        # 创建模块对象
-                        module = McpModule(
-                            name=template_data["name"],
-                            description=template_data["description"],
-                            module_path=template_data["module_path"],
-                            author=template_data["author"],
-                            version=template_data["version"],
-                            tags=template_data["tags"],
-                            icon=template_data["icon"],
-                            is_hosted=template_data["is_hosted"],
-                            category_id=category_id,
-                            config_schema=template_data.get("config_schema"),
-                            code=template_data["code"],
-                            markdown_docs=template_data["markdown_docs"]
-                        )
-                        
-                        db.add(module)
-                        mcp_logger.info(f"加载模板模块: {template_data['name']}")
-                        
-                    except Exception as e:
-                        mcp_logger.error(f"加载模板文件 {template_file} 失败: {str(e)}")
+            # 模板文件夹路径
+            template_dir = Path(__file__).parent / "mcp-template"
+            
+            if not template_dir.exists():
+                mcp_logger.warning(f"模板目录不存在: {template_dir}")
+                return
+            
+            # 获取所有分类，建立名称到ID的映射
+            categories = db.execute(select(McpGroup)).scalars().all()
+            category_map = {cat.name: cat.id for cat in categories}
+            
+            # 需要检查的模板名称列表
+            template_names = [
+                "http_client",
+                "数据库助手", 
+                "file_manager",
+                "text_processor"
+            ]
+            
+            # 检查数据库中是否已存在这些模块
+            existing_modules = db.execute(
+                select(McpModule).where(McpModule.name.in_(template_names))
+            ).scalars().all()
+            existing_names = {module.name for module in existing_modules}
+            
+            # 遍历模板文件
+            imported_count = 0
+            for template_file in template_dir.glob("*.json"):
+                try:
+                    with open(template_file, 'r', encoding='utf-8') as f:
+                        template_data = json.load(f)
+                    
+                    # 检查模块名称是否在需要检查的列表中
+                    module_name = template_data["name"]
+                    if module_name not in template_names:
                         continue
+                        
+                    # 如果模块已存在，跳过
+                    if module_name in existing_names:
+                        mcp_logger.info(f"模块 {module_name} 已存在，跳过导入")
+                        continue
+                    
+                    # 获取分类ID
+                    category_name = template_data.get("category", "开发者工具")
+                    category_id = category_map.get(category_name)
+                    
+                    if not category_id:
+                        # 如果分类不存在，使用默认分类
+                        category_id = category_map.get("开发者工具")
+                    
+                    # 创建模块对象
+                    module = McpModule(
+                        name=template_data["name"],
+                        description=template_data["description"],
+                        module_path=template_data["module_path"],
+                        author=template_data["author"],
+                        version=template_data["version"],
+                        tags=template_data["tags"],
+                        icon=template_data["icon"],
+                        is_hosted=template_data["is_hosted"],
+                        category_id=category_id,
+                        config_schema=template_data.get("config_schema"),
+                        code=template_data["code"],
+                        markdown_docs=template_data["markdown_docs"],
+                        is_public=True  # 发布为公开服务
+                    )
+                    
+                    db.add(module)
+                    mcp_logger.info(f"导入模板模块: {template_data['name']}")
+                    imported_count += 1
+                    
+                except Exception as e:
+                    mcp_logger.error(f"加载模板文件 {template_file} 失败: "
+                                     f"{str(e)}")
+                    continue
 
+            if imported_count > 0:
                 db.commit()
-                mcp_logger.info("从模板文件夹初始化了演示模块数据")
+                mcp_logger.info(f"成功导入 {imported_count} 个模板模块为公开服务")
+            else:
+                mcp_logger.info("没有需要导入的新模板模块")
 
     except Exception as e:
         mcp_logger.error(f"初始化演示模块失败: {str(e)}")
@@ -259,8 +287,6 @@ def init_demo_modules():
 def init_admin_users():
     """初始化管理员用户数据"""
     # 创建初始管理员用户
-    from werkzeug.security import generate_password_hash
-    from datetime import datetime
 
     try:
         with get_db() as db:
@@ -272,8 +298,10 @@ def init_admin_users():
                 mcp_logger.info("创建默认管理员用户")
 
                 # 检查是否已有默认租户
-                default_tenant_query = select(Tenant).where(Tenant.code == "default")
-                default_tenant_count = len(db.execute(default_tenant_query).scalars().all())
+                default_tenant_query = select(Tenant).where(
+                    Tenant.code == "default")
+                default_tenant_count = len(
+                    db.execute(default_tenant_query).scalars().all())
 
                 if not default_tenant_count:
                     # 创建默认租户
@@ -284,9 +312,9 @@ def init_admin_users():
                     )
 
                 # 修改默认密码为 mcp@12345
-                admin_user = UserService.create_user(
+                UserService.create_user(
                     username="admin",
-                    password="mcp@12345",  # 直接使用明文密码，由create_user内部进行哈希
+                    password="mcp@12345",
                     fullname="系统管理员",
                     is_admin=True,
                     tenant_ids=[default_tenant.id]

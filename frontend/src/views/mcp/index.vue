@@ -157,6 +157,16 @@
                 </el-tag>
               </el-tooltip>
             </div>
+            
+            <div class="protocol-badge">
+              <el-tag 
+                :type="getProtocolTagType(service.protocol_type)" 
+                size="small" 
+                effect="light"
+              >
+                {{ getProtocolText(service.protocol_type) }}
+              </el-tag>
+            </div>
           </div>
 
           <div class="action-section">
@@ -240,7 +250,7 @@
             </div>
 
             <div class="url-section">
-              <div class="url-label">SSE URL</div>
+              <div class="url-label">{{ getProtocolUrlLabel(service.protocol_type) }}</div>
               <div class="url-container">
                 <el-tooltip content="点击复制URL" placement="top">
                   <div class="url-text" @click.stop="copyToClipboard(service.sse_url)">
@@ -262,7 +272,7 @@
                     <el-button 
                       link 
                       type="success" 
-                      @click.stop="copyAsEgovakbUrl(service.sse_url)" 
+                      @click.stop="copyAsEgovakbUrl(service.sse_url, service.protocol_type)" 
                       class="url-btn"
                     >
                       <el-icon><Connection /></el-icon>
@@ -796,15 +806,27 @@ const copyToClipboard = (url: string) => {
 };
 
 // 复制为egovakb格式的URL
-const copyAsEgovakbUrl = (url: string) => {
+const copyAsEgovakbUrl = (url: string, protocolType: number) => {
   // 阻止事件冒泡
   event?.stopPropagation();
+
+  // 获取正确的传输协议字符串
+  const getTransportType = (type: number) => {
+    switch (type) {
+      case 1:
+        return 'sse';
+      case 2:
+        return 'streamableHttp';
+      default:
+        return 'sse';
+    }
+  };
 
   // 创建egovakb格式的JSON
   const egovakbFormat = JSON.stringify({
     "在线搜索": {
       "url": url,
-      "transport": "sse"
+      "transport": getTransportType(protocolType)
     }
   }, null, 2);
 
@@ -975,6 +997,42 @@ const createThirdPartyService = async () => {
     });
   } finally {
     creatingThirdParty.value = false;
+  }
+};
+
+// 获取协议标签类型
+const getProtocolTagType = (protocolType: number) => {
+  switch (protocolType) {
+    case 1:
+      return 'success';
+    case 2:
+      return 'info';
+    default:
+      return 'default';
+  }
+};
+
+// 获取协议文本
+const getProtocolText = (protocolType: number) => {
+  switch (protocolType) {
+    case 1:
+      return 'SSE';
+    case 2:
+      return 'StreamableHttp';
+    default:
+      return '未知协议';
+  }
+};
+
+// 获取协议URL标签
+const getProtocolUrlLabel = (protocolType: number) => {
+  switch (protocolType) {
+    case 1:
+      return 'SSE URL';
+    case 2:
+      return 'StreamableHttp URL';
+    default:
+      return 'URL';
   }
 };
 
@@ -1229,16 +1287,20 @@ onMounted(() => {
 .card-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 24px 28px 20px;
   border-bottom: 1px solid rgba(25, 118, 210, 0.08);
   background: linear-gradient(135deg, rgba(25, 118, 210, 0.02) 0%, transparent 100%);
+  min-height: 80px;
 }
 
 .status-section {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
   gap: 12px;
+  flex: 1;
+  max-width: 70%;
 }
 
 .status-indicator {
@@ -1327,7 +1389,7 @@ onMounted(() => {
 }
 
 .service-type-badge {
-  margin-left: 8px;
+  margin-left: 0;
 }
 
 .service-type-badge :deep(.el-tag) {
@@ -1338,7 +1400,7 @@ onMounted(() => {
 }
 
 .visibility-badge {
-  margin-left: 8px;
+  margin-left: 0;
 }
 
 .visibility-badge :deep(.el-tag) {
@@ -1346,6 +1408,20 @@ onMounted(() => {
   font-weight: 600;
   padding: 6px 12px;
   border: none;
+}
+
+.protocol-badge {
+  margin-left: 0;
+}
+
+.protocol-badge :deep(.el-tag) {
+  border-radius: 16px;
+  font-weight: 600;
+  padding: 6px 12px;
+  border: none;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .clickable-tag {
@@ -1849,6 +1925,22 @@ onMounted(() => {
   
   .title-section {
     min-width: auto;
+  }
+
+  .card-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    min-height: auto;
+  }
+
+  .status-section {
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+
+  .action-section {
+    align-self: flex-end;
   }
 }
 

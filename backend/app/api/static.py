@@ -4,7 +4,6 @@
 提供静态文件的访问功能，包括前端资源
 """
 import os
-from pathlib import Path
 from starlette.staticfiles import StaticFiles
 from starlette.responses import FileResponse
 from app.core.config import settings
@@ -33,14 +32,15 @@ if not os.path.exists(ASSETS_DIR):
 try:
     # 创建StaticFiles实例
     static_files = StaticFiles(directory=DIST_DIR)
-except Exception as e:
+except Exception:
     mcp_logger.error(f"未找到dist前端资源目录: {DIST_DIR}")
 
 
 try:
     # 创建专门用于assets的StaticFiles实例
-    assets_files = StaticFiles(directory=ASSETS_DIR) if os.path.exists(ASSETS_DIR) else None
-except Exception as e:
+    assets_files = (StaticFiles(directory=ASSETS_DIR) 
+                    if os.path.exists(ASSETS_DIR) else None)
+except Exception:
     mcp_logger.error(f"未找到assets目录: {ASSETS_DIR}")
 
 
@@ -48,6 +48,7 @@ async def index(request):
     """提供前端首页"""
     mcp_logger.debug(f"提供前端首页: {request.url.path}")
     return FileResponse(os.path.join(DIST_DIR, "index.html"))
+
 
 def get_media_type(file_path):
     """根据文件扩展名获取适当的媒体类型"""
@@ -81,6 +82,7 @@ def get_media_type(file_path):
         return 'image/x-icon'
     return None
 
+
 async def spa_routing(request):
     """
     处理SPA路由，返回index.html
@@ -91,9 +93,17 @@ async def spa_routing(request):
     full_path = request.url.path
     mcp_logger.debug(f"SPA路由处理: {path}, 完整路径: {full_path}")
     
+    # MCP服务路径应该在路由注册时被正确处理，不应该到达这里
+    if full_path.startswith("/mcp-"):
+        mcp_logger.warning(f"MCP路径到达SPA路由: {full_path}")
+        # 返回404，因为MCP路由应该已经处理了这个请求
+        from starlette.responses import PlainTextResponse
+        return PlainTextResponse(
+            "MCP服务路径未找到。此请求应该由MCP路由处理。",
+            status_code=404
+        )
+    
     # API请求不应该由SPA路由处理器捕获
-    # 如果配置正确，这里应该永远不会接收到API请求
-    # 但如果API请求到达这里，说明API路由没有捕获它，应该返回404
     if full_path.startswith("/api") or path.startswith("api"):
         mcp_logger.warning(f"API路径未被API路由捕获: {full_path}")
         from starlette.responses import PlainTextResponse
@@ -113,6 +123,7 @@ async def spa_routing(request):
     
     # 否则返回index.html
     return FileResponse(os.path.join(DIST_DIR, "index.html"))
+
 
 async def asset_file(request):
     """提供assets目录下的静态文件"""
@@ -166,6 +177,7 @@ def get_router():
             "path": "/{path:path}",
             "endpoint": spa_routing,
             "methods": ["GET"],
-            "name": "spa_routing"
+            "name": "spa_routing",
+            "include_in_schema": False  # 不在API文档中显示
         }
     ]

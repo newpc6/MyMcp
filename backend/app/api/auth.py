@@ -163,10 +163,14 @@ async def get_users(request: Request):
         user = UserService.get_user_by_id(current_user_id)
         users = [user] if user else []
     
+    # 批量获取所有用户的租户信息，避免在循环中重复查询
+    user_ids = [user.id for user in users]
+    users_tenants = TenantService.get_users_tenants_batch(user_ids)
+    
     user_list = []
     for user in users:
-        # 获取用户关联的租户
-        tenants = TenantService.get_user_tenants(user.id)
+        # 从批量查询结果中获取租户信息
+        tenants = users_tenants.get(user.id, [])
         tenant_list = [{"id": t.id, "name": t.name, "code": t.code} for t in tenants]
         
         user_list.append({

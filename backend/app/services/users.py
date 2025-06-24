@@ -707,4 +707,41 @@ class TenantService:
                 
         except Exception as e:
             mcp_logger.error(f"获取用户租户失败: {str(e)}")
-            return [] 
+            return []
+    
+    @staticmethod
+    def get_users_tenants_batch(user_ids: List[int]) -> Dict[int, List[Tenant]]:
+        """批量获取多个用户的租户信息
+        
+        Args:
+            user_ids: 用户ID列表
+            
+        Returns:
+            Dict[int, List[Tenant]]: 用户ID到租户列表的映射
+        """
+        try:
+            if not user_ids:
+                return {}
+                
+            with get_db() as db:
+                # 批量查询用户租户关联信息
+                query = (
+                    select(UserTenant.user_id, Tenant)
+                    .join(Tenant, UserTenant.tenant_id == Tenant.id)
+                    .where(UserTenant.user_id.in_(user_ids))
+                )
+                results = db.execute(query).all()
+                
+                # 组织结果
+                user_tenants = {}
+                for user_id in user_ids:
+                    user_tenants[user_id] = []
+                
+                for user_id, tenant in results:
+                    user_tenants[user_id].append(tenant)
+                
+                return user_tenants
+                
+        except Exception as e:
+            mcp_logger.error(f"批量获取用户租户失败: {str(e)}")
+            return {} 

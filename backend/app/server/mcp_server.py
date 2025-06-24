@@ -18,6 +18,8 @@ from ..core.config import settings
 from ..utils.logging import mcp_logger
 from mcp.server.fastmcp import FastMCP
 from starlette.middleware.cors import CORSMiddleware
+from starlette.applications import Starlette
+from fastapi_lifespan_manager import LifespanManager, State
 
 # 添加当前目录到路径
 current_dir = os.path.dirname(
@@ -33,11 +35,12 @@ if project_root not in sys.path:
 # MCP服务器实例
 server_instance = None
 uni_server = None
+lifespan_manager = LifespanManager()
 
 def add_tool(
-    func: Callable,
-    name: Optional[str] = None,
-    doc: Optional[str] = None
+        func: Callable,
+        name: Optional[str] = None,
+        doc: Optional[str] = None
 ) -> None:
     """
     动态添加MCP工具
@@ -107,21 +110,21 @@ def get_service_by_id(id: int):
         query = db.query(McpService)
         query = query.filter(McpService.id == id)
         return query.first()
-    
+
 
 def update_service_params(id: int, config_params: Dict[str, Any]):
     """更新服务参数"""
     if server_instance is None:
         mcp_logger.warning("MCP服务器尚未启动，无法更新服务参数")
         return False
-    
+
     with get_db() as db:
         db.execute(
             update(McpService)
             .where(McpService.id == id)
             .values(config_params=json.dumps(config_params))
         )
-        db.commit()        
+        db.commit()
         return True
 
 def get_enabled_tools() -> List[str]:
@@ -260,15 +263,18 @@ def start_mcp_server():
         port=settings.PORT,
     )
 
-    # 创建SSE应用并配置中间件
-    app = server_instance.sse_app()
-    
+    # 创建Starlette并配置中间件，lifespan
+    app = Starlette(
+        debug=True,
+        lifespan=lifespan_manager,
+    )
+
     # 输出CORS配置信息
     mcp_logger.info(
         f"CORS配置: allow_origins={settings.CORS_ORIGINS}, "
         f"allow_credentials={settings.CORS_CREDENTIALS}"
     )
-    
+
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.CORS_ORIGINS,
@@ -288,17 +294,18 @@ def start_mcp_server():
     # 保存服务器实例
     # server_instance = server
     mcp_logger.info(f"启动 {settings.API_TITLE} v{settings.API_VERSION}")
-        
+
     global uni_server
     config = uvicorn.Config(
         app,
         host=settings.HOST,
         port=settings.PORT,
         log_level=settings.LOG_LEVEL.lower(),
+        lifespan="on"
     )
     uni_server = uvicorn.Server(config)
     from app.services.mcp_service.service_manager import service_manager
-    service_manager.init_app(app)
+    service_manager.init_app(app, lifespan_manager)
 
     # 启动统计数据定时任务
     try:

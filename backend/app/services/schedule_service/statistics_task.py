@@ -67,9 +67,6 @@ def start_statistics_scheduler():
     # 设置定时任务
     schedule.every(interval).minutes.do(update_statistics)
     
-    # 立即执行一次
-    update_statistics()
-    
     # 在单独的线程中运行调度器
     scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
     scheduler_thread.start()

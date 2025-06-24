@@ -19,7 +19,7 @@
         </div>
       </div>
       <div class="code-editor-wrapper">
-        <Codemirror v-model="props.modelValue" :extensions="extensions" class="code-editor" :indent-with-tab="true"
+        <Codemirror v-model="internalCode" :extensions="extensions" class="code-editor" :indent-with-tab="true"
           :tab-size="4" @ready="handleEditorCreated" style="overflow: auto; height: 100%;"
           :readonly="!hasEditPermission" basic />
       </div>
@@ -28,7 +28,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch, ref } from 'vue';
 import Codemirror from 'vue-codemirror6';
 import { python } from '@codemirror/lang-python';
 import { oneDark } from '@codemirror/theme-one-dark';
@@ -58,10 +58,55 @@ const emit = defineEmits<{
   (e: 'format'): void;
 }>();
 
+// 创建内部的代码内容ref，用于双向绑定
+const internalCode = ref(props.modelValue || '');
+
+// 监听props.modelValue变化，同步到内部ref
+watch(() => props.modelValue, (newValue) => {
+  const newCode = typeof newValue === 'string' ? newValue : '';
+  if (internalCode.value !== newCode) {
+    internalCode.value = newCode;
+  }
+}, { immediate: true });
+
+// 监听内部ref变化，触发emit
+watch(internalCode, (newValue) => {
+  if (newValue !== props.modelValue) {
+    emit('update:modelValue', newValue);
+  }
+});
+
 // 判断代码是否有变化
 const hasCodeChanged = computed(() => {
-  return props.modelValue !== props.originalCode;
+  // 确保两个值都是字符串类型
+  const currentCode = typeof internalCode.value === 'string' ? internalCode.value : '';
+  const originalCodeStr = typeof props.originalCode === 'string' ? props.originalCode : '';
+  
+  const changed = currentCode !== originalCodeStr;
+  
+  return changed;
 });
+
+// 监听代码变化状态，用于调试
+watch([hasCodeChanged, () => props.hasEditPermission], ([codeChanged, editPermission]) => {
+  console.log('📊 保存按钮状态:', {
+    hasCodeChanged: codeChanged,
+    hasEditPermission: editPermission,
+    saveButtonEnabled: codeChanged && editPermission,
+    currentCodeLength: internalCode.value?.length || 0,
+    originalCodeLength: props.originalCode?.length || 0
+  });
+}, { immediate: true });
+
+// 监听internalCode变化，确保v-model正常工作
+watch(internalCode, (newValue, oldValue) => {
+  console.log('🔄 InternalCode变化:', {
+    newValue: newValue?.substring(0, 50) + (newValue && newValue.length > 50 ? '...' : ''),
+    oldValue: oldValue?.substring(0, 50) + (oldValue && oldValue.length > 50 ? '...' : ''),
+    newValueLength: newValue?.length || 0,
+    oldValueLength: oldValue?.length || 0
+  });
+}, { immediate: true });
 
 // CodeMirror 扩展配置
 const extensions = [

@@ -320,7 +320,7 @@ class StatisticsService:
             "running_services": stats.running_services,
             "stopped_services": stats.stopped_services,
             "error_services": stats.error_services,
-            "updated_at": stats.updated_at.isoformat()
+            "updated_at": stats.updated_at.strftime("%Y-%m-%d %H:%M:%S") if stats.updated_at else None
         }
 
     def get_module_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
@@ -555,7 +555,7 @@ class StatisticsService:
                     "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
-                    "created_at": ex.created_at.isoformat()
+                    "created_at": ex.created_at.strftime("%Y-%m-%d %H:%M:%S") if ex.created_at else None
                 })
 
             # 将转换后的字典列表赋值给result.items
@@ -681,7 +681,7 @@ class StatisticsService:
                     "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
-                    "created_at": ex.created_at.isoformat()
+                    "created_at": ex.created_at.strftime("%Y-%m-%d %H:%M:%S") if ex.created_at else None
                 })
 
 
@@ -810,7 +810,7 @@ class StatisticsService:
                     "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
-                    "created_at": ex.created_at.isoformat()
+                    "created_at": ex.created_at.strftime("%Y-%m-%d %H:%M:%S") if ex.created_at else None
                 })
 
             # 返回分页结果
@@ -882,8 +882,7 @@ class StatisticsService:
                 "module_stats": len(module_stats),
                 "tool_stats": len(tool_stats),
                 "service_call_stats": len(service_call_stats),
-                "updated_at": (datetime.now(timezone('Asia/Shanghai'))
-                               .isoformat())
+                "updated_at": datetime.now(timezone('Asia/Shanghai')).strftime("%Y-%m-%d %H:%M:%S") 
             }
         except Exception as e:
             mcp_logger.error(f"刷新统计数据时出错: {str(e)}")

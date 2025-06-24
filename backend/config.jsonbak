@@ -32,7 +32,7 @@
         "statistics_interval": 1
     },
     "platform": {
-        "egova-kb": "http://127.0.0.1:8080",
+        "egova-kb": "",
     },
     "user": {
         "default_password": "mcp@12345"

@@ -17,6 +17,7 @@ class McpService(Base):
     status = Column(String(20), default="stopped")  # running, stopped, error
     error_message = Column(Text, nullable=True)  # 错误信息
     sse_url = Column(String(255), nullable=False)
+    protocol_type = Column(Integer, default=1)  # 协议类型：1=SSE, 2=流式HTTP
     created_at = Column(DateTime, default=now_beijing())
     updated_at = Column(DateTime, default=now_beijing())
     enabled = Column(Boolean, default=False)
@@ -58,10 +59,25 @@ class McpService(Base):
         }
         return type_map.get(self.service_type, "未知类型")
             
-    def to_dict(self):
-        """转换为字典格式"""
-        module_name = self.get_module_name()
-        user_name = self.get_user_name()
+    def to_dict(self, module_info=None, user_info=None):
+        """转换为字典格式
+        
+        Args:
+            module_info: 模块信息字典 {module_id: {'name': str, 'description': str}}
+            user_info: 用户信息字典 {user_id: {'username': str}}
+        """
+        # 获取模块名称
+        if self.module_id and module_info and self.module_id in module_info:
+            module_name = module_info[self.module_id]['name']
+        else:
+            module_name = self.get_module_name()
+        
+        # 获取用户名称
+        if self.user_id and user_info and self.user_id in user_info:
+            user_name = user_info[self.user_id]['username']
+        else:
+            user_name = self.get_user_name()
+        
         service_type_name = self.get_service_type_name()
         
         # 解析config_params JSON字符串
@@ -88,11 +104,14 @@ class McpService(Base):
             "user_name": user_name,
             "config_params": config_params,
             "error_message": self.error_message,
+            "protocol_type": self.protocol_type,
             "created_at": (
-                self.created_at.isoformat() if self.created_at else None
+                self.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                if self.created_at else None
             ),
             "updated_at": (
-                self.updated_at.isoformat() if self.updated_at else None
+                self.updated_at.strftime("%Y-%m-%d %H:%M:%S") 
+                if self.updated_at else None
             ),
             "is_public": self.is_public,
             "service_type": self.service_type,

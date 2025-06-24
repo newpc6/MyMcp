@@ -14,6 +14,7 @@ from . import (
 )
 from app.utils.logging import mcp_logger
 
+
 async def api_root(request):
     """API根路由"""
     return success_response({
@@ -56,9 +57,10 @@ def get_router(app) -> None:
     
     # 添加MCP服务路由
     for route in mcp_service.get_router():
-        mcp_logger.info(f"添加MCP服务路由: {settings.API_PREFIX}/service{route.path}")
+        path = f"{settings.API_PREFIX}/service{route.path}"
+        mcp_logger.info(f"添加MCP服务路由: {path}")
         app.add_route(
-            f"{settings.API_PREFIX}/service{route.path}", 
+            path, 
             route.endpoint, 
             methods=route.methods, 
             name=route.name

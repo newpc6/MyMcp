@@ -50,7 +50,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         ]
         self.sse_paths = [
             "/sse",
-            "/messages/"
+            "/messages/",
+            "/stream/"
         ]
         # 添加静态文件扩展名列表
         self.static_extensions = [
@@ -123,7 +124,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # 使用缓存的用户数据
             user_data = cached_user_data
             is_valid = True
-        else:
+        elif len(settings.PLATFORM_EGOVA_KB) > 0:
             # 首先尝试验证JWT令牌
             user_data, is_valid = self._validate_token(token)
             
@@ -273,7 +274,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
             }
             
             response = requests.post(
-                url, headers=headers, timeout=10.0
+                url, headers=headers, timeout=2.0
             )
             
             if response.status_code != 200:
