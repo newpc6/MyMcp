@@ -1,88 +1,194 @@
 <template>
-  <div class="statistics-container">    
+  <div class="statistics-container">
     <!-- 服务概览卡片 -->
     <div class="stats-overview">
-      <div class="stats-card total">
-        <div class="card-content">
-          <div class="card-icon">
-            <el-icon><Promotion /></el-icon>
+      <!-- 服务状态统计 -->
+      <div class="stats-section">
+        <h3 class="section-title">
+          <el-icon>
+            <Monitor />
+          </el-icon>
+          服务状态统计
+        </h3>
+        <div class="stats-cards">
+          <div class="stats-card total">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <Promotion />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ serviceStats.total_services }}</div>
+                <div class="card-label">服务总数</div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
           </div>
-          <div class="card-info">
-            <div class="card-value">{{ serviceStats.total_services }}</div>
-            <div class="card-label">服务总数</div>
+
+          <div class="stats-card running">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <VideoPlay />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ serviceStats.running_services }}</div>
+                <div class="card-label">运行中</div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
+          </div>
+
+          <div class="stats-card stopped">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <VideoPause />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ serviceStats.stopped_services }}</div>
+                <div class="card-label">已停止</div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
+          </div>
+
+          <div class="stats-card error">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <Warning />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ serviceStats.error_services }}</div>
+                <div class="card-label">异常</div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
           </div>
         </div>
-        <div class="card-decoration"></div>
       </div>
-      
-      <div class="stats-card running">
-        <div class="card-content">
-          <div class="card-icon">
-            <el-icon><VideoPlay /></el-icon>
+
+      <!-- 模板统计 -->
+      <div class="stats-section">
+        <h3 class="section-title">
+          <el-icon>
+            <Document />
+          </el-icon>
+          模板统计
+        </h3>
+        <div class="stats-cards">
+          <div class="stats-card template-groups">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <Folder />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ serviceStats.total_template_groups }}</div>
+                <div class="card-label">模板组总数</div>
+                <div class="card-today">
+                  今日新增: +{{ serviceStats.today_new_template_groups }}
+                </div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
           </div>
-          <div class="card-info">
-            <div class="card-value">{{ serviceStats.running_services }}</div>
-            <div class="card-label">运行中</div>
+
+          <div class="stats-card templates">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <DocumentCopy />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ serviceStats.total_templates }}</div>
+                <div class="card-label">模板总数</div>
+                <div class="card-today">
+                  今日新增: +{{ serviceStats.today_new_templates }}
+                </div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
           </div>
         </div>
-        <div class="card-decoration"></div>
       </div>
-      
-      <div class="stats-card stopped">
-        <div class="card-content">
-          <div class="card-icon">
-            <el-icon><VideoPause /></el-icon>
+
+      <!-- 调用统计 -->
+      <div class="stats-section">
+        <h3 class="section-title">
+          <el-icon>
+            <DataAnalysis />
+          </el-icon>
+          调用统计
+        </h3>
+        <div class="stats-cards">
+          <div class="stats-card service-calls">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <Connection />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ formatNumber(serviceStats.total_service_calls) }}</div>
+                <div class="card-label">服务调用总数</div>
+                <div class="card-today">
+                  今日新增: +{{ formatNumber(serviceStats.today_new_service_calls) }}
+                </div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
           </div>
-          <div class="card-info">
-            <div class="card-value">{{ serviceStats.stopped_services }}</div>
-            <div class="card-label">已停止</div>
+
+          <div class="stats-card tools-calls">
+            <div class="card-content">
+              <div class="card-icon">
+                <el-icon>
+                  <Tools />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-value">{{ formatNumber(serviceStats.total_tools_calls) }}</div>
+                <div class="card-label">工具调用总数</div>
+                <div class="card-today">
+                  今日新增: +{{ formatNumber(serviceStats.today_new_tools_calls) }}
+                </div>
+              </div>
+            </div>
+            <div class="card-decoration"></div>
           </div>
         </div>
-        <div class="card-decoration"></div>
-      </div>
-      
-      <div class="stats-card error">
-        <div class="card-content">
-          <div class="card-icon">
-            <el-icon><Warning /></el-icon>
-          </div>
-          <div class="card-info">
-            <div class="card-value">{{ serviceStats.error_services }}</div>
-            <div class="card-label">异常</div>
-          </div>
-        </div>
-        <div class="card-decoration"></div>
       </div>
     </div>
-    
+
     <!-- 排名和详情部分 -->
     <div class="ranking-grid">
       <!-- 模块发布排名 -->
       <div class="ranking-card">
         <div class="card-header">
           <div class="header-title">
-            <el-icon class="header-icon"><DataBoard /></el-icon>
+            <el-icon class="header-icon">
+              <DataBoard />
+            </el-icon>
             模块发布排名
           </div>
-          <el-button 
-            type="primary" 
-            size="small" 
-            @click="refreshModuleRankings" 
-            class="refresh-button"
-          >
-            <el-icon><Refresh /></el-icon>
+          <el-button type="primary" size="small" @click="refreshModuleRankings" class="refresh-button">
+            <el-icon>
+              <Refresh />
+            </el-icon>
           </el-button>
         </div>
-        
+
         <div class="table-container">
-          <el-table 
-            :data="moduleRankings" 
-            stripe 
-            style="width: 100%" 
-            v-loading="loadingModules"
-            class="ranking-table"
-            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }"
-          >
+          <el-table :data="moduleRankings" stripe style="width: 100%" v-loading="loadingModules" class="ranking-table"
+            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
             <el-table-column label="排名" width="60" align="center">
               <template #default="scope">
                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
@@ -111,50 +217,36 @@
             </el-table-column>
           </el-table>
         </div>
-        
+
         <div class="pagination-section">
           <el-config-provider :locale="zhCn">
-            <el-pagination
-              size="small"
-              :current-page="moduleCurrentPage"
-              :page-size="modulePageSize"
-              :page-sizes="[5, 10, 15, 20]"
-              :background="true"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="moduleTotalItems"
-              @size-change="handleModuleSizeChange"
-              @current-change="handleModulePageChange"
-            />
+            <el-pagination size="small" :current-page="moduleCurrentPage" :page-size="modulePageSize"
+              :page-sizes="[5, 10, 15, 20]" :background="true" layout="total, sizes, prev, pager, next, jumper"
+              :total="moduleTotalItems" @size-change="handleModuleSizeChange"
+              @current-change="handleModulePageChange" />
           </el-config-provider>
         </div>
       </div>
-      
+
       <!-- 工具调用排名 -->
       <div class="ranking-card">
         <div class="card-header">
           <div class="header-title">
-            <el-icon class="header-icon"><Tools /></el-icon>
+            <el-icon class="header-icon">
+              <Tools />
+            </el-icon>
             工具调用排名
           </div>
-          <el-button 
-            type="primary" 
-            size="small" 
-            @click="refreshToolRankings" 
-            class="refresh-button"
-          >
-            <el-icon><Refresh /></el-icon>
+          <el-button type="primary" size="small" @click="refreshToolRankings" class="refresh-button">
+            <el-icon>
+              <Refresh />
+            </el-icon>
           </el-button>
         </div>
-        
+
         <div class="table-container">
-          <el-table 
-            :data="toolRankings" 
-            stripe 
-            style="width: 100%" 
-            v-loading="loadingTools"
-            class="ranking-table"
-            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }"
-          >
+          <el-table :data="toolRankings" stripe style="width: 100%" v-loading="loadingTools" class="ranking-table"
+            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
             <el-table-column label="排名" width="60" align="center">
               <template #default="scope">
                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
@@ -179,32 +271,20 @@
             <el-table-column label="成功率" width="100" align="center">
               <template #default="scope">
                 <div class="success-rate">
-                  <el-progress 
-                    :percentage="calculateSuccessRate(scope.row)" 
-                    :status="getSuccessRateStatus(scope.row)"
-                    :stroke-width="6"
-                    :show-text="false"
-                  />
+                  <el-progress :percentage="calculateSuccessRate(scope.row)" :status="getSuccessRateStatus(scope.row)"
+                    :stroke-width="6" :show-text="false" />
                   <span class="rate-text">{{ calculateSuccessRate(scope.row) }}%</span>
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
-        
+
         <div class="pagination-section">
           <el-config-provider :locale="zhCn">
-            <el-pagination
-              size="small"
-              :current-page="toolCurrentPage"
-              :page-size="toolPageSize"
-              :page-sizes="[5, 10, 15, 20]"
-              :background="true"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="toolTotalItems"
-              @size-change="handleToolSizeChange"
-              @current-change="handleToolPageChange"
-            />
+            <el-pagination size="small" :current-page="toolCurrentPage" :page-size="toolPageSize"
+              :page-sizes="[5, 10, 15, 20]" :background="true" layout="total, sizes, prev, pager, next, jumper"
+              :total="toolTotalItems" @size-change="handleToolSizeChange" @current-change="handleToolPageChange" />
           </el-config-provider>
         </div>
       </div>
@@ -213,28 +293,21 @@
       <div class="ranking-card">
         <div class="card-header">
           <div class="header-title">
-            <el-icon class="header-icon"><Monitor /></el-icon>
+            <el-icon class="header-icon">
+              <Monitor />
+            </el-icon>
             服务调用排名
           </div>
-          <el-button 
-            type="primary" 
-            size="small" 
-            @click="refreshServiceRankings" 
-            class="refresh-button"
-          >
-            <el-icon><Refresh /></el-icon>
+          <el-button type="primary" size="small" @click="refreshServiceRankings" class="refresh-button">
+            <el-icon>
+              <Refresh />
+            </el-icon>
           </el-button>
         </div>
-        
+
         <div class="table-container">
-          <el-table 
-            :data="serviceRankings" 
-            stripe 
-            style="width: 100%" 
-            v-loading="loadingServices"
-            class="ranking-table"
-            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }"
-          >
+          <el-table :data="serviceRankings" stripe style="width: 100%" v-loading="loadingServices" class="ranking-table"
+            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
             <el-table-column label="排名" width="60" align="center">
               <template #default="scope">
                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
@@ -266,73 +339,57 @@
             <el-table-column label="成功率" width="100" align="center">
               <template #default="scope">
                 <div class="success-rate">
-                  <el-progress 
-                    :percentage="calculateServiceSuccessRate(scope.row)" 
-                    :status="getServiceSuccessRateStatus(scope.row)"
-                    :stroke-width="6"
-                    :show-text="false"
-                  />
+                  <el-progress :percentage="calculateServiceSuccessRate(scope.row)"
+                    :status="getServiceSuccessRateStatus(scope.row)" :stroke-width="6" :show-text="false" />
                   <span class="rate-text">{{ calculateServiceSuccessRate(scope.row) }}%</span>
                 </div>
               </template>
             </el-table-column>
           </el-table>
         </div>
-        
+
         <div class="pagination-section">
           <el-config-provider :locale="zhCn">
-            <el-pagination
-              size="small"
-              :current-page="serviceCurrentPage"
-              :page-size="servicePageSize"
-              :page-sizes="[5, 10, 15, 20]"
-              :background="true"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="serviceTotalItems"
-              @size-change="handleServiceSizeChange"
-              @current-change="handleServicePageChange"
-            />
+            <el-pagination size="small" :current-page="serviceCurrentPage" :page-size="servicePageSize"
+              :page-sizes="[5, 10, 15, 20]" :background="true" layout="total, sizes, prev, pager, next, jumper"
+              :total="serviceTotalItems" @size-change="handleServiceSizeChange"
+              @current-change="handleServicePageChange" />
           </el-config-provider>
         </div>
       </div>
     </div>
-    
+
     <!-- 工具调用详情 -->
     <div class="detail-section">
       <div class="detail-card">
         <div class="card-header">
           <div class="header-title">
-            <el-icon class="header-icon"><DataAnalysis /></el-icon>
+            <el-icon class="header-icon">
+              <DataAnalysis />
+            </el-icon>
             工具调用详情
           </div>
           <div class="header-actions">
-            <el-input
-              v-model="toolFilter"
-              placeholder="按工具名筛选"
-              clearable
-              class="filter-input"
-            >
+            <el-input v-model="toolFilter" placeholder="按工具名筛选" clearable class="filter-input">
               <template #prefix>
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
               </template>
               <template #append>
                 <el-button @click="loadToolExecutions(1)" class="search-append-btn">
-                  <el-icon><Search /></el-icon>
+                  <el-icon>
+                    <Search />
+                  </el-icon>
                 </el-button>
               </template>
             </el-input>
           </div>
         </div>
-        
+
         <div class="table-container">
-          <el-table 
-            :data="toolExecutions.items" 
-            stripe 
-            style="width: 100%" 
-            v-loading="loadingExecutions"
-            class="detail-table"
-            :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }"
-          >
+          <el-table :data="toolExecutions.items" stripe style="width: 100%" v-loading="loadingExecutions"
+            class="detail-table" :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
             <el-table-column prop="id" label="ID" width="80" />
             <el-table-column prop="tool_name" label="工具名称" min-width="150">
               <template #default="scope">
@@ -343,13 +400,8 @@
             </el-table-column>
             <el-table-column label="所属服务" width="120">
               <template #default="scope">
-                <el-tag 
-                  v-if="scope.row.service && scope.row.service.name" 
-                  size="small" 
-                  type="primary" 
-                  effect="light"
-                  class="service-tag"
-                >
+                <el-tag v-if="scope.row.service && scope.row.service.name" size="small" type="primary" effect="light"
+                  class="service-tag">
                   {{ scope.row.service.name }}
                 </el-tag>
                 <span v-else class="no-data">-</span>
@@ -357,13 +409,8 @@
             </el-table-column>
             <el-table-column label="所属模块" width="120">
               <template #default="scope">
-                <el-tag 
-                  v-if="scope.row.module && scope.row.module.name" 
-                  size="small" 
-                  type="success" 
-                  effect="light"
-                  class="module-tag"
-                >
+                <el-tag v-if="scope.row.module && scope.row.module.name" size="small" type="success" effect="light"
+                  class="module-tag">
                   {{ scope.row.module.name }}
                 </el-tag>
                 <span v-else class="no-data">-</span>
@@ -376,12 +423,8 @@
             </el-table-column>
             <el-table-column prop="status" label="状态" width="100" align="center">
               <template #default="scope">
-                <el-tag 
-                  :type="scope.row.status === 'success' ? 'success' : 'danger'" 
-                  size="small"
-                  effect="light"
-                  class="status-tag"
-                >
+                <el-tag :type="scope.row.status === 'success' ? 'success' : 'danger'" size="small" effect="light"
+                  class="status-tag">
                   {{ scope.row.status }}
                 </el-tag>
               </template>
@@ -398,51 +441,31 @@
             </el-table-column>
             <el-table-column label="操作" width="100" align="center" fixed="right">
               <template #default="scope">
-                <el-button 
-                  type="primary" 
-                  size="small" 
-                  @click="showExecutionDetails(scope.row)" 
-                  class="details-button"
-                >
+                <el-button type="primary" size="small" @click="showExecutionDetails(scope.row)" class="details-button">
                   详情
                 </el-button>
               </template>
             </el-table-column>
           </el-table>
         </div>
-        
+
         <div class="pagination-section">
           <el-config-provider :locale="zhCn">
-            <el-pagination
-              :current-page="currentPage"
-              :page-size="pageSize"
-              :page-sizes="[10, 20, 50, 100]"
-              :background="true"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="toolExecutions.total"
-              @size-change="handleSizeChange"
-              @current-change="handleCurrentChange"
-            />
+            <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[10, 20, 50, 100]"
+              :background="true" layout="total, sizes, prev, pager, next, jumper" :total="toolExecutions.total"
+              @size-change="handleSizeChange" @current-change="handleCurrentChange" />
           </el-config-provider>
         </div>
       </div>
     </div>
-    
+
     <!-- 工具调用详情对话框 -->
-    <el-dialog
-      v-model="detailsVisible"
-      title="工具调用详情"
-      width="70%"
-      class="execution-dialog"
-    >
+    <el-dialog v-model="detailsVisible" title="工具调用详情" width="70%" class="execution-dialog">
       <template v-if="selectedExecution">
         <div class="execution-header">
           <div class="execution-title">
             <h3>{{ selectedExecution.tool_name }}</h3>
-            <el-tag 
-              :type="selectedExecution.status === 'success' ? 'success' : 'danger'"
-              effect="light"
-            >
+            <el-tag :type="selectedExecution.status === 'success' ? 'success' : 'danger'" effect="light">
               {{ selectedExecution.status }}
             </el-tag>
           </div>
@@ -469,22 +492,22 @@
             </div>
           </div>
         </div>
-        
+
         <el-divider />
-        
+
         <div class="execution-content">
           <div class="content-section">
             <h4>描述</h4>
             <p>{{ selectedExecution.description }}</p>
           </div>
-          
+
           <div class="content-section">
             <h4>参数</h4>
             <div class="code-container">
               <pre>{{ formatJson(selectedExecution.parameters) }}</pre>
             </div>
           </div>
-          
+
           <div class="content-section">
             <h4>结果</h4>
             <div class="code-container">
@@ -501,24 +524,28 @@
 import { ref, onMounted, computed } from 'vue';
 import { ElMessage, ElNotification } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
-import { 
-  Promotion, 
-  VideoPlay, 
-  VideoPause, 
-  Warning, 
-  Refresh, 
+import {
+  Promotion,
+  VideoPlay,
+  VideoPause,
+  Warning,
+  Refresh,
   Search,
   DataBoard,
   Tools,
   Monitor,
-  DataAnalysis
+  DataAnalysis,
+  Document,
+  DocumentCopy,
+  Folder,
+  Connection
 } from '@element-plus/icons-vue';
-import { 
-  getServiceStats, 
-  getModuleRankings, 
-  getToolRankings, 
+import {
+  getServiceStats,
+  getModuleRankings,
+  getToolRankings,
   getServiceRankings,
-  getToolExecutions, 
+  getToolExecutions,
   refreshStatistics
 } from '../../api/statistics';
 
@@ -528,6 +555,14 @@ const serviceStats = ref({
   running_services: 0,
   stopped_services: 0,
   error_services: 0,
+  total_template_groups: 0,
+  today_new_template_groups: 0,
+  total_templates: 0,
+  today_new_templates: 0,
+  total_service_calls: 0,
+  today_new_service_calls: 0,
+  total_tools_calls: 0,
+  today_new_tools_calls: 0,
   updated_at: null
 });
 
@@ -669,14 +704,14 @@ const loadServiceRankings = async (page = 1) => {
 const loadToolExecutions = async (page) => {
   if (page) currentPage.value = page;
   loadingExecutions.value = true;
-  
+
   try {
     const response = await getToolExecutions(
       currentPage.value,
       pageSize.value,
       toolFilter.value || undefined
     );
-    
+
     if (response && response.code === 0) {
       toolExecutions.value = response.data;
       currentPage.value = response.data.page || currentPage.value;
@@ -699,7 +734,7 @@ const refreshAllStatistics = async () => {
         message: '统计数据已刷新',
         type: 'success'
       });
-      
+
       // 重新加载所有数据
       loadServiceStats();
       refreshModuleRankings();
@@ -805,6 +840,18 @@ const formatJson = (data) => {
   return JSON.stringify(data, null, 2);
 };
 
+// 格式化数字（大数字使用K、M等单位）
+const formatNumber = (num) => {
+  if (!num) return '0';
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + 'M';
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1) + 'K';
+  }
+  return num.toString();
+};
+
 // 页面加载时获取数据
 onMounted(() => {
   loadServiceStats();
@@ -826,118 +873,84 @@ const getRankingClass = (index) => {
 <style scoped>
 .statistics-container {
   padding: 24px;
-  /* max-width: 1440px; */
   margin: 0 auto;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
   min-height: 100vh;
 }
 
-.page-header {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 32px;
-  margin-bottom: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-.header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 32px;
-  flex-wrap: wrap;
-}
-
-.title-section {
-  flex: 1;
-  min-width: 300px;
-}
-
-.page-title {
-  font-size: 32px;
-  font-weight: 700;
-  color: #1a202c;
-  margin: 0 0 8px 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.title-icon {
-  font-size: 28px;
-  color: #667eea;
-}
-
-.page-subtitle {
-  font-size: 16px;
-  color: #718096;
-  margin: 0;
-  font-weight: 400;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
-}
-
-.refresh-btn {
-  border-radius: 12px;
-  padding: 10px 20px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.refresh-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-}
-
 .stats-overview {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
   margin-bottom: 32px;
 }
 
-.stats-card {
+.stats-section {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 20px;
   padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.stats-section:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1565c0;
+  margin: 0 0 20px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid rgba(21, 101, 192, 0.1);
+}
+
+.stats-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.stats-card {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 20px;
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
 }
 
 .stats-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
 .card-content {
   display: flex;
-  align-items: center;
-  gap: 20px;
+  align-items: flex-start;
+  gap: 16px;
   z-index: 2;
   position: relative;
 }
 
 .card-icon {
-  font-size: 48px;
-  padding: 16px;
-  border-radius: 16px;
+  font-size: 40px;
+  padding: 12px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .card-info {
@@ -945,20 +958,32 @@ const getRankingClass = (index) => {
 }
 
 .card-value {
-  font-size: 36px;
+  font-size: 32px;
   font-weight: 700;
   margin-bottom: 4px;
   line-height: 1;
 }
 
 .card-label {
-  font-size: 16px;
-  font-weight: 500;
-  opacity: 0.8;
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.9;
+  margin-bottom: 4px;
 }
 
+.card-today {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-block;
+}
+
+/* 服务状态卡片样式 */
 .stats-card.total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
   color: white;
 }
 
@@ -968,7 +993,7 @@ const getRankingClass = (index) => {
 }
 
 .stats-card.running {
-  background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
   color: white;
 }
 
@@ -978,7 +1003,7 @@ const getRankingClass = (index) => {
 }
 
 .stats-card.stopped {
-  background: linear-gradient(135deg, #a0aec0 0%, #718096 100%);
+  background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
   color: white;
 }
 
@@ -988,11 +1013,53 @@ const getRankingClass = (index) => {
 }
 
 .stats-card.error {
-  background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
   color: white;
 }
 
 .stats-card.error .card-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* 模板相关卡片样式 */
+.stats-card.template-groups {
+  background: linear-gradient(135deg, #03a9f4 0%, #0288d1 100%);
+  color: white;
+}
+
+.stats-card.template-groups .card-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.stats-card.templates {
+  background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
+  color: white;
+}
+
+.stats-card.templates .card-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+/* 调用相关卡片样式 */
+.stats-card.service-calls {
+  background: linear-gradient(135deg, #3f51b5 0%, #303f9f 100%);
+  color: white;
+}
+
+.stats-card.service-calls .card-icon {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.stats-card.tools-calls {
+  background: linear-gradient(135deg, #673ab7 0%, #512da8 100%);
+  color: white;
+}
+
+.stats-card.tools-calls .card-icon {
   background: rgba(255, 255, 255, 0.2);
   color: white;
 }
@@ -1009,14 +1076,14 @@ const getRankingClass = (index) => {
   backdrop-filter: blur(10px);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
 }
 
 .ranking-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
 }
 
 .card-header {
@@ -1024,13 +1091,14 @@ const getRankingClass = (index) => {
   justify-content: space-between;
   align-items: center;
   padding: 24px 24px 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(21, 101, 192, 0.1);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(25, 118, 210, 0.05) 100%);
 }
 
 .header-title {
   font-size: 18px;
   font-weight: 700;
-  color: #2d3748;
+  color: #1565c0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1038,16 +1106,19 @@ const getRankingClass = (index) => {
 
 .header-icon {
   font-size: 20px;
-  color: #667eea;
+  color: #2196f3;
 }
 
 .refresh-button {
   border-radius: 8px;
   transition: all 0.2s ease;
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  border: none;
 }
 
 .refresh-button:hover {
   transform: scale(1.05);
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
 }
 
 .table-container {
@@ -1062,7 +1133,7 @@ const getRankingClass = (index) => {
 
 .ranking-table :deep(.el-table__row:hover),
 .detail-table :deep(.el-table__row:hover) {
-  background-color: rgba(102, 126, 234, 0.05) !important;
+  background-color: rgba(33, 150, 243, 0.05) !important;
 }
 
 .ranking-table :deep(.el-table__row--striped),
@@ -1101,8 +1172,8 @@ const getRankingClass = (index) => {
 }
 
 .ranking-normal {
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e0);
-  color: #4a5568;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  color: #1565c0;
 }
 
 .module-info,
@@ -1116,17 +1187,20 @@ const getRankingClass = (index) => {
 .tool-name,
 .service-name {
   font-weight: 600;
-  color: #2d3748;
+  color: #1565c0;
 }
 
 .creator-name {
   font-weight: 500;
-  color: #4a5568;
+  color: #1976d2;
 }
 
 .count-tag {
   font-weight: 600;
   border-radius: 12px;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1565c0;
+  border: 1px solid rgba(21, 101, 192, 0.2);
 }
 
 .success-rate {
@@ -1139,13 +1213,16 @@ const getRankingClass = (index) => {
 .rate-text {
   font-size: 12px;
   font-weight: 600;
-  color: #4a5568;
+  color: #1565c0;
 }
 
 .module-tag,
 .service-tag {
   border-radius: 12px;
   font-weight: 500;
+  background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+  color: #2e7d32;
+  border: 1px solid rgba(46, 125, 50, 0.2);
 }
 
 .status-tag {
@@ -1156,28 +1233,34 @@ const getRankingClass = (index) => {
 .execution-time {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
   font-weight: 600;
-  color: #4a5568;
+  color: #1565c0;
 }
 
 .created-time {
   font-size: 13px;
-  color: #718096;
+  color: #1976d2;
 }
 
 .no-data {
-  color: #a0aec0;
+  color: #90caf9;
   font-style: italic;
 }
 
 .details-button {
   border-radius: 8px;
   font-weight: 600;
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  border: none;
+}
+
+.details-button:hover {
+  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
 }
 
 .pagination-section {
   padding: 16px 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.05);
-  background: rgba(248, 250, 252, 0.5);
+  border-top: 1px solid rgba(21, 101, 192, 0.1);
+  background: linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(25, 118, 210, 0.02) 100%);
 }
 
 .detail-section {
@@ -1189,7 +1272,7 @@ const getRankingClass = (index) => {
   backdrop-filter: blur(10px);
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
@@ -1197,13 +1280,29 @@ const getRankingClass = (index) => {
   width: 300px;
 }
 
+.filter-input :deep(.el-input__wrapper) {
+  border-radius: 12px;
+  border: 1px solid rgba(21, 101, 192, 0.2);
+}
+
+.filter-input :deep(.el-input__wrapper:hover) {
+  border-color: #2196f3;
+}
+
 .search-append-btn {
-  border-radius: 0 8px 8px 0;
+  border-radius: 0 12px 12px 0;
+  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  border: none;
 }
 
 .execution-dialog {
   border-radius: 20px;
   overflow: hidden;
+}
+
+.execution-dialog :deep(.el-dialog__header) {
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  color: #1565c0;
 }
 
 .execution-header {
@@ -1221,7 +1320,7 @@ const getRankingClass = (index) => {
   margin: 0;
   font-size: 24px;
   font-weight: 700;
-  color: #2d3748;
+  color: #1565c0;
 }
 
 .execution-meta {
@@ -1238,12 +1337,12 @@ const getRankingClass = (index) => {
 
 .meta-label {
   font-weight: 600;
-  color: #718096;
+  color: #1976d2;
 }
 
 .meta-value {
   font-weight: 500;
-  color: #2d3748;
+  color: #1565c0;
 }
 
 .content-section {
@@ -1253,21 +1352,25 @@ const getRankingClass = (index) => {
 .content-section h4 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: #303133;
+  color: #1565c0;
   font-weight: bold;
 }
 
-.code-card {
-  background-color: #f8f8f8;
+.code-container {
+  background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
+  border: 1px solid rgba(21, 101, 192, 0.1);
+  border-radius: 8px;
+  padding: 16px;
 }
 
-.code-card pre {
+.code-container pre {
   margin: 0;
   padding: 0;
   white-space: pre-wrap;
   word-wrap: break-word;
-  font-family: monospace;
-  color: #333;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  color: #1565c0;
+  font-size: 13px;
 }
 
 .execution-dialog {
@@ -1284,4 +1387,23 @@ const getRankingClass = (index) => {
   max-width: 90px;
   display: inline-block;
 }
-</style> 
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .statistics-container {
+    padding: 16px;
+  }
+
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .ranking-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-input {
+    width: 100%;
+  }
+}
+</style>
