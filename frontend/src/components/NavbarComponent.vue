@@ -20,8 +20,9 @@
       <el-menu-item index="/mcp-services" @mouseup="handleMouseUp($event, '/mcp-services')">MCP服务管理</el-menu-item>
       <el-menu-item v-if="isAdmin" index="/statistics"
         @mouseup="handleMouseUp($event, '/statistics')">统计分析</el-menu-item>
-      <el-menu-item v-if="isAdmin" index="/users" @mouseup="handleMouseUp($event, '/users')">用户管理</el-menu-item>
-      <el-menu-item v-if="isAdmin" index="/tenants" @mouseup="handleMouseUp($event, '/tenants')">租户管理</el-menu-item>
+        <el-menu-item v-if="isAdmin" index="/users" @mouseup="handleMouseUp($event, '/users')">用户管理</el-menu-item>
+        <el-menu-item v-if="isAdmin" index="/tenants" @mouseup="handleMouseUp($event, '/tenants')">租户管理</el-menu-item>
+        <el-menu-item v-if="isAdmin" index="/system" @mouseup="handleMouseUp($event, '/system')">系统管理</el-menu-item>
 
       <div class="user-controls">
         <el-dropdown v-if="isLoggedIn" @command="handleCommand">

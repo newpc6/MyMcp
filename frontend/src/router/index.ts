@@ -50,6 +50,18 @@ const routes: Array<RouteRecordRaw> = [
     name: 'Statistics',
     component: () => import('../views/statictics/index.vue'),
     meta: { requiresAdmin: true, title: 'MCP统计' }
+  },
+  {
+    path: '/system',
+    name: 'system-management',
+    component: () => import('../views/system/index.vue'),
+    meta: { title: '系统管理', adminOnly: true }
+  },
+  {
+    path: '/system/python-packages',
+    name: 'python-packages',
+    component: () => import('../views/system/PythonPackages.vue'),
+    meta: { title: 'Python包管理', adminOnly: true }
   }
 ]
 

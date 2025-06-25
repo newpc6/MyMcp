@@ -10,7 +10,7 @@ from starlette.responses import FileResponse
 import os
 from . import (
     auth, tools, mcp_service, history,
-    execution, log, marketplace, statistics, static, group
+    execution, log, marketplace, statistics, static, group, system
 )
 from app.utils.logging import mcp_logger
 
@@ -111,9 +111,19 @@ def get_router(app) -> None:
             name=route.name
         )
         
+    # 添加统计路由
     for route in statistics.get_router():
         app.add_route(
             f"{settings.API_PREFIX}/statistics{route.path}", 
+            route.endpoint, 
+            methods=route.methods, 
+            name=route.name
+        )
+    
+    # 添加系统管理路由
+    for route in system.get_router():
+        app.add_route(
+            f"{settings.API_PREFIX}/system{route.path}", 
             route.endpoint, 
             methods=route.methods, 
             name=route.name
