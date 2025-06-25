@@ -960,7 +960,7 @@ class StatisticsService:
                 raise
 
     def get_statistics_trend(
-            self, days: int = 7) -> List[Dict[str, Any]]:
+            self, start_date: date, end_date: date) -> List[Dict[str, Any]]:
         """
         获取统计数据趋势
 
@@ -974,9 +974,7 @@ class StatisticsService:
             try:
                 from datetime import timedelta
                 
-                end_date = date.today()
-                start_date = end_date - timedelta(days=days-1)
-                
+                end_date = date.today()                
                 stats_list = db.query(ServiceStatistics).filter(
                     ServiceStatistics.statistics_date >= start_date,
                     ServiceStatistics.statistics_date <= end_date

@@ -13,6 +13,7 @@ from app.services.statistics.service import statistics_service
 from app.utils.response import success_response, error_response
 from app.utils.logging import mcp_logger
 from app.utils.http import get_page_params
+from app.utils.permissions import get_user_info
 
 async def get_service_statistics(request: Request):
     """获取服务统计数据"""
@@ -274,6 +275,25 @@ async def get_module_tool_rankings(request: Request):
         mcp_logger.error(f"获取模块工具排名时出错: {str(e)}")
         return error_response(str(e))
 
+
+async def get_statistics_trend(request: Request):
+    """获取统计数据趋势"""
+    try:
+        # 获取用户信息
+        user_id, is_admin = get_user_info(request)
+        
+        # 检查管理员权限
+        if not is_admin:
+            return error_response("需要管理员权限", code=403, http_status_code=403)
+        body = await request.json()
+        start_date = body.get("start_date")
+        end_date = body.get("end_date")
+        # 获取统计数据趋势
+        trend = statistics_service.get_statistics_trend(start_date, end_date)
+        
+        return success_response(trend)
+    except Exception as e:
+        return error_response(str(e), code=500, http_status_code=500)
 
 def get_router():
     """获取统计API路由"""
