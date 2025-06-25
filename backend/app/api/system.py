@@ -1,5 +1,5 @@
 """
-系统管理API接口
+系统管理相关API
 """
 from starlette.requests import Request
 from starlette.routing import Route
@@ -239,7 +239,41 @@ async def clear_system_logs(request: Request):
         return success_response(result, message="系统日志清空成功")
     except Exception as e:
         return error_response(f"清空系统日志失败: {str(e)}", code=500, http_status_code=500)
+    
 
+async def get_scheduled_tasks(request: Request):
+    """获取定时任务列表"""
+    # 获取用户信息
+    user_id, is_admin = get_user_info(request)
+    
+    # 检查管理员权限
+    if not is_admin:
+        return error_response("需要管理员权限", code=403, http_status_code=403)
+    
+    try:
+        tasks = await system_service.get_scheduled_tasks()
+        return success_response(tasks)
+    except Exception as e:
+        return error_response(f"获取定时任务列表失败: {str(e)}", code=500, http_status_code=500)
+    
+    
+async def execute_scheduled_task(request: Request):
+    """执行定时任务"""
+    # 获取用户信息
+    user_id, is_admin = get_user_info(request)
+    
+    # 检查管理员权限
+    if not is_admin:
+        return error_response("需要管理员权限", code=403, http_status_code=403)
+    
+    try:
+        data = await request.json()
+        task_name = data.get("task_name")
+        result = await system_service.execute_scheduled_task(task_name)
+        return success_response(result, message="定时任务执行成功")
+    except Exception as e:
+        return error_response(f"执行定时任务失败: {str(e)}", code=500, http_status_code=500)
+    
 
 def get_router():
     """获取系统管理相关路由"""
@@ -248,12 +282,36 @@ def get_router():
         Route("/python/packages", get_installed_packages, methods=["GET"]),
         Route("/python/install", install_package, methods=["POST"]),
         Route("/python/upgrade", upgrade_package, methods=["POST"]),
-        Route("/python/uninstall/{package_name}", uninstall_package, methods=["DELETE"]),
+        Route(
+            "/python/uninstall/{package_name}", 
+            uninstall_package, 
+            methods=["DELETE"]
+        ),
         Route("/services/status", get_service_status, methods=["GET"]),
-        Route("/services/{service_name}/restart", restart_service, methods=["POST"]),
-        Route("/services/{service_name}/stop", stop_service, methods=["POST"]),
-        Route("/services/{service_name}/start", start_service, methods=["POST"]),
+        Route(
+            "/services/{service_name}/restart", 
+            restart_service, 
+            methods=["POST"]
+        ),
+        Route(
+            "/services/{service_name}/stop", 
+            stop_service, 
+            methods=["POST"]
+        ),
+        Route(
+            "/services/{service_name}/start", 
+            start_service, 
+            methods=["POST"]
+        ),
         Route("/logs", get_system_logs, methods=["GET"]),
         Route("/logs", clear_system_logs, methods=["DELETE"]),
+        # 定时任务管理路由
+        Route("/scheduled-tasks", get_scheduled_tasks, methods=["GET"]),
+        Route(
+            "/scheduled-tasks/execute", 
+            execute_scheduled_task, 
+            methods=["POST"]
+        ),
     ]
+    
     return routes 

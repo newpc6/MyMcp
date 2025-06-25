@@ -62,6 +62,12 @@ const routes: Array<RouteRecordRaw> = [
     name: 'python-packages',
     component: () => import('../views/system/PythonPackages.vue'),
     meta: { title: 'Python包管理', adminOnly: true }
+  },
+  {
+    path: '/system/scheduled-tasks',
+    name: 'scheduled-tasks',
+    component: () => import('../views/system/ScheduledTasks.vue'),
+    meta: { title: '定时任务管理', adminOnly: true }
   }
 ]
 

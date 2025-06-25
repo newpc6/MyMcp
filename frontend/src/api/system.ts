@@ -1,5 +1,17 @@
 import api, { apiPrefix } from './index'
 
+// 定时任务接口
+export interface ScheduledTask {
+  id: string
+  name: string
+  description: string
+  category: string
+  interval: string
+  next_run: string
+  status: string
+  enabled: boolean
+}
+
 // 系统信息接口
 export const getSystemInfo = () => {
   return api.get(`${apiPrefix}/system/info`)
@@ -12,18 +24,15 @@ export const getInstalledPackages = () => {
 
 // 安装Python包
 export const installPackage = (data: {
-  package: string
-  upgrade?: boolean
-  user?: boolean
-  index_url?: string
+  package_name: string
+  version?: string
 }) => {
   return api.post(`${apiPrefix}/system/python/install`, data)
 }
 
 // 升级Python包
 export const upgradePackage = (data: {
-  package: string
-  index_url?: string
+  package_name: string
 }) => {
   return api.post(`${apiPrefix}/system/python/upgrade`, data)
 }
@@ -65,4 +74,16 @@ export const getSystemLogs = (params?: {
 // 清空系统日志
 export const clearSystemLogs = () => {
   return api.delete(`${apiPrefix}/system/logs`)
+}
+
+// 获取定时任务列表
+export const getScheduledTasks = () => {
+  return api.get(`${apiPrefix}/system/scheduled-tasks`)
+}
+
+// 手动执行定时任务
+export const executeScheduledTask = (taskName: string) => {
+  return api.post(`${apiPrefix}/system/scheduled-tasks/execute`, {
+    task_name: taskName
+  })
 } 

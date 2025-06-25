@@ -1,30 +1,5 @@
 <template>
-  <div class="statistics-container">
-    <!-- 页面头部 -->
-    <!-- <div class="page-header">
-      <div class="header-content">
-        <div class="title-section">
-          <h2 class="page-title">
-            <el-icon class="title-icon">
-              <Promotion />
-            </el-icon>
-            MCP统计分析
-          </h2>
-        </div>
-        
-        <div class="header-actions">
-          <el-button 
-            type="primary" 
-            @click="refreshAllStatistics" 
-            class="refresh-btn"
-          >
-            <el-icon><Refresh /></el-icon>
-            刷新统计
-          </el-button>
-        </div>
-      </div>
-    </div> -->
-    
+  <div class="statistics-container">    
     <!-- 服务概览卡片 -->
     <div class="stats-overview">
       <div class="stats-card total">

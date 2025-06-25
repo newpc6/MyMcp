@@ -19,6 +19,19 @@
         </div>
       </div>
 
+      <div class="management-card" @click="$router.push('/system/scheduled-tasks')">
+        <div class="card-icon">
+          <i class="icon-schedule"></i>
+        </div>
+        <div class="card-content">
+          <h3>定时任务管理</h3>
+          <p>查看和管理系统定时任务</p>
+        </div>
+        <div class="card-arrow">
+          <i class="arrow-right"></i>
+        </div>
+      </div>
+
       <div class="management-card" @click="handleLogManagement">
         <div class="card-icon">
           <i class="icon-log"></i>
@@ -32,6 +45,71 @@
         </div>
       </div>
     </div>
+
+    <!-- 定时任务对话框 -->
+    <el-dialog
+      v-model="scheduledTasksDialogVisible"
+      title="定时任务管理"
+      width="80%"
+      :before-close="handleCloseTasksDialog"
+    >
+      <div class="scheduled-tasks-container">
+        <div class="tasks-header">
+          <el-button type="primary" @click="loadScheduledTasks" :loading="tasksLoading">
+            <el-icon><Refresh /></el-icon>
+            刷新
+          </el-button>
+        </div>
+
+        <el-table
+          :data="scheduledTasks"
+          style="width: 100%"
+          v-loading="tasksLoading"
+          element-loading-text="加载定时任务..."
+        >
+          <el-table-column prop="name" label="任务名称" min-width="150">
+            <template #default="{ row }">
+              <el-tag type="info" size="small">{{ row.name }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="description" label="任务描述" min-width="200" />
+          <el-table-column prop="category" label="分类" width="100">
+            <template #default="{ row }">
+              <el-tag
+                :type="getCategoryTagType(row.category)"
+                size="small"
+              >
+                {{ row.category }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="interval" label="执行间隔" min-width="150" />
+          <el-table-column prop="next_run" label="下次执行时间" min-width="180" />
+          <el-table-column prop="status" label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.status === '运行中' ? 'success' : 'warning'"
+                size="small"
+              >
+                {{ row.status }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{ row }">
+              <el-button
+                type="primary"
+                size="small"
+                @click="executeTask(row)"
+                :loading="executingTasks.includes(row.name)"
+              >
+                执行
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </el-dialog>
 
     <div class="system-status">
       <h2>系统状态</h2>
@@ -125,10 +203,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { getSystemInfo } from '../../api/system'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Refresh } from '@element-plus/icons-vue'
+import { getSystemInfo, getScheduledTasks, executeScheduledTask, type ScheduledTask } from '../../api/system'
 
 const router = useRouter()
 
+// 系统信息
 const systemInfo = ref({
   pythonVersion: '加载中...',
   uptime: '加载中...',
@@ -149,6 +230,12 @@ const systemInfo = ref({
     percent: 0
   }
 })
+
+// 定时任务相关
+const scheduledTasksDialogVisible = ref(false)
+const scheduledTasks = ref<ScheduledTask[]>([])
+const tasksLoading = ref(false)
+const executingTasks = ref<string[]>([])
 
 // 格式化字节数为可读格式
 const formatBytes = (bytes: number): string => {
@@ -217,6 +304,89 @@ const loadSystemInfo = async () => {
         percent: 68.5
       }
     }
+  }
+}
+
+// 显示定时任务对话框
+const showScheduledTasksDialog = () => {
+  scheduledTasksDialogVisible.value = true
+  loadScheduledTasks()
+}
+
+// 关闭定时任务对话框
+const handleCloseTasksDialog = () => {
+  scheduledTasksDialogVisible.value = false
+}
+
+// 加载定时任务列表
+const loadScheduledTasks = async () => {
+  tasksLoading.value = true
+  try {
+    const response = await getScheduledTasks()
+    if (response.data && response.data.code === 0) {
+      scheduledTasks.value = response.data.data || []
+    } else {
+      ElMessage.error('获取定时任务列表失败')
+      scheduledTasks.value = []
+    }
+  } catch (error) {
+    console.error('获取定时任务列表失败:', error)
+    ElMessage.error('获取定时任务列表失败')
+    scheduledTasks.value = []
+  } finally {
+    tasksLoading.value = false
+  }
+}
+
+// 执行定时任务
+const executeTask = async (task: ScheduledTask) => {
+  try {
+    await ElMessageBox.confirm(
+      `确认要立即执行任务 "${task.description}" 吗？`,
+      '确认执行',
+      {
+        type: 'warning',
+        confirmButtonText: '确认执行',
+        cancelButtonText: '取消'
+      }
+    )
+
+    executingTasks.value.push(task.name)
+    
+    const response = await executeScheduledTask(task.name)
+    if (response.data && response.data.code === 0) {
+      ElMessage.success(`任务 "${task.description}" 已开始执行`)
+      // 刷新任务列表
+      setTimeout(() => {
+        loadScheduledTasks()
+      }, 1000)
+    } else {
+      ElMessage.error(response.data?.message || '执行任务失败')
+    }
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('执行任务失败:', error)
+      ElMessage.error('执行任务失败')
+    }
+  } finally {
+    const index = executingTasks.value.indexOf(task.name)
+    if (index > -1) {
+      executingTasks.value.splice(index, 1)
+    }
+  }
+}
+
+// 获取分类标签类型
+const getCategoryTagType = (category: string) => {
+  switch (category) {
+    case '统计':
+      return 'primary'
+    case '清理':
+      return 'warning'
+    case '系统':
+      return 'success'
+    default:
+      return 'info'
   }
 }
 
@@ -429,27 +599,71 @@ onMounted(() => {
 
 .resource-details {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
 }
 
 .detail-item {
+  padding: 8px 12px;
+  background: white;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* 图标样式 */
+.icon-python::before {
+  content: "🐍";
+}
+
+.icon-schedule::before {
+  content: "⏰";
+}
+
+.icon-log::before {
+  content: "📝";
+}
+
+.arrow-right::before {
+  content: "→";
+}
+
+/* 定时任务对话框样式 */
+.scheduled-tasks-container {
+  padding: 8px 0;
+}
+
+.tasks-header {
+  margin-bottom: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 14px;
-  color: #6b7280;
 }
 
-/* 图标样式 - 这里可以使用字体图标或SVG */
-.icon-python::before { content: "🐍"; }
-.icon-info::before { content: "ℹ️"; }
-.icon-service::before { content: "⚙️"; }
-.icon-log::before { content: "📋"; }
-.arrow-right::before { content: "→"; }
+.task-category-tag {
+  margin-right: 8px;
+}
+
+.task-execution-time {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 12px;
+}
+
+.task-status-running {
+  color: #10b981;
+}
+
+.task-status-stopped {
+  color: #f59e0b;
+}
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .management-grid {
+    grid-template-columns: 1fr;
+  }
+  
   .status-grid {
     grid-template-columns: 1fr;
   }
@@ -458,8 +672,8 @@ onMounted(() => {
     grid-template-columns: 1fr;
   }
   
-  .management-grid {
-    grid-template-columns: 1fr;
+  .system-management {
+    padding: 16px;
   }
 }
 </style> 

@@ -5,7 +5,7 @@
 """
 
 import json
-from datetime import datetime
+from datetime import datetime, date
 from typing import List, Dict, Any, Optional
 from pytz import timezone
 from sqlalchemy import func, desc
@@ -20,6 +20,7 @@ from app.models.statistics import (
 from app.models.modules.mcp_services import McpService
 from app.models.modules.mcp_marketplace import McpModule
 from app.models.tools.tool_execution import ToolExecution
+from app.models.group.group import McpGroup
 from app.utils.logging import mcp_logger
 from app.utils.http import PageParams, PageResult, build_page_response
 from app.models.modules.users import User
@@ -41,34 +42,71 @@ class StatisticsService:
         """
         with get_db() as db:
             try:
-                # 查询总服务数
-                total_services = db.query(McpService).count()
+                today = date.today()
+                tz = timezone('Asia/Shanghai')
+                
+                # 查询MCP模板分组统计
+                total_template_groups = db.query(McpGroup).count()
+                today_new_template_groups = db.query(McpGroup).filter(
+                    func.date(McpGroup.created_at) == today
+                ).count()
 
-                # 查询各状态服务数
+                # 查询MCP模板统计
+                total_templates = db.query(McpModule).count()
+                today_new_templates = db.query(McpModule).filter(
+                    func.date(McpModule.created_at) == today
+                ).count()
+
+                # 查询MCP工具调用统计
+                total_tools_calls = db.query(ToolExecution).count()
+                today_new_tools_calls = db.query(ToolExecution).filter(
+                    func.date(ToolExecution.created_at) == today
+                ).count()
+
+                # 查询MCP服务调用统计
+                total_service_calls = db.query(ToolExecution).filter(
+                    ToolExecution.service_id.isnot(None)
+                ).count()
+                today_new_service_calls = db.query(ToolExecution).filter(
+                    ToolExecution.service_id.isnot(None),
+                    func.date(ToolExecution.created_at) == today
+                ).count()
+
+                # 查询MCP发布服务统计
+                total_services = db.query(McpService).count()
                 running_services = db.query(McpService).filter(
                     McpService.status == "running"
                 ).count()
-
                 stopped_services = db.query(McpService).filter(
                     McpService.status == "stopped"
                 ).count()
-
                 error_services = db.query(McpService).filter(
                     McpService.status == "error"
                 ).count()
 
-                # 获取或创建统计记录
-                stats = db.query(ServiceStatistics).first()
+                # 获取或创建今日统计记录
+                stats = db.query(ServiceStatistics).filter(
+                    ServiceStatistics.statistics_date == today
+                ).first()
+                
                 if not stats:
-                    stats = ServiceStatistics()
+                    stats = ServiceStatistics(statistics_date=today)
                     db.add(stats)
 
                 # 更新统计数据
+                stats.total_template_groups = total_template_groups
+                stats.today_new_template_groups = today_new_template_groups
+                stats.total_templates = total_templates
+                stats.today_new_templates = today_new_templates
+                stats.total_service_calls = total_service_calls
+                stats.today_new_service_calls = today_new_service_calls
+                stats.total_tools_calls = total_tools_calls
+                stats.today_new_tools_calls = today_new_tools_calls
                 stats.total_services = total_services
                 stats.running_services = running_services
                 stats.stopped_services = stopped_services
                 stats.error_services = error_services
-                stats.updated_at = datetime.now(timezone('Asia/Shanghai'))
+                stats.updated_at = datetime.now(tz)
 
                 db.commit()
                 db.refresh(stats)
@@ -105,7 +143,7 @@ class StatisticsService:
                 user_ids = {module.user_id for module in modules}
                 users = db.query(User).filter(User.id.in_(user_ids)).all()
                 user_dict = {user.id: user.username for user in users}
-                
+
                 for module in modules:
                     # 查找或创建统计记录
                     stats = db.query(ModuleStatistics).filter(
@@ -313,17 +351,11 @@ class StatisticsService:
         """
         # 首先更新统计数据
         stats = self.update_service_statistics()
+        
+        return stats.to_dict()
 
-        # 返回统计结果
-        return {
-            "total_services": stats.total_services,
-            "running_services": stats.running_services,
-            "stopped_services": stats.stopped_services,
-            "error_services": stats.error_services,
-            "updated_at": stats.updated_at.strftime("%Y-%m-%d %H:%M:%S") if stats.updated_at else None
-        }
-
-    def get_module_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
+    def get_module_rankings(
+            self, size: int = 10, page: int = 1) -> Dict[str, Any]:
         """
         获取模块发布排名
 
@@ -361,7 +393,8 @@ class StatisticsService:
                 mcp_logger.error(f"获取模块排名数据时出错: {str(e)}")
                 raise
 
-    def get_tool_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
+    def get_tool_rankings(
+            self, size: int = 10, page: int = 1) -> Dict[str, Any]:
         """
         获取工具调用排名
 
@@ -399,7 +432,8 @@ class StatisticsService:
                 mcp_logger.error(f"获取工具排名数据时出错: {str(e)}")
                 raise
 
-    def get_service_rankings(self, size: int = 10, page: int = 1) -> Dict[str, Any]:
+    def get_service_rankings(
+            self, size: int = 10, page: int = 1) -> Dict[str, Any]:
         """
         获取服务调用排名
 
@@ -502,7 +536,7 @@ class StatisticsService:
                     McpService.id.in_(service_ids)
                 ).all()
                 services = {s.id: s for s in service_records}
-                
+
             user_ids = {module.user_id for module in modules.values()}
             users = db.query(User).filter(User.id.in_(user_ids)).all()
             user_dict = {user.id: user.username for user in users}
@@ -538,7 +572,9 @@ class StatisticsService:
                     parameters = {"raw": ex.parameters}
 
                 try:
-                    result_json = json.loads(ex.result) if ex.result else None
+                    result_json = (
+                        json.loads(ex.result) if ex.result else None
+                    )
                 except json.JSONDecodeError:
                     result_json = {"raw": ex.result}
 
@@ -555,7 +591,10 @@ class StatisticsService:
                     "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
-                    "created_at": ex.created_at.strftime("%Y-%m-%d %H:%M:%S") if ex.created_at else None
+                    "created_at": (
+                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                        if ex.created_at else None
+                    )
                 })
 
             # 将转换后的字典列表赋值给result.items
@@ -610,14 +649,10 @@ class StatisticsService:
             # 转换为字典列表
             items = []
 
-            # 获取所有涉及的模块ID和服务ID
+            # 获取所有涉及的模块ID
             module_ids = {
                 ex.module_id for ex in executions
                 if ex.module_id is not None
-            }
-            service_ids = {
-                ex.service_id for ex in executions
-                if ex.service_id is not None
             }
 
             # 一次性查询所有相关模块
@@ -627,14 +662,6 @@ class StatisticsService:
                     McpModule.id.in_(module_ids)
                 ).all()
                 modules = {m.id: m for m in module_records}
-
-            # 一次性查询所有相关服务
-            services = {}
-            if service_ids:
-                service_records = db.query(McpService).filter(
-                    McpService.id.in_(service_ids)
-                ).all()
-                services = {s.id: s for s in service_records}
 
             for ex in executions:
                 # 获取关联的模块信息
@@ -647,17 +674,6 @@ class StatisticsService:
                         "description": module.description
                     }
 
-                # 获取关联的服务信息（添加到字典中，但此方法不在输出中使用）
-                # 此变量仍保留以便将来可能的扩展
-                service_info = {}
-                if ex.service_id and ex.service_id in services:
-                    service = services[ex.service_id]
-                    service_info = {
-                        "id": service.id,
-                        "name": service.name,
-                        "description": service.description
-                    }
-
                 # 解析参数和结果
                 try:
                     parameters = (
@@ -667,7 +683,9 @@ class StatisticsService:
                     parameters = {"raw": ex.parameters}
 
                 try:
-                    result_json = json.loads(ex.result) if ex.result else None
+                    result_json = (
+                        json.loads(ex.result) if ex.result else None
+                    )
                 except json.JSONDecodeError:
                     result_json = {"raw": ex.result}
 
@@ -681,9 +699,11 @@ class StatisticsService:
                     "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
-                    "created_at": ex.created_at.strftime("%Y-%m-%d %H:%M:%S") if ex.created_at else None
+                    "created_at": (
+                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                        if ex.created_at else None
+                    )
                 })
-
 
             # 返回分页结果
             return build_page_response(
@@ -794,7 +814,9 @@ class StatisticsService:
                     parameters = {"raw": ex.parameters}
 
                 try:
-                    result_json = json.loads(ex.result) if ex.result else None
+                    result_json = (
+                        json.loads(ex.result) if ex.result else None
+                    )
                 except json.JSONDecodeError:
                     result_json = {"raw": ex.result}
 
@@ -810,7 +832,10 @@ class StatisticsService:
                     "result": result_json,
                     "status": ex.status,
                     "execution_time": ex.execution_time,
-                    "created_at": ex.created_at.strftime("%Y-%m-%d %H:%M:%S") if ex.created_at else None
+                    "created_at": (
+                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                        if ex.created_at else None
+                    )
                 })
 
             # 返回分页结果
@@ -865,6 +890,8 @@ class StatisticsService:
             Dict: 刷新结果
         """
         try:
+            tz = timezone('Asia/Shanghai')
+            
             # 更新服务统计
             service_stats = self.update_service_statistics()
 
@@ -882,11 +909,114 @@ class StatisticsService:
                 "module_stats": len(module_stats),
                 "tool_stats": len(tool_stats),
                 "service_call_stats": len(service_call_stats),
-                "updated_at": datetime.now(timezone('Asia/Shanghai')).strftime("%Y-%m-%d %H:%M:%S") 
+                "updated_at": datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
             }
         except Exception as e:
             mcp_logger.error(f"刷新统计数据时出错: {str(e)}")
             raise
+
+    def get_daily_statistics(
+            self, 
+            target_date: Optional[date] = None) -> Dict[str, Any]:
+        """
+        获取指定日期的统计数据
+
+        Args:
+            target_date: 目标日期，默认为今天
+
+        Returns:
+            Dict: 日期统计数据
+        """
+        if target_date is None:
+            target_date = date.today()
+        
+        with get_db() as db:
+            try:
+                stats = db.query(ServiceStatistics).filter(
+                    ServiceStatistics.statistics_date == target_date
+                ).first()
+                
+                if not stats:
+                    # 如果没有记录，返回空统计
+                    return {
+                        "statistics_date": target_date.strftime("%Y-%m-%d"),
+                        "total_template_groups": 0,
+                        "today_new_template_groups": 0,
+                        "total_templates": 0,
+                        "today_new_templates": 0,
+                        "total_service_calls": 0,
+                        "today_new_service_calls": 0,
+                        "total_tools_calls": 0,
+                        "today_new_tools_calls": 0,
+                        "total_services": 0,
+                        "running_services": 0,
+                        "stopped_services": 0,
+                        "error_services": 0
+                    }
+                
+                return stats.to_dict()
+            except Exception as e:
+                mcp_logger.error(f"获取日期统计数据时出错: {str(e)}")
+                raise
+
+    def get_statistics_trend(
+            self, days: int = 7) -> List[Dict[str, Any]]:
+        """
+        获取统计数据趋势
+
+        Args:
+            days: 获取最近多少天的数据
+
+        Returns:
+            List[Dict]: 趋势数据列表
+        """
+        with get_db() as db:
+            try:
+                from datetime import timedelta
+                
+                end_date = date.today()
+                start_date = end_date - timedelta(days=days-1)
+                
+                stats_list = db.query(ServiceStatistics).filter(
+                    ServiceStatistics.statistics_date >= start_date,
+                    ServiceStatistics.statistics_date <= end_date
+                ).order_by(ServiceStatistics.statistics_date).all()
+                
+                # 确保每一天都有数据
+                result = []
+                current_date = start_date
+                stats_dict = {
+                    stats.statistics_date: stats for stats in stats_list
+                }
+                
+                while current_date <= end_date:
+                    if current_date in stats_dict:
+                        result.append(stats_dict[current_date].to_dict())
+                    else:
+                        # 如果没有数据，创建空记录
+                        result.append({
+                            "statistics_date": (
+                                current_date.strftime("%Y-%m-%d")
+                            ),
+                            "total_template_groups": 0,
+                            "today_new_template_groups": 0,
+                            "total_templates": 0,
+                            "today_new_templates": 0,
+                            "total_service_calls": 0,
+                            "today_new_service_calls": 0,
+                            "total_tools_calls": 0,
+                            "today_new_tools_calls": 0,
+                            "total_services": 0,
+                            "running_services": 0,
+                            "stopped_services": 0,
+                            "error_services": 0
+                        })
+                    current_date += timedelta(days=1)
+                
+                return result
+            except Exception as e:
+                mcp_logger.error(f"获取统计趋势数据时出错: {str(e)}")
+                raise
 
 
 # 创建统计服务实例

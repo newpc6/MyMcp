@@ -102,3 +102,4 @@ assests/
 mcp.service
 backend/server.log
 deploy
+dev.md
