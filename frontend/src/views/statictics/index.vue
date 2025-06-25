@@ -6,6 +6,9 @@
       @refresh="refreshAllStatistics" 
     />
 
+    <!-- 统计趋势分析 -->
+    <StatisticsTrend />
+
     <!-- 排名网格 -->
     <div class="ranking-grid">
       <!-- 模块发布排名 -->
@@ -66,6 +69,7 @@ import ModuleRanking from './components/ModuleRanking.vue'
 import ToolRanking from './components/ToolRanking.vue'
 import ServiceRanking from './components/ServiceRanking.vue'
 import ToolExecutionDetails from './components/ToolExecutionDetails.vue'
+import StatisticsTrend from './components/StatisticsTrend.vue'
 import {
   getServiceStats,
   getModuleRankings,

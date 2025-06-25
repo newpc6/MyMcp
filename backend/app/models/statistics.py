@@ -32,9 +32,17 @@ class ServiceStatistics(Base):
     total_service_calls = Column(Integer, default=0)
     today_new_service_calls = Column(Integer, default=0)
     
+    # MCP服务调用成功失败统计
+    today_service_calls_success = Column(Integer, default=0)
+    today_service_calls_error = Column(Integer, default=0)
+    
     # MCP工具调用统计
     total_tools_calls = Column(Integer, default=0)
     today_new_tools_calls = Column(Integer, default=0)
+    
+    # MCP服务调用成功失败统计
+    today_tools_calls_success = Column(Integer, default=0)
+    today_tools_calls_error = Column(Integer, default=0)
     
     # MCP发布服务统计
     total_services = Column(Integer, default=0)
@@ -64,8 +72,12 @@ class ServiceStatistics(Base):
             "today_new_templates": self.today_new_templates,
             "total_service_calls": self.total_service_calls,
             "today_new_service_calls": self.today_new_service_calls,
+            "today_service_calls_success": self.today_service_calls_success,
+            "today_service_calls_error": self.today_service_calls_error,
             "total_tools_calls": self.total_tools_calls,
             "today_new_tools_calls": self.today_new_tools_calls,
+            "today_tools_calls_success": self.today_tools_calls_success,
+            "today_tools_calls_error": self.today_tools_calls_error,
             "total_services": self.total_services,
             "running_services": self.running_services,
             "stopped_services": self.stopped_services,

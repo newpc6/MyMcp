@@ -960,7 +960,7 @@ class StatisticsService:
                 raise
 
     def get_statistics_trend(
-            self, start_date: date, end_date: date) -> List[Dict[str, Any]]:
+            self, start_date_str: str, end_date_str: str) -> List[Dict[str, Any]]:
         """
         获取统计数据趋势
 
@@ -973,8 +973,8 @@ class StatisticsService:
         with get_db() as db:
             try:
                 from datetime import timedelta
-                
-                end_date = date.today()                
+                start_date = datetime.strptime(start_date_str, "%Y-%m-%d")
+                end_date = datetime.strptime(end_date_str, "%Y-%m-%d")
                 stats_list = db.query(ServiceStatistics).filter(
                     ServiceStatistics.statistics_date >= start_date,
                     ServiceStatistics.statistics_date <= end_date
@@ -982,12 +982,12 @@ class StatisticsService:
                 
                 # 确保每一天都有数据
                 result = []
-                current_date = start_date
+                current_date = start_date.date()
                 stats_dict = {
                     stats.statistics_date: stats for stats in stats_list
                 }
                 
-                while current_date <= end_date:
+                while current_date <= end_date.date():
                     if current_date in stats_dict:
                         result.append(stats_dict[current_date].to_dict())
                     else:
@@ -1003,11 +1003,11 @@ class StatisticsService:
                             "total_service_calls": 0,
                             "today_new_service_calls": 0,
                             "total_tools_calls": 0,
-                            "today_new_tools_calls": 0,
-                            "total_services": 0,
-                            "running_services": 0,
-                            "stopped_services": 0,
-                            "error_services": 0
+                            "today_service_calls_success": 0,
+                            "today_service_calls_error": 0,
+                            "today_tools_calls_success": 0,
+                            "today_tools_calls_error": 0,
+                            "today_new_tools_calls": 0
                         })
                     current_date += timedelta(days=1)
                 
