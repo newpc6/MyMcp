@@ -318,6 +318,11 @@ def get_router():
             "/modules/{module_id}/tool-rankings", 
             endpoint=get_module_tool_rankings, 
             methods=["GET"]
+        ),
+        Route(
+            "/trend", 
+            endpoint=get_statistics_trend, 
+            methods=["POST"]
         )
     ]
     

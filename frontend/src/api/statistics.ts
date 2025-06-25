@@ -187,3 +187,17 @@ export async function refreshStatistics(): Promise<ApiResponse<{ message: string
   const response = await api.post(`${apiPrefix}/statistics/refresh`);
   return response.data;
 } 
+
+/**
+ * 获取统计数据趋势
+ */
+export async function getStatisticsTrend(
+  startDate: string,
+  endDate: string
+): Promise<ApiResponse<any>> {
+  const response = await api.post(`${apiPrefix}/statistics/trend`, {
+    start_date: startDate,
+    end_date: endDate
+  });
+  return response.data;
+}
