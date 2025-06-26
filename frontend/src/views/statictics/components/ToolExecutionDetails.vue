@@ -375,12 +375,6 @@ const handleCurrentChange = (page) => {
     background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
 }
 
-.pagination-section {
-    padding: 16px 24px;
-    border-top: 1px solid rgba(21, 101, 192, 0.1);
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(25, 118, 210, 0.02) 100%);
-}
-
 /* 对话框样式 */
 .execution-dialog {
     border-radius: 20px;

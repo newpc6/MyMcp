@@ -103,21 +103,21 @@ const serviceStats = ref({
 const moduleRankings = ref([])
 const loadingModules = ref(false)
 const moduleCurrentPage = ref(1)
-const modulePageSize = ref(10)
+const modulePageSize = ref(5)
 const moduleTotalItems = ref(0)
 
 // 工具排名数据
 const toolRankings = ref([])
 const loadingTools = ref(false)
 const toolCurrentPage = ref(1)
-const toolPageSize = ref(10)
+const toolPageSize = ref(5)
 const toolTotalItems = ref(0)
 
 // 服务排名数据
 const serviceRankings = ref([])
 const loadingServices = ref(false)
 const serviceCurrentPage = ref(1)
-const servicePageSize = ref(10)
+const servicePageSize = ref(5)
 const serviceTotalItems = ref(0)
 
 // 工具调用详情数据
@@ -128,7 +128,7 @@ const toolExecutions = ref({
 })
 const loadingExecutions = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(5)
 
 // 获取服务统计数据
 const loadServiceStats = async () => {

@@ -205,31 +205,40 @@ export async function getStatisticsTrend(
 /**
  * 获取模块统计排名
  * @param order_by - 排序字段
- * @param limit - 限制数量
  * @param desc - 是否降序
+ * @param page - 页码
+ * @param size - 每页条数
  */
 export async function getModuleStatsRanking(
   order_by: string = "services_count",
-  limit: number = 10,
-  desc: boolean = true
+  desc: boolean = true,
+  page: number = 1,
+  size: number = 10
 ): Promise<ApiResponse<any>> {
   const response = await api.post(`${apiPrefix}/marketplace/modules/stat`, {
     order_by: order_by,
-    limit: limit,
-    desc: desc
+    desc: desc,
+    paging: {
+      page: page,
+      size: size
+    }
   });
   return response.data;
 }
 
 export async function getGroupStatsRanking(
   order_by: string = "services_count",
-  limit: number = 10,
-  desc: boolean = true
+  desc: boolean = true,
+  page: number = 1,
+  size: number = 10
 ): Promise<ApiResponse<any>> {
   const response = await api.post(`${apiPrefix}/group/stat`, {
     order_by: order_by,
-    limit: limit,
-    desc: desc
+    desc: desc,
+    paging: {
+      page: page,
+      size: size
+    }
   });
   return response.data;
 }

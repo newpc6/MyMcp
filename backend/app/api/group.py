@@ -7,6 +7,7 @@ from starlette.routing import Route
 from app.services.group.service import group_service
 from app.utils.response import success_response, error_response
 from app.utils.permissions import get_user_info
+from app.utils.http.utils import body_page_params
 
 
 async def list_group(request: Request):
@@ -23,24 +24,30 @@ async def list_group(request: Request):
 
 
 async def stat_group(request: Request):
-    """获取MCP分组统计信息排行榜
+    """获取MCP分组统计信息排行榜（支持分页）
     
-    查询参数:
+    请求体参数:
         order_by (str): 排序字段，可选值: templates_count, services_count, call_count
-        limit (int): 返回数量限制，1-100之间，默认10
         desc (bool): 是否降序排列，默认true
+        paging (object): 分页参数
+            page (int): 页码，从1开始，默认1
+            size (int): 每页条数，默认10，最大50
     
     示例:
         POST /group/stat
         Content-Type: application/json
         {
             "order_by": "services_count",
-            "limit": 5,
-            "desc": true
+            "desc": true,
+            "paging": {
+                "page": 1,
+                "size": 10
+            }
         }
     
     返回:
-        成功: {"code": 0, "data": [...], "message": "success"}
+        成功: {"code": 0, "data": {"items": [...], "total": 100, "page": 1, 
+               "size": 10}, "message": "success"}
         失败: {"code": 400/500, "data": null, "message": "错误信息"}
     """
     try:
@@ -50,9 +57,11 @@ async def stat_group(request: Request):
         # 获取查询参数
         data = await request.json()
         
-        # 解析参数
+        # 解析分页参数
+        page_params = body_page_params(data, default_size=10, max_size=50)
+        
+        # 解析其他参数
         order_by = data.get("order_by", "templates_count")
-        limit = int(data.get("limit", 10))
         desc = data.get("desc", True)
         
         # 参数验证
@@ -62,18 +71,10 @@ async def stat_group(request: Request):
             msg = f"无效的排序字段: {order_by}，支持的字段: {fields_str}"
             return error_response(msg, code=400, http_status_code=400)
         
-        # 限制数量范围
-        if limit < 1 or limit > 100:
-            return error_response(
-                "limit参数必须在1-100之间",
-                code=400,
-                http_status_code=400
-            )
-        
         # 调用服务层方法
         result = group_service.stat_group(
+            page_params=page_params,
             order_by=order_by,
-            limit=limit,
             desc=desc,
             user_id=user_id,
             is_admin=is_admin

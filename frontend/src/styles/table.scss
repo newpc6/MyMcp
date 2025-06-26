@@ -32,3 +32,13 @@
   background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
   color: #fff;
 }
+
+.pagination-section {
+  padding: 16px 24px;
+  border-top: 1px solid rgba(21, 101, 192, 0.1);
+  background: linear-gradient(
+    135deg,
+    rgba(33, 150, 243, 0.02) 0%,
+    rgba(25, 118, 210, 0.02) 100%
+  );
+}

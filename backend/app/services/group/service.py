@@ -11,6 +11,7 @@ from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
 from app.utils.permissions import add_edit_permission
+from app.utils.http import PageParams, build_page_response
 
 
 class GroupService:
@@ -27,19 +28,31 @@ class GroupService:
             return add_edit_permission(result, user_id, is_admin)
 
     def stat_group(self, 
+                   page_params: PageParams,
                    order_by: str = "templates_count",
-                   limit: int = 10,
                    desc: bool = True,
                    user_id: Optional[int] = None,
-                   is_admin: bool = False) -> List[Dict[str, Any]]:
-        """获取MCP分组统计信息"""
-        result = McpGroup.get_top_groups_by_stat(
+                   is_admin: bool = False) -> Dict[str, Any]:
+        """获取MCP分组统计信息（分页）"""
+        # 使用模型层方法获取所有统计数据
+        all_stats = McpGroup.get_top_groups_by_stat(
             order_by=order_by,
-            limit=limit,
+            limit=10000,  # 先获取所有数据
             desc=desc
         )
-        return result
-
+        
+        # 计算分页
+        total_count = len(all_stats)
+        start_index = page_params.offset
+        end_index = start_index + page_params.size
+        paged_stats = all_stats[start_index:end_index]
+        
+        # 构建分页响应
+        return build_page_response(
+            paged_stats,
+            total_count,
+            page_params
+        )
 
     def get_category(self, category_id: int, user_id: Optional[int] = None,
                      is_admin: bool = False) -> Optional[Dict[str, Any]]:

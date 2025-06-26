@@ -83,7 +83,7 @@ defineProps({
   },
   pageSize: {
     type: Number,
-    default: 10
+    default: 5
   },
   totalItems: {
     type: Number,
@@ -223,12 +223,6 @@ const handlePageChange = (page) => {
   font-size: 12px;
   font-weight: 600;
   color: #1565c0;
-}
-
-.pagination-section {
-  padding: 16px 24px;
-  border-top: 1px solid rgba(21, 101, 192, 0.1);
-  background: linear-gradient(135deg, rgba(33, 150, 243, 0.02) 0%, rgba(25, 118, 210, 0.02) 100%);
 }
 
 /* 响应式设计 */

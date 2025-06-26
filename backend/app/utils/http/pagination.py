@@ -116,7 +116,8 @@ class PageResult(Generic[T], BaseModel):
         
         # 如果没有提供items，则执行查询
         if items is None:
-            items = query.offset(page_params.offset).limit(page_params.size).all()
+            items = (query.offset(page_params.offset)
+                    .limit(page_params.size).all())
         
         return cls(
             items=items,

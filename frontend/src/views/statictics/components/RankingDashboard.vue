@@ -9,10 +9,6 @@
                 排行榜仪表板
             </h2>
             <div class="control-section">
-                <el-select v-model="selectedLimit" @change="handleLimitChange" size="default" style="width: 120px;">
-                    <el-option label="前五名" :value="5" />
-                    <el-option label="前十名" :value="10" />
-                </el-select>
                 <el-button type="primary" @click="refreshAll" :loading="refreshing">
                     <el-icon>
                         <Refresh />
@@ -48,7 +44,7 @@
                         <el-table-column label="排名" width="60" align="center">
                             <template #default="scope">
                                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
-                                    {{ scope.$index + 1 }}
+                                    {{ (groupCurrentPage - 1) * groupPageSize + scope.$index + 1 }}
                                 </div>
                             </template>
                         </el-table-column>
@@ -87,6 +83,15 @@
                         </el-table-column>
                     </el-table>
                 </div>
+
+                <!-- 分页组件 -->
+                <div class="pagination-section">
+                    <el-config-provider :locale="zhCn">
+                        <el-pagination size="small" :current-page="groupCurrentPage" :page-size="groupPageSize"
+                            :page-sizes="[5, 10, 15, 20]" :background="true" layout="total, sizes, prev, pager, next, jumper"
+                            :total="groupTotalItems" @size-change="handleGroupSizeChange" @current-change="handleGroupPageChange" />
+                    </el-config-provider>
+                </div>
             </div>
 
             <!-- MCP模板排行榜 -->
@@ -112,7 +117,7 @@
                         <el-table-column label="排名" width="60" align="center">
                             <template #default="scope">
                                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
-                                    {{ scope.$index + 1 }}
+                                    {{ (moduleCurrentPage - 1) * modulePageSize + scope.$index + 1 }}
                                 </div>
                             </template>
                         </el-table-column>
@@ -152,6 +157,15 @@
                         </el-table-column>
                     </el-table>
                 </div>
+
+                <!-- 分页组件 -->
+                <div class="pagination-section">
+                    <el-config-provider :locale="zhCn">
+                        <el-pagination size="small" :current-page="moduleCurrentPage" :page-size="modulePageSize"
+                            :page-sizes="[5, 10, 15, 20]" :background="true" layout="total, sizes, prev, pager, next, jumper"
+                            :total="moduleTotalItems" @size-change="handleModuleSizeChange" @current-change="handleModulePageChange" />
+                    </el-config-provider>
+                </div>
             </div>
         </div>
     </div>
@@ -160,6 +174,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import {
     TrendCharts,
     Refresh,
@@ -172,18 +187,23 @@ import {
 } from '@/api/statistics'
 import { getRankingClass } from '@/utils/table'
 // 响应式数据
-const selectedLimit = ref(10)
 const refreshing = ref(false)
 
 // 分组排行榜数据
 const groupRankings = ref([])
 const loadingGroups = ref(false)
 const groupOrderBy = ref('services_count')
+const groupCurrentPage = ref(1)
+const groupPageSize = ref(5)
+const groupTotalItems = ref(0)
 
 // 模板排行榜数据
 const moduleRankings = ref([])
 const loadingModules = ref(false)
 const moduleOrderBy = ref('services_count')
+const moduleCurrentPage = ref(1)
+const modulePageSize = ref(5)
+const moduleTotalItems = ref(0)
 
 // 获取分组排序值
 const getRankValue = (row) => {
@@ -217,11 +237,14 @@ const loadGroupRankings = async () => {
     try {
         const response = await getGroupStatsRanking(
             groupOrderBy.value,
-            selectedLimit.value,
-            true
+            true,
+            groupCurrentPage.value,
+            groupPageSize.value
         )
         if (response && response.code === 0) {
-            groupRankings.value = response.data || []
+            const data = response.data || {}
+            groupRankings.value = data.items || []
+            groupTotalItems.value = data.total || 0
         } else {
             ElMessage.error(response?.message || '获取分组排行榜失败')
         }
@@ -239,11 +262,14 @@ const loadModuleRankings = async () => {
     try {
         const response = await getModuleStatsRanking(
             moduleOrderBy.value,
-            selectedLimit.value,
-            true
+            true,
+            moduleCurrentPage.value,
+            modulePageSize.value
         )
         if (response && response.code === 0) {
-            moduleRankings.value = response.data || []
+            const data = response.data || {}
+            moduleRankings.value = data.items || []
+            moduleTotalItems.value = data.total || 0
         } else {
             ElMessage.error(response?.message || '获取模板排行榜失败')
         }
@@ -255,9 +281,26 @@ const loadModuleRankings = async () => {
     }
 }
 
-// 处理数量限制变化
-const handleLimitChange = () => {
+// 处理分页变化
+const handleGroupSizeChange = (newSize) => {
+    groupPageSize.value = newSize
+    groupCurrentPage.value = 1  // 重置到第一页
     loadGroupRankings()
+}
+
+const handleGroupPageChange = (newPage) => {
+    groupCurrentPage.value = newPage
+    loadGroupRankings()
+}
+
+const handleModuleSizeChange = (newSize) => {
+    modulePageSize.value = newSize
+    moduleCurrentPage.value = 1  // 重置到第一页
+    loadModuleRankings()
+}
+
+const handleModulePageChange = (newPage) => {
+    moduleCurrentPage.value = newPage
     loadModuleRankings()
 }
 
@@ -288,7 +331,8 @@ onMounted(() => {
 .ranking-dashboard {
     /* padding: 24px; */
     /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
-    min-height: calc(100vh - 120px);
+    /* min-height: calc(100vh - 120px); */
+    margin-bottom: 24px;
 }
 
 .dashboard-header {
@@ -328,7 +372,6 @@ onMounted(() => {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 24px;
-    height: calc(100vh - 240px);
 }
 
 .ranking-card {
@@ -428,6 +471,12 @@ onMounted(() => {
     font-weight: 700;
     color: #e91e63;
     font-size: 14px;
+}
+
+.pagination-section {
+    padding: 16px 24px;
+    border-top: 1px solid rgba(21, 101, 192, 0.1);
+    background: rgba(248, 250, 252, 0.5);
 }
 
 /* 响应式设计 */

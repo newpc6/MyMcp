@@ -22,8 +22,7 @@ from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.permissions import add_edit_permission
-from app.utils.http.pagination import PageParams
-from app.utils.http.utils import build_page_response
+from app.utils.http import PageParams, build_page_response
 from app.models.tools.tool_execution import ToolExecution
 
 
@@ -162,20 +161,23 @@ class MarketplaceService:
             return add_edit_permission(result, user_id, is_admin)
     
     
-    def get_module_stats_ranking(self, order_by="services_count", limit=10, 
-                                 desc=True, user_id: Optional[int] = None, 
-                                 is_admin: bool = False) -> List[Dict[str, Any]]:
-        """获取模块统计信息排行榜
+    def get_module_stats_ranking(self, 
+                                 page_params: PageParams,
+                                 order_by: str = "services_count", 
+                                 desc: bool = True, 
+                                 user_id: Optional[int] = None, 
+                                 is_admin: bool = False) -> Dict[str, Any]:
+        """获取模块统计信息排行榜（分页）
         
         参数:
+            page_params: 分页参数
             order_by: 排序字段，可选值: services_count, call_count
-            limit: 返回数量限制，默认10
             desc: 是否降序排列，默认True
             user_id: 当前用户ID，可选
             is_admin: 是否为管理员用户
             
         返回:
-            排序后的模块统计列表
+            分页的模块统计结果
         """
         try:
             # 参数验证
@@ -185,32 +187,39 @@ class MarketplaceService:
                 mcp_logger.warning(msg)
                 order_by = "services_count"
             
-            # 限制数量范围
-            if limit < 1 or limit > 100:
-                limit = 10
-                msg = f"排行榜数量限制在1-100之间，使用默认值: {limit}"
-                mcp_logger.warning(msg)
-            
-            # 调用模型层方法获取排名数据
-            ranking_data = McpModule.get_module_stats_ranking(
+            # 调用模型层方法获取所有排名数据
+            all_ranking_data = McpModule.get_module_stats_ranking(
                 order_by=order_by,
-                limit=limit,
+                limit=10000,  # 先获取所有数据
                 desc=desc
             )
-                        
-            # 重新计算排名（因为过滤后排名可能有变化）
-            for i, item in enumerate(ranking_data, 1):
-                item["rank"] = i
+            
+            # 计算分页
+            total_count = len(all_ranking_data)
+            start_index = page_params.offset
+            end_index = start_index + page_params.size
+            paged_data = all_ranking_data[start_index:end_index]
+            
+            # 重新计算排名（考虑分页偏移）
+            for i, item in enumerate(paged_data):
+                item["rank"] = start_index + i + 1
 
             success_msg = (f"获取模块排行榜成功，排序：{order_by}，"
-                          f"数量：{len(ranking_data)}")
+                          f"页码：{page_params.page}，"
+                          f"每页：{page_params.size}")
             mcp_logger.info(success_msg)
-            return ranking_data
+            
+            # 构建分页响应
+            return build_page_response(
+                paged_data,
+                total_count,
+                page_params
+            )
             
         except Exception as e:
             mcp_logger.error(f"获取模块统计排行榜失败: {str(e)}")
-            # 出错时返回空列表而不是抛出异常
-            return []
+            # 出错时返回空的分页结果
+            return build_page_response([], 0, page_params)
     
     
     def get_module(self, module_id: int, user_id: Optional[int] = None, 
