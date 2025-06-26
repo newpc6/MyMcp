@@ -117,7 +117,7 @@ export async function getServiceStats(): Promise<ApiResponse<ServiceStats>> {
  * @param page - 页码
  */
 export async function getModuleRankings(
-  size: number = 10, 
+  size: number = 10,
   page: number = 1
 ): Promise<ApiResponse<RankingPaginationResponse<ModuleRanking>>> {
   const response = await api.get(`${apiPrefix}/statistics/modules/rankings`, {
@@ -171,11 +171,11 @@ export async function getToolExecutions(
     page,
     size
   };
-  
+
   if (toolName) {
     params.tool_name = toolName;
   }
-  
+
   const response = await api.get(`${apiPrefix}/statistics/tools/executions`, { params });
   return response.data;
 }
@@ -186,7 +186,7 @@ export async function getToolExecutions(
 export async function refreshStatistics(): Promise<ApiResponse<{ message: string }>> {
   const response = await api.post(`${apiPrefix}/statistics/refresh`);
   return response.data;
-} 
+}
 
 /**
  * 获取统计数据趋势
@@ -198,6 +198,38 @@ export async function getStatisticsTrend(
   const response = await api.post(`${apiPrefix}/statistics/trend`, {
     start_date: startDate,
     end_date: endDate
+  });
+  return response.data;
+}
+
+/**
+ * 获取模块统计排名
+ * @param order_by - 排序字段
+ * @param limit - 限制数量
+ * @param desc - 是否降序
+ */
+export async function getModuleStatsRanking(
+  order_by: string = "services_count",
+  limit: number = 10,
+  desc: boolean = true
+): Promise<ApiResponse<any>> {
+  const response = await api.post(`${apiPrefix}/marketplace/modules/stat`, {
+    order_by: order_by,
+    limit: limit,
+    desc: desc
+  });
+  return response.data;
+}
+
+export async function getGroupStatsRanking(
+  order_by: string = "services_count",
+  limit: number = 10,
+  desc: boolean = true
+): Promise<ApiResponse<any>> {
+  const response = await api.post(`${apiPrefix}/group/stat`, {
+    order_by: order_by,
+    limit: limit,
+    desc: desc
   });
   return response.data;
 }

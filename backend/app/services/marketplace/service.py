@@ -15,17 +15,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.engine import get_db
-from app.models.modules.mcp_marketplace import McpModule, McpTool
+from app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_tool import McpTool
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
 from app.services.mcp_service.service_manager import service_manager
 from app.utils.permissions import add_edit_permission
-from app.models.group.group import McpGroup
 from app.utils.http.pagination import PageParams
 from app.utils.http.utils import build_page_response
 from app.models.tools.tool_execution import ToolExecution
-from app.models.modules.users import User
 
 
 class MarketplaceService:
@@ -162,8 +161,60 @@ class MarketplaceService:
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
     
+    
+    def get_module_stats_ranking(self, order_by="services_count", limit=10, 
+                                 desc=True, user_id: Optional[int] = None, 
+                                 is_admin: bool = False) -> List[Dict[str, Any]]:
+        """获取模块统计信息排行榜
+        
+        参数:
+            order_by: 排序字段，可选值: services_count, call_count
+            limit: 返回数量限制，默认10
+            desc: 是否降序排列，默认True
+            user_id: 当前用户ID，可选
+            is_admin: 是否为管理员用户
+            
+        返回:
+            排序后的模块统计列表
+        """
+        try:
+            # 参数验证
+            valid_order_fields = ["services_count", "call_count"]
+            if order_by not in valid_order_fields:
+                msg = f"无效的排序字段: {order_by}，使用默认值"
+                mcp_logger.warning(msg)
+                order_by = "services_count"
+            
+            # 限制数量范围
+            if limit < 1 or limit > 100:
+                limit = 10
+                msg = f"排行榜数量限制在1-100之间，使用默认值: {limit}"
+                mcp_logger.warning(msg)
+            
+            # 调用模型层方法获取排名数据
+            ranking_data = McpModule.get_module_stats_ranking(
+                order_by=order_by,
+                limit=limit,
+                desc=desc
+            )
+                        
+            # 重新计算排名（因为过滤后排名可能有变化）
+            for i, item in enumerate(ranking_data, 1):
+                item["rank"] = i
+
+            success_msg = (f"获取模块排行榜成功，排序：{order_by}，"
+                          f"数量：{len(ranking_data)}")
+            mcp_logger.info(success_msg)
+            return ranking_data
+            
+        except Exception as e:
+            mcp_logger.error(f"获取模块统计排行榜失败: {str(e)}")
+            # 出错时返回空列表而不是抛出异常
+            return []
+    
+    
     def get_module(self, module_id: int, user_id: Optional[int] = None, 
-                  is_admin: bool = False) -> Optional[Dict[str, Any]]:
+                   is_admin: bool = False) -> Optional[Dict[str, Any]]:
         """获取指定的MCP模块信息"""
         with get_db() as db:
             query = select(McpModule).where(McpModule.id == module_id)

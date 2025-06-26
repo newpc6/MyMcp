@@ -9,6 +9,9 @@
     <!-- 统计趋势分析 -->
     <StatisticsTrend />
 
+    <!-- 排行榜仪表板 -->
+    <RankingDashboard />
+
     <!-- 排名网格 -->
     <div class="ranking-grid">
       <!-- 模块发布排名 -->
@@ -70,6 +73,7 @@ import ToolRanking from './components/ToolRanking.vue'
 import ServiceRanking from './components/ServiceRanking.vue'
 import ToolExecutionDetails from './components/ToolExecutionDetails.vue'
 import StatisticsTrend from './components/StatisticsTrend.vue'
+import RankingDashboard from './components/RankingDashboard.vue'
 import {
   getServiceStats,
   getModuleRankings,

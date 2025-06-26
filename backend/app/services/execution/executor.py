@@ -5,7 +5,7 @@ import importlib
 from typing import Dict, Any, Callable
 
 from app.models.engine import get_db
-from app.models.modules.mcp_marketplace import McpTool
+from app.models.modules.mcp_tool import McpTool
 
 
 async def execute_tool_by_name(tool_name: str, params: Dict[str, Any]) -> Any:

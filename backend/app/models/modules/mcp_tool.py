@@ -9,6 +9,7 @@ from app.core.utils import now_beijing
 class McpTool(Base):
     """MCP工具信息模型"""
     __tablename__ = "mcp_tools"
+    __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, index=True)  # 模块ID

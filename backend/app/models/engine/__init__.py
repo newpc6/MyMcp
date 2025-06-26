@@ -40,9 +40,8 @@ def init_db():
     # 导入所有模型以确保它们被注册到Base中
     from app.models.tools.tool_execution import ToolExecution  # noqa: F401
     # 导入MCP广场相关模型
-    from app.models.modules.mcp_marketplace import (  # noqa: F401
-        McpModule, McpTool
-    )
+    from app.models.modules.mcp_modules import McpModule
+    from app.models.modules.mcp_tool import McpTool
     from app.models.group.group import McpGroup  # noqa: F401
     from app.models.modules.mcp_services import McpService  # noqa: F401
     # 导入用户和租户模型
