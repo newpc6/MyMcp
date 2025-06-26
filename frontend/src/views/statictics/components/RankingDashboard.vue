@@ -170,7 +170,7 @@ import {
     getGroupStatsRanking,
     getModuleStatsRanking
 } from '@/api/statistics'
-
+import { getRankingClass } from '@/utils/table'
 // 响应式数据
 const selectedLimit = ref(10)
 const refreshing = ref(false)
@@ -184,20 +184,6 @@ const groupOrderBy = ref('services_count')
 const moduleRankings = ref([])
 const loadingModules = ref(false)
 const moduleOrderBy = ref('services_count')
-
-// 获取排名样式类
-const getRankingClass = (index) => {
-    switch (index) {
-        case 0:
-            return 'ranking-first'
-        case 1:
-            return 'ranking-second'
-        case 2:
-            return 'ranking-third'
-        default:
-            return 'ranking-normal'
-    }
-}
 
 // 获取分组排序值
 const getRankValue = (row) => {
@@ -404,41 +390,6 @@ onMounted(() => {
 
 .ranking-table :deep(.el-table__row--striped) {
     background-color: rgba(248, 250, 252, 0.8);
-}
-
-.ranking-badge {
-    display: inline-flex;
-    width: 28px;
-    height: 28px;
-    justify-content: center;
-    align-items: center;
-    border-radius: 50%;
-    font-weight: 700;
-    font-size: 12px;
-    transition: all 0.3s ease;
-}
-
-.ranking-first {
-    background: linear-gradient(135deg, #ffd700 0%, #ffb300 100%);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-}
-
-.ranking-second {
-    background: linear-gradient(135deg, #c0c0c0 0%, #a0a0a0 100%);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(192, 192, 192, 0.4);
-}
-
-.ranking-third {
-    background: linear-gradient(135deg, #cd7f32 0%, #b8860b 100%);
-    color: #fff;
-    box-shadow: 0 4px 15px rgba(205, 127, 50, 0.4);
-}
-
-.ranking-normal {
-    background: linear-gradient(135deg, #64b5f6 0%, #42a5f5 100%);
-    color: #fff;
 }
 
 .group-info,

@@ -36,7 +36,9 @@
                         <el-table :data="trendData" stripe class="trend-table">
                             <el-table-column label="序号">
                                 <template #default="scope">
-                                    <span>{{ scope.$index + 1 }}</span>
+                                    <div class="ranking-badge ranking-normal">
+                                        {{ scope.$index + 1 }}
+                                    </div>
                                 </template>
                             </el-table-column>
                             <el-table-column prop="statistics_date" label="日期" />
@@ -57,7 +59,9 @@
                         <el-table :data="trendData" stripe class="trend-table">
                             <el-table-column label="序号">
                                 <template #default="scope">
-                                    <span>{{ scope.$index + 1 }}</span>
+                                    <div class="ranking-badge ranking-normal">
+                                        {{ scope.$index + 1 }}
+                                    </div>
                                 </template>
                             </el-table-column>
                             <el-table-column prop="statistics_date" label="日期" />

@@ -104,7 +104,7 @@ conda activate mcp
 
 ```
 cd backend
-pip install -r .\requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install -r ./requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 
 ## 2.2 调整配置文件

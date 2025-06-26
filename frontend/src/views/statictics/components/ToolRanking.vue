@@ -65,6 +65,7 @@
 <script setup>
 import { Tools, Refresh } from '@element-plus/icons-vue'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
+import { getRankingClass } from '@/utils/table'
 
 // 定义Props
 defineProps({
@@ -92,20 +93,6 @@ defineProps({
 
 // 定义事件
 const emit = defineEmits(['refresh', 'size-change', 'page-change'])
-
-// 获取排名样式类
-const getRankingClass = (index) => {
-  switch (index) {
-    case 0:
-      return 'ranking-first'
-    case 1:
-      return 'ranking-second'
-    case 2:
-      return 'ranking-third'
-    default:
-      return 'ranking-normal'
-  }
-}
 
 // 计算工具调用成功率
 const calculateSuccessRate = (tool) => {
@@ -205,41 +192,6 @@ const handlePageChange = (page) => {
 
 .ranking-table :deep(.el-table__row--striped) {
   background-color: rgba(248, 250, 252, 0.8);
-}
-
-.ranking-badge {
-  display: inline-flex;
-  width: 28px;
-  height: 28px;
-  justify-content: center;
-  align-items: center;
-  border-radius: 50%;
-  font-weight: 700;
-  font-size: 12px;
-  color: white;
-}
-
-.ranking-first {
-  background: linear-gradient(135deg, #ffd700, #ffed4e);
-  color: #744210;
-  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
-}
-
-.ranking-second {
-  background: linear-gradient(135deg, #c0c0c0, #e2e8f0);
-  color: #4a5568;
-  box-shadow: 0 2px 8px rgba(192, 192, 192, 0.3);
-}
-
-.ranking-third {
-  background: linear-gradient(135deg, #cd7f32, #d69e2e);
-  color: white;
-  box-shadow: 0 2px 8px rgba(205, 127, 50, 0.3);
-}
-
-.ranking-normal {
-  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
-  color: #1565c0;
 }
 
 .tool-info {

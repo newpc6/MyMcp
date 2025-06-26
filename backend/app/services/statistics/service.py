@@ -996,6 +996,10 @@ class StatisticsService:
                             "statistics_date": (
                                 current_date.strftime("%Y-%m-%d")
                             ),
+                            "total_services": 0,
+                            "running_services": 0,
+                            "stopped_services": 0,
+                            "error_services": 0,
                             "total_template_groups": 0,
                             "today_new_template_groups": 0,
                             "total_templates": 0,
