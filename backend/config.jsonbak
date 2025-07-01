@@ -11,7 +11,7 @@
         "headers": ["*"]
     },
     "api": {
-        "prefix": "/api",
+        "prefix": "/api/v1/mcp",
         "title": "MCP Server",
         "version": "1.0.0"
     },

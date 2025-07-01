@@ -330,7 +330,7 @@ onMounted(() => {
 <style scoped>
 .statistics-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #8bd4ff 0%, #d1d1d1 100%);
+  background: linear-gradient(135deg, #e0efff 0%, #d1d1d1 100%);
   padding: 32px;
   position: relative;
   overflow: hidden;
