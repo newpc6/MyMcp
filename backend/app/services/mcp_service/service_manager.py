@@ -123,6 +123,8 @@ class McpServiceManager:
             config_params: 配置参数，包括秘钥等信息
             name: 服务名称
             protocol_type: 协议类型，1=SSE，2=流式HTTP
+            sse_path: 自定义SSE路径，可选
+            use_full_custom_path: 是否使用完全自定义路径，可选
 
         Returns:
             McpService: 创建的服务记录
@@ -131,6 +133,8 @@ class McpServiceManager:
         config_params = data.get("config_params")
         is_public = data.get("is_public", False)
         protocol_type = data.get("protocol_type", 1)  # 默认使用SSE协议
+        custom_sse_path = data.get("sse_path", "").strip()  # 获取自定义SSE路径
+        use_full_custom_path = data.get("use_full_custom_path", False)
 
         if not self._main_app:
             raise ValueError("主应用程序未初始化，无法发布服务")
@@ -176,13 +180,63 @@ class McpServiceManager:
             # 生成唯一ID
             service_uuid = str(uuid.uuid4())
 
-            # 构建SSE URL (只存储相对路径)
-            if protocol_type == 1:  # SSE协议
-                sse_path = f"{self._get_sse_path(service_uuid)}/sse"
-            elif protocol_type == 2:  # 流式HTTP协议
-                sse_path = f"{self._get_sse_path(service_uuid)}/stream"
+            # 处理SSE路径
+            if custom_sse_path:
+                if use_full_custom_path:
+                    # 完全自定义路径模式：直接使用用户输入的路径
+                    # 确保路径以/开头
+                    if not custom_sse_path.startswith('/'):
+                        custom_sse_path = '/' + custom_sse_path
+                    
+                    # 验证自定义路径的合法性
+                    import re
+                    if not re.match(r'^/[a-zA-Z0-9\-_/]*$', custom_sse_path):
+                        raise ValueError("自定义路径只能包含字母、数字、连字符、下划线和斜杠")
+                    
+                    # 检查路径是否已被占用（完全匹配）
+                    existing_service = db.query(McpService).filter(
+                        McpService.sse_url == custom_sse_path
+                    ).first()
+                    if existing_service:
+                        raise ValueError(f"路径 {custom_sse_path} 已被其他服务占用")
+                    
+                    # 直接使用用户输入的路径
+                    sse_path = custom_sse_path
+                else:
+                    # 标准自定义路径模式：添加/mcp前缀和协议后缀
+                    # 确保路径以/开头但不以/结尾
+                    if not custom_sse_path.startswith('/'):
+                        custom_sse_path = '/' + custom_sse_path
+                    if custom_sse_path.endswith('/'):
+                        custom_sse_path = custom_sse_path.rstrip('/')
+                    
+                    # 验证自定义路径的合法性
+                    import re
+                    if not re.match(r'^/[a-zA-Z0-9\-_/]*$', custom_sse_path):
+                        raise ValueError("自定义路径只能包含字母、数字、连字符、下划线和斜杠")
+                    
+                    # 检查路径是否已被占用（前缀匹配）
+                    existing_service = db.query(McpService).filter(
+                        McpService.sse_url.like(f"/mcp{custom_sse_path}%")
+                    ).first()
+                    if existing_service:
+                        raise ValueError(f"路径 /mcp{custom_sse_path} 已被其他服务占用")
+                    
+                    # 构建完整的SSE路径
+                    if protocol_type == 1:  # SSE协议
+                        sse_path = f"/mcp{custom_sse_path}/sse"
+                    elif protocol_type == 2:  # 流式HTTP协议
+                        sse_path = f"/mcp{custom_sse_path}/stream"
+                    else:
+                        raise ValueError("不支持该协议，仅支持SSE与流式HTTP协议")
             else:
-                raise ValueError("不支持该协议，仅支持SSE与流式HTTP协议")
+                # 使用自动生成的路径
+                if protocol_type == 1:  # SSE协议
+                    sse_path = f"{self._get_sse_path(service_uuid)}/sse"
+                elif protocol_type == 2:  # 流式HTTP协议
+                    sse_path = f"{self._get_sse_path(service_uuid)}/stream"
+                else:
+                    raise ValueError("不支持该协议，仅支持SSE与流式HTTP协议")
 
             # 处理配置参数
             params = config_params
@@ -341,33 +395,45 @@ class McpServiceManager:
                     if not task.done():
                         task.cancel()
                         mcp_logger.info(f"已取消服务任务: {service_uuid}")
-        
-        # 添加服务路由到主应用
-        sse_path = f"{self._get_sse_path(service_uuid)}/sse"
-        message_path = f"{self._get_sse_path(service_uuid)}/messages"
-        stream_path = f"{self._get_sse_path(service_uuid)}/stream"
 
-        # 删除路由
-        routes_to_delete = []
-        for i, route in enumerate(self._main_app.routes):
-            if hasattr(route, 'path'):
-                if route.path in [sse_path, message_path, stream_path]:
-                    routes_to_delete.append(route)
-
-        # 单独删除以避免迭代时修改列表
-        for route in routes_to_delete:
-            try:
-                self._main_app.routes.remove(route)
-                mcp_logger.info(f"成功删除路由: {route.path}")
-            except Exception as e:
-                mcp_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
-
-        # 更新数据库状态
+        # 从数据库获取服务信息以获取正确的路径
         with get_db() as db:
             service = db.query(McpService).filter(
                 McpService.service_uuid == service_uuid
             ).first()
             if service:
+                # 使用数据库中存储的真实路径
+                sse_path = service.sse_url
+                
+                # 判断是否为完全自定义路径
+                is_full_custom = not (sse_path.startswith('/mcp') and 
+                                      (sse_path.endswith('/sse') or 
+                                       sse_path.endswith('/stream')))
+                
+                if is_full_custom:
+                    # 完全自定义路径：直接添加/messages后缀
+                    message_path = f"{sse_path.rstrip('/')}/messages"
+                else:
+                    # 标准路径：去掉结尾的/sse或/stream，然后加上/messages
+                    base_path = sse_path.rstrip('/sse').rstrip('/stream')
+                    message_path = f"{base_path}/messages"
+
+                # 删除路由
+                routes_to_delete = []
+                for i, route in enumerate(self._main_app.routes):
+                    if hasattr(route, 'path'):
+                        if route.path in [sse_path, message_path]:
+                            routes_to_delete.append(route)
+
+                # 单独删除以避免迭代时修改列表
+                for route in routes_to_delete:
+                    try:
+                        self._main_app.routes.remove(route)
+                        mcp_logger.info(f"成功删除路由: {route.path}")
+                    except Exception as e:
+                        mcp_logger.error(f"删除路由失败: {route.path}, 错误: {str(e)}")
+
+                # 更新数据库状态
                 service.status = "stopped"
                 service.enabled = False
                 db.commit()
@@ -1087,7 +1153,6 @@ class McpServiceManager:
             if service.protocol_type == 1:  # SSE协议
                 self._create_sse_handlers(service)
             elif service.protocol_type == 2:  # 流式HTTP协议
-                raise NotImplementedError("流式HTTP协议暂未实现")
                 self._create_stream_handlers(service)
 
         except Exception as e:
@@ -1107,9 +1172,21 @@ class McpServiceManager:
         """创建SSE协议相关的处理函数和路由"""
         service_uuid = service.service_uuid
 
-        # sse 路径
-        sse_path = f"{self._get_sse_path(service_uuid)}/sse"
-        message_path = f"{self._get_sse_path(service_uuid)}/messages/"
+        # 直接使用数据库中存储的sse_url路径
+        sse_path = service.sse_url
+        
+        # 判断是否为完全自定义路径（不包含/mcp前缀和/sse后缀）
+        is_full_custom = not (sse_path.startswith('/mcp') and 
+                              (sse_path.endswith('/sse') or 
+                               sse_path.endswith('/stream')))
+        
+        if is_full_custom:
+            # 完全自定义路径：直接添加/messages后缀
+            message_path = f"{sse_path.rstrip('/')}/messages/"
+        else:
+            # 标准路径：去掉结尾的/sse或/stream，然后加上/messages/
+            base_path = sse_path.rstrip('/sse').rstrip('/stream')
+            message_path = f"{base_path}/messages/"
 
         # 创建SSE应用
         sse = SseServerTransport(message_path)
@@ -1181,7 +1258,8 @@ class McpServiceManager:
         """创建流式HTTP协议相关的处理函数和路由"""
         service_uuid = service.service_uuid
 
-        streamable_http_path = f"{self._get_sse_path(service_uuid)}/stream"
+        # 直接使用数据库中存储的sse_url路径
+        streamable_http_path = service.sse_url
         
         # 删除现有路由（如果存在）
         routes_to_delete = []
@@ -1261,42 +1339,19 @@ class McpServiceManager:
                 
                 def run_in_background():
                     """在后台运行连接任务"""
-                    try:
-                        loop.run_until_complete(setup_connection())
-                    except Exception as e:
-                        mcp_logger.error(f"后台连接任务失败: {str(e)}")
-                    finally:
-                        loop.close()
-                
-                # 在新线程中运行事件循环
-                import threading
-                thread = threading.Thread(
-                    target=run_in_background, daemon=True
-                )
-                thread.start()
-                # 在后台线程中运行，不需要保存任务引用
-                connection_task = None
-                
-        except RuntimeError:
-            # 如果没有事件循环，创建新的事件循环并在后台运行
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
-            def run_in_background():
-                """在后台运行连接任务"""
-                try:
+                    asyncio.set_event_loop(loop)
                     loop.run_until_complete(setup_connection())
-                except Exception as e:
-                    mcp_logger.error(f"后台连接任务失败: {str(e)}")
-                finally:
-                    loop.close()
-            
-            # 在新线程中运行事件循环
-            import threading
-            thread = threading.Thread(target=run_in_background, daemon=True)
-            thread.start()
-            connection_task = None  # 在后台线程中运行，不需要保存任务引用
-        
+                
+                # 在线程中运行连接任务
+                import threading
+                thread = threading.Thread(target=run_in_background)
+                thread.daemon = True
+                thread.start()
+                connection_task = None
+        except Exception as e:
+            mcp_logger.error(f"启动流式HTTP连接失败: {service_uuid}, 错误: {str(e)}")
+            connection_task = None
+
         # 创建路由处理函数
         async def handle_streamable_http(request: Request):
             """处理流式HTTP请求"""

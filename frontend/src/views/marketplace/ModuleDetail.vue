@@ -84,6 +84,34 @@
           <el-input v-model="configForm.service_name" placeholder="请输入服务名称" class="form-input"></el-input>
         </el-form-item>
         
+        <el-form-item label="自定义路径" prop="sse_path">
+          <el-input v-model="configForm.sse_path" placeholder="例如: /my-custom-service" class="form-input">
+            <template #prepend v-if="!configForm.use_full_custom_path">/mcp</template>
+            <template #suffix v-if="!configForm.use_full_custom_path">/{{ configForm.protocol_type === 1 ? 'sse' : 'stream' }}</template>
+          </el-input>
+          <div class="path-hint">
+            <el-text size="small" type="info" v-if="!configForm.use_full_custom_path">
+              生成格式为/mcp/xxxxx/{{ configForm.protocol_type === 1 ? 'sse' : 'stream' }}
+              <br/>
+              留空将自动生成路径，格式为: /mcp-随机UUID/{{ configForm.protocol_type === 1 ? 'sse' : 'stream' }}
+            </el-text>
+            <el-text size="small" type="info" v-else>
+              完全自定义模式：直接使用您输入的路径，不添加任何前缀或后缀
+            </el-text>
+          </div>
+        </el-form-item>
+        
+        <el-form-item label="路径模式" prop="use_full_custom_path">
+          <el-checkbox v-model="configForm.use_full_custom_path" class="custom-path-checkbox">
+            完全自定义路径（不添加/mcp前缀和协议后缀）
+          </el-checkbox>
+          <div class="checkbox-hint">
+            <el-text size="small" type="warning">
+              注意：完全自定义路径模式下，您需要确保路径的唯一性和正确性
+            </el-text>
+          </div>
+        </el-form-item>
+        
         <el-form-item label="协议类型" prop="protocol_type">
           <el-radio-group v-model="configForm.protocol_type" class="protocol-radio-group">
             <el-radio :value="1" class="protocol-radio">
@@ -287,11 +315,15 @@ const configForm = ref<{
   is_public: boolean;
   protocol_type: number;
   config_params: Record<string, any>;
+  sse_path: string;
+  use_full_custom_path: boolean;
 }>({
   service_name: '',
   is_public: false,
   protocol_type: 1, // 默认为SSE
-  config_params: {}
+  config_params: {},
+  sse_path: '',
+  use_full_custom_path: false
 });
 const configRules = ref<Record<string, any>>({});
 const publishing = ref(false);
@@ -443,7 +475,9 @@ function initConfigForm() {
     service_name: `${moduleInfo.value.name}-实例-${new Date().getTime().toString().slice(-6)}`, // 默认服务名称
     is_public: false,
     protocol_type: 1, // 默认为SSE
-    config_params: {}
+    config_params: {},
+    sse_path: '',
+    use_full_custom_path: false
   };
   configRules.value = {
     service_name: [{ required: true, message: '请输入服务名称', trigger: 'blur' }],
@@ -1257,6 +1291,59 @@ onMounted(() => {
 .empty-params :deep(.el-empty__description) {
   color: #64748b;
   font-size: 14px;
+}
+
+/* 路径提示样式 */
+.path-hint {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(59, 130, 246, 0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.path-hint :deep(.el-text) {
+  line-height: 1.4;
+}
+
+/* 复选框提示样式 */
+.checkbox-hint {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: rgba(245, 158, 11, 0.05);
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.1);
+}
+
+.checkbox-hint :deep(.el-text) {
+  line-height: 1.3;
+}
+
+.custom-path-checkbox {
+  margin-bottom: 8px;
+}
+
+.custom-path-checkbox :deep(.el-checkbox__label) {
+  font-weight: 500;
+  color: #374151;
+}
+
+/* 输入框前缀后缀样式 */
+.form-input :deep(.el-input-group__prepend),
+.form-input :deep(.el-input-group__append) {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  color: #64748b;
+  border-color: #e5e7eb;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+.form-input :deep(.el-input-group__prepend) {
+  border-right: 1px solid #e5e7eb;
+}
+
+.form-input :deep(.el-input-group__append) {
+  border-left: 1px solid #e5e7eb;
 }
 
 /* 响应式设计 */
