@@ -124,11 +124,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             # 使用缓存的用户数据
             user_data = cached_user_data
             is_valid = True
-        elif len(settings.PLATFORM_EGOVA_KB) > 0:
+        else:
             # 首先尝试验证JWT令牌
             user_data, is_valid = self._validate_token(token)
             
-            if not is_valid:
+            if not is_valid and len(settings.PLATFORM_EGOVA_KB) > 0:
                 # 如果JWT验证失败，尝试验证EGova KB令牌
                 user_data = self._validate_egova_kb_token(token)
                 is_valid = user_data is not None
