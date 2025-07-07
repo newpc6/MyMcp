@@ -60,9 +60,9 @@
         <div class="action-search-container">
           <!-- 左侧操作按钮 -->
           <div class="action-buttons">
-            <el-button type="success" @click="showCreateDialog" class="mr-2">
+            <el-button type="primary" @click="showCreateDialog" class="mr-2">
               <el-icon><Plus /></el-icon>
-              新建MCP服务
+              新建MCP模板
             </el-button>
           </div>
           

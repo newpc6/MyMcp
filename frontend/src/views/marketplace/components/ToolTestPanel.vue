@@ -378,7 +378,7 @@ async function testTool() {
         const callback = (result: any, error?: any) => {
             if (error) {
                 console.error("工具测试失败", error);
-                testError.value = error.response?.data?.detail || error.message || '执行失败';
+                testError.value = error.response?.data?.message || error.message || '执行失败';
             } else {
                 console.log('接收到测试结果:', result);
                 testResult.value = result;
@@ -400,7 +400,6 @@ function formatResult(result: any) {
     if (result === null || result === undefined) {
         return '无结果';
     }
-
     if (typeof result === 'object') {
         // 如果是标准的接口响应格式 {code, message, data}
         if (result.hasOwnProperty('code') && result.hasOwnProperty('message')) {
