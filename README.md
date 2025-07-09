@@ -1,12 +1,11 @@
 # MyMcp
 
-
 ## 交流群
-qq群：979958989
+
+qq 群：979958989
 加群更及时交流、讨论
 
-![qq-group.png](https://img.picui.cn/free/2025/05/30/6839134886ec1.png)
-
+![qq-group.png](https://img.picui.cn/free/2025/07/09/686e35890b48d.png)
 
 ## 介绍
 
@@ -20,57 +19,72 @@ qq群：979958989
 
 ### 登录页面
 
-![login-v2.jpg](https://img.picui.cn/free/2025/05/29/6838658baf2e9.jpg)
+![login-v2.jpg](https://img.picui.cn/free/2025/07/09/686e3587a0106.jpg)
 
 ### MCP 模板广场
 
-![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/05/29/6838001fac033.jpg)
+![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/07/09/686e358951af2.jpg)
 
 #### MCP 模板-详情
 
-![detail-v2.jpg](https://img.picui.cn/free/2025/05/29/683857a0d89fd.jpg)
+![detail-v2.jpg](https://img.picui.cn/free/2025/07/09/686e35867a75d.jpg)
 
 #### MCP 模板-工具测试
-展示了 
+
+展示了
+
 - 工具列表
 - 测试参数（模板中如果配置了，可以配置参数是否必填）
 - 工具执行（如果配置了工具函数参数，需要填写）
 - 工具函数代码（了解工具执行原理）
 
-![tool-test.jpg](https://img.picui.cn/free/2025/06/05/684128b905ecf.jpg)
+![tool-test.jpg](https://img.picui.cn/free/2025/07/09/686e3589229a2.jpg)
 
 #### MCP 模板-参数配置
 
-![detail-params.jpg](https://img.picui.cn/free/2025/05/29/68386974af5ca.jpg)
+![template-params.jpg](https://img.picui.cn/free/2025/07/09/686e36be6b488.jpg)
 
 #### MCP 模板-发布服务
 
-![detail-publish.jpg](https://img.picui.cn/free/2025/05/29/68386a6a50340.jpg)
+![template-publish.jpg](https://img.picui.cn/free/2025/07/09/686e36be074a0.jpg)
 
 #### MCP 模板-代码编辑
 
-![detail-code.jpg](https://img.picui.cn/free/2025/05/29/6838697497d13.jpg)
+![template-code.jpg](https://img.picui.cn/free/2025/07/09/686e36be029a6.jpg)
 
 ### MCP 服务
+
 支持管理内置服务
-支持新增第三方 http sse地址
-![mcp-service-v2-1.jpg](https://img.picui.cn/free/2025/06/05/6841298f67bbb.jpg)
+![mcp-service-v2-1.jpg](https://img.picui.cn/free/2025/07/09/686e36bf35f74.jpg)
 
-![mcp-service-v2-2.jpg](https://img.picui.cn/free/2025/06/05/6841298f21d28.jpg)
+支持新增第三方 http sse 地址
 
-![mcp-service-v2-third.jpg](https://img.picui.cn/free/2025/06/05/684129db39ed6.jpg)
+![mcp-service-v2-third.jpg](https://img.picui.cn/free/2025/07/09/686e36bd37291.jpg)
 
 ### MCP 统计
 
-![mcp-stat-v2.jpg](https://img.picui.cn/free/2025/05/29/68384779bc6c9.jpg)
+![mcp-stat-v2-1.jpg](https://img.picui.cn/free/2025/07/09/686e379a27de3.jpg)
+![mcp-stat-v2-2.jpg](https://img.picui.cn/free/2025/07/09/686e379996aee.jpg)
+![mcp-stat-v2-3.jpg](https://img.picui.cn/free/2025/07/09/686e379a642c5.jpg)
 
 ### 用户管理
 
-![user-v2.jpg](https://img.picui.cn/free/2025/06/05/684128b87258f.jpg)
+![user-v2.jpg](https://img.picui.cn/free/2025/07/09/686e379a4bddb.jpg)
 
 ### 租户管理
 
-![tanants-v2.jpg](https://img.picui.cn/free/2025/05/29/6838658c11984.jpg)
+## 系统管理
+
+![system-v2.jpg](https://img.picui.cn/free/2025/07/09/686e3820ef2d2.jpg)
+
+### 定时任务
+
+![system-schedule-v2.jpg](https://img.picui.cn/free/2025/07/09/686e3821080d2.jpg)
+
+### python 包管理
+
+还有点小问题，未完全实现
+![python-install-2.jpg](https://img.picui.cn/free/2025/07/09/686e3820dab5d.jpg)
 
 ## 临时体验地址
 
@@ -130,9 +144,9 @@ pip install -r ./requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 ```json
 "api": {
-    "prefix": "/api",           // API路径前缀
-    "title": "MCP Server", // API标题
-    "version": "1.0.0"          // API版本号
+    "prefix": "/api/v1/mcp",  // API路径前缀
+    "title": "MCP Server",    // API标题
+    "version": "1.0.0"        // API版本号
 }
 ```
 
