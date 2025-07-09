@@ -671,6 +671,10 @@ class McpServiceManager:
         if request:
             host = request.headers.get(
                 "host", f"{settings.HOST}:{settings.PORT}")
+            # 前端调试模式启动情况下host为host+端口号的格式，生成的地址没问题，但是如果前端编译后用nginx代理访问
+            # 拿到的host只有域名没有端口号，所以这里进行修正
+            if ":" not in host:
+                host = host + ":" + str(settings.PORT)
             scheme = request.headers.get("x-forwarded-proto", "http")
             return f"{scheme}://{host}{sse_url}"
 
