@@ -56,65 +56,48 @@
     <!-- 右侧内容 -->
     <el-main class="p-4">
       <!-- 操作和搜索区域 -->
-      <el-card shadow="never" class="mb-4 action-search-card">
-        <div class="action-search-container">
-          <!-- 左侧操作按钮 -->
-          <div class="action-buttons">
-            <el-button type="primary" @click="showCreateDialog" class="mr-2">
-              <el-icon><Plus /></el-icon>
-              新建MCP模板
-            </el-button>
-          </div>
-          
-          <!-- 右侧搜索表单 -->
-          <div class="search-form">
-            <el-input
-              v-model="searchForm.name"
-              placeholder="搜索模板名称"
-              clearable
-              @clear="handleSearch"
-              @keyup.enter="handleSearch"
-              style="width: 200px"
-              class="search-input"
-            >
-              <template #prefix>
-                <el-icon><Search /></el-icon>
-              </template>
-            </el-input>
-            
-            <el-select
-              v-model="searchForm.user_id"
-              placeholder="选择创建者"
-              clearable
-              @clear="handleSearch"
-              @change="handleSearch"
-              style="width: 180px"
-              filterable
-              class="creator-select"
-            >
-              <el-option
-                v-for="user in users"
-                :key="user.id"
-                :label="user.username"
-                :value="user.id"
-              >
-                <span class="option-text">{{ user.username }}</span>
-                <el-tag v-if="user.is_admin" size="small" type="warning" class="ml-2">管理员</el-tag>
-              </el-option>
-            </el-select>
-            
-            <el-button type="primary" @click="handleSearch" :loading="loading">
-              <el-icon><Search /></el-icon>
-              搜索
-            </el-button>
-            
-            <el-button @click="handleResetSearch">
-              <el-icon><Refresh /></el-icon>
-              重置
-            </el-button>
-          </div>
-        </div>
-      </el-card>
+      <ActionSearchCard>
+        <template #search>
+          <el-input v-model="searchForm.name" placeholder="搜索模板名称" clearable @clear="handleSearch"
+            @keyup.enter="handleSearch" style="width: 200px" class="search-input">
+            <template #prefix>
+              <el-icon>
+                <Search />
+              </el-icon>
+            </template>
+          </el-input>
+
+          <el-select v-model="searchForm.user_id" placeholder="选择创建者" clearable @clear="handleSearch"
+            @change="handleSearch" style="width: 180px" filterable class="creator-select">
+            <el-option v-for="user in users" :key="user.id" :label="user.username" :value="user.id">
+              <span class="option-text">{{ user.username }}</span>
+              <el-tag v-if="user.is_admin" size="small" type="warning" class="ml-2">管理员</el-tag>
+            </el-option>
+          </el-select>
+        </template>
+
+        <template #actions>
+          <el-button type="primary" @click="handleSearch" :loading="loading">
+            <el-icon>
+              <Search />
+            </el-icon>
+            搜索
+          </el-button>
+
+          <el-button @click="handleResetSearch">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            重置
+          </el-button>
+          <el-button type="primary" @click="showCreateDialog" class="mr-2">
+            <el-icon>
+              <Plus />
+            </el-icon>
+            新建MCP模板
+          </el-button>
+        </template>
+      </ActionSearchCard>
 
       <!-- 一行三列的卡片网格 -->
       <div class="module-grid">
@@ -195,9 +178,9 @@
       <!-- 分页组件 -->
       <div v-if="!loading && modules.length > 0" class="pagination-container">
         <el-config-provider :locale="zhCn">
-          <el-pagination :current-page="currentPage" :page-size="pageSize"
-            :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]" :background="true" layout="total, sizes, prev, pager, next, jumper"
-            :total="total" @size-change="handleSizeChange" @current-change="handleCurrentChange" />
+          <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
+            :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
+            @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination" />
         </el-config-provider>
       </div>
     </el-main>
@@ -226,36 +209,46 @@
     <el-dialog v-model="categoryDialogVisible" :title="editingCategory ? '编辑分类' : '创建分类'" width="40%"
       :destroy-on-close="true">
       <el-form ref="categoryFormRef" :model="categoryForm" :rules="categoryRules" label-width="100px"
-        label-position="top">
-        <el-form-item label="分类名称" prop="name">
-          <el-input v-model.trim="categoryForm.name" placeholder="请输入分类名称" clearable></el-input>
-        </el-form-item>
+        label-position="top" class="form-container form-compact">
+        <div class="form-section">
+          <div class="form-section-header">
+            <h3 class="section-title">分类信息</h3>
+            <p class="section-subtitle">创建新的服务分类</p>
+          </div>
+          
+          <el-form-item label="分类名称" prop="name">
+            <el-input v-model.trim="categoryForm.name" placeholder="请输入分类名称" clearable></el-input>
+            <div class="form-item-tip">分类名称用于组织和管理服务</div>
+          </el-form-item>
 
-        <el-form-item label="分类描述" prop="description">
-          <el-input v-model.trim="categoryForm.description" placeholder="请输入分类描述" clearable></el-input>
-        </el-form-item>
+          <el-form-item label="分类描述" prop="description">
+            <el-input v-model.trim="categoryForm.description" placeholder="请输入分类描述" clearable></el-input>
+            <div class="form-item-tip">详细描述此分类的用途和特点</div>
+          </el-form-item>
 
-        <el-form-item label="图标" prop="icon">
-          <el-select v-model="categoryForm.icon" placeholder="请选择图标" style="width: 100%">
-            <el-option v-for="icon in iconOptions" :key="icon" :label="icon" :value="icon">
-              <div class="flex items-center">
-                <el-icon class="mr-2">
-                  <component :is="icon" />
-                </el-icon>
-                <span>{{ icon }}</span>
-              </div>
-            </el-option>
-          </el-select>
-        </el-form-item>
+          <el-form-item label="图标" prop="icon">
+            <el-select v-model="categoryForm.icon" placeholder="请选择图标" style="width: 100%">
+              <el-option v-for="icon in iconOptions" :key="icon" :label="icon" :value="icon">
+                <div class="flex items-center">
+                  <el-icon class="mr-2">
+                    <component :is="icon" />
+                  </el-icon>
+                  <span>{{ icon }}</span>
+                </div>
+              </el-option>
+            </el-select>
+            <div class="form-item-tip">选择代表此分类的图标</div>
+          </el-form-item>
+        </div>
       </el-form>
 
       <template #footer>
-        <span class="dialog-footer">
+        <div class="form-actions">
           <el-button @click="categoryDialogVisible = false">取消</el-button>
           <el-button type="primary" @click="submitCategoryForm" :loading="submitting">
             {{ editingCategory ? '保存' : '创建' }}
           </el-button>
-        </span>
+        </div>
       </template>
     </el-dialog>
   </el-container>
@@ -277,7 +270,7 @@ import {
 import { getAllUsers } from '../../api/auth';
 import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
 import { defineAsyncComponent } from 'vue';
-import { Page } from '../../types/page';
+import { Page } from '@/types/page';
 
 const router = useRouter();
 const modules = ref<McpModuleInfo[]>([]);
@@ -957,7 +950,7 @@ async function submitCategoryForm() {
 onMounted(async () => {
   // 加载用户信息
   loadUserInfo();
-  
+
   // 检查用户认证状态
   const userInfoStr = localStorage.getItem('userInfo');
   if (!userInfoStr) {
@@ -966,7 +959,7 @@ onMounted(async () => {
     await router.replace('/login');
     return;
   }
-  
+
   try {
     // 并行加载分类、模块和用户数据
     await Promise.all([
@@ -981,7 +974,8 @@ onMounted(async () => {
   }
 });
 
-const McpServiceForm = defineAsyncComponent(() => import('./components/McpServiceForm.vue'));
+const McpServiceForm = defineAsyncComponent(() => import('./components/McpTemplateForm.vue'));
+const ActionSearchCard = defineAsyncComponent(() => import('@/components/ActionSearchCard.vue'));
 
 // 搜索相关
 const searchForm = ref<{
@@ -1444,97 +1438,9 @@ function handleResetSearch() {
   align-items: center;
 }
 
-/* 分页组件样式 */
-.pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 24px;
-  padding: 20px 0;
-}
-
 .mcp-template-morefill {
   background: linear-gradient(135deg, #a5c4fa 0%, #3575ff 100%);
   color: #ffffff;
-}
-
-.search-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.search-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #10b981 0%, #059669 50%, #047857 100%);
-  border-radius: 16px 16px 0 0;
-}
-
-.search-form {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 8px 0;
-}
-
-.search-form .el-form-item {
-  margin-bottom: 0;
-}
-
-.search-form .el-form-item__label {
-  font-weight: 500;
-  color: #374151;
-}
-
-:deep(.search-form .el-input__wrapper) {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-:deep(.search-form .el-input__wrapper:hover) {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.search-form .el-input__wrapper.is-focus) {
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-  border-color: #4f8ef7;
-}
-
-.search-form .el-button {
-  border-radius: 12px;
-  font-weight: 500;
-  padding: 8px 16px;
-  transition: all 0.3s ease;
-}
-
-.search-form .el-button--primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  border: none;
-}
-
-.search-form .el-button--primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.search-form .el-button:not(.el-button--primary) {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  border: 1px solid #d1d5db;
-  color: #374151;
-}
-
-.search-form .el-button:not(.el-button--primary):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 /* 用户下拉选择器样式 */
@@ -1555,132 +1461,4 @@ function handleResetSearch() {
   font-size: 11px;
   padding: 2px 6px;
 }
-
-/* 操作和搜索卡片样式 */
-.action-search-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border: none;
-  position: relative;
-  overflow: hidden;
-}
-
-.action-search-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border-radius: 16px 16px 0 0;
-}
-
-.action-search-container {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 32px !important;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.action-buttons .el-button {
-  border-radius: 12px;
-  font-weight: 500;
-  padding: 10px 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.action-buttons .el-button--success {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  border: none;
-}
-
-.action-buttons .el-button--success:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.action-buttons .el-button--primary {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border: none;
-}
-
-.action-buttons .el-button--primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-}
-
-.search-form {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-form .search-input :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.search-form .search-input :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.search-form .search-input :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-  border-color: #4f8ef7;
-}
-
-.search-form .creator-select :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.search-form .creator-select :deep(.el-input__wrapper:hover) {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.search-form .creator-select :deep(.el-input__wrapper.is-focus) {
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-  border-color: #4f8ef7;
-}
-
-.search-form .el-button {
-  border-radius: 12px;
-  font-weight: 500;
-  padding: 8px 16px;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.search-form .el-button--primary {
-  background: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
-  border: none;
-}
-
-.search-form .el-button--primary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
-}
-
-.search-form .el-button:not(.el-button--primary) {
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  border: 1px solid #d1d5db;
-  color: #374151;
-}
-
-.search-form .el-button:not(.el-button--primary):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* 用户下拉选择器样式 */
 </style>

@@ -165,19 +165,6 @@ export async function testModuleFunction(
 }
 
 /**
- * 获取模块的服务列表
- * @param moduleId - 可选的模块ID
- */
-export async function listServices(moduleId?: number): Promise<ApiResponse<McpServiceInfo[]>> {
-  let url = `${apiPrefix}/service/list`
-  if (moduleId) {
-    url += `?module_id=${moduleId}`
-  }
-  const response = await api.get(url)
-  return response.data
-}
-
-/**
  * 发布模块
  * @param moduleId - 模块ID
  * @param configParams - 配置参数，可选

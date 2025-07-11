@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text
 from app.models.engine import Base, get_db
 from app.core.utils import now_beijing
 from sqlalchemy.sql import text
+from sqlalchemy.orm import relationship
 import json
 
 
@@ -26,6 +27,13 @@ class McpService(Base):
     is_public = Column(Boolean, default=False)  # 是否公开，True为公开，False为私有
     service_type = Column(Integer, default=1)  # 服务类型：1=内置服务(基于模板), 2=第三方服务
     description = Column(Text, nullable=True)  # 服务描述，第三方服务时使用
+    
+    # 新增鉴权相关字段
+    auth_required = Column(Boolean, default=False)  # 是否需要鉴权
+    auth_mode = Column(String(20), default='')  # 鉴权模式: '', 'secret', 'token'
+    
+    # 关系定义
+    secrets = []
     
     def get_module_name(self):
         """获取关联的模块名称"""
@@ -58,8 +66,30 @@ class McpService(Base):
             2: "第三方服务"
         }
         return type_map.get(self.service_type, "未知类型")
+    
+    def get_auth_mode_name(self):
+        """获取鉴权模式名称"""
+        if not self.auth_required:
+            return "免密访问"
+        
+        mode_map = {
+            'secret': '密钥访问',
+            'token': '令牌访问',
+            '': '免密访问'
+        }
+        return mode_map.get(self.auth_mode, "未知模式")
+    
+    def get_active_secrets_count(self):
+        """获取有效密钥数量"""
+        from app.models.auth.mcp_service_secret import McpServiceSecret
+        with get_db() as db:
+            secrets_count = db.query(McpServiceSecret).filter(
+                McpServiceSecret.service_id == self.id,
+                McpServiceSecret.is_active.is_(True)
+            ).count()
+            return secrets_count
             
-    def to_dict(self, module_info=None, user_info=None):
+    def to_dict(self, module_info=None, user_info=None, show_secret_count=False):
         """转换为字典格式
         
         Args:
@@ -116,5 +146,10 @@ class McpService(Base):
             "is_public": self.is_public,
             "service_type": self.service_type,
             "service_type_name": service_type_name,
-            "description": self.description
+            "description": self.description,
+            # 新增鉴权相关字段
+            "auth_required": self.auth_required,
+            "auth_mode": self.auth_mode,
+            "auth_mode_name": self.get_auth_mode_name(),
+            "active_secrets_count": self.get_active_secrets_count() if show_secret_count else None
         } 

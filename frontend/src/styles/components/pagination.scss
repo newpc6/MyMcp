@@ -1,0 +1,44 @@
+.pagination-container {
+  margin-top: $spacing-sm;
+  background: $gradient-light-light-blue;
+  display: flex;
+  justify-content: flex-end;
+  padding: $spacing-sm 0;
+  border-radius: $border-radius-lg;
+}
+
+.pagination {
+  background: $gradient-light-gray;
+  padding: 20px 0;
+  margin-right: $spacing-md;
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 10px 32px;
+  box-shadow: 0 12px 40px rgba(25, 118, 210, 0.15);
+  border: 1px solid rgba(25, 118, 210, 0.1);
+}
+
+.pagination :deep(.el-pagination__total),
+.pagination :deep(.el-pagination__sizes),
+.pagination :deep(.el-pagination__jump) {
+  color: #1565c0;
+  font-weight: 600;
+}
+
+.pagination :deep(.el-pager li) {
+  border-radius: 12px;
+  margin: 0 4px;
+  transition: all 0.3s ease;
+  font-weight: 600;
+}
+
+.pagination :deep(.el-pager li:hover) {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+
+.pagination :deep(.el-pager li.is-active) {
+  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
+}

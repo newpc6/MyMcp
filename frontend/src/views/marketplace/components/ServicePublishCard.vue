@@ -30,26 +30,45 @@
       <el-table :data="services" style="width: 100%" size="small" class="service-table"
         :header-cell-style="{ backgroundColor: '#f5f7fa', color: '#606266', fontWeight: 'bold' }"
         :max-height="tableMaxHeight">
-        <el-table-column label="序号" width="60">
+        <el-table-column label="序号" width="78">
           <template #default="scope">
-            {{ scope.$index + 1 }}
+            <div class="index-cell">
+              {{ scope.$index + 1 }}
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="90">
+        <el-table-column prop="status" label="状态" width="150" align="center">
           <template #default="scope">
-            <el-tag :type="getStatusType(scope.row.status)" size="small">
-              {{ getStatusText(scope.row.status) }}
-            </el-tag>
+            <div class="flex items-center">
+              <el-tag :type="getStatusType(scope.row.status)" size="small">
+                {{ getStatusText(scope.row.status) }}
+              </el-tag>
+            <span>
+              <el-tag type="success" size="small" v-if="scope.row.is_public">
+                公开
+              </el-tag>
+              <el-tag type="warning" size="small" v-else>
+                未公开
+              </el-tag>
+              </span>
+            </div>
           </template>
         </el-table-column>
-        <el-table-column prop="is_public" label="公开" width="70">
+        <!-- <el-table-column prop="is_public" label="公开" width="85">
           <template #default="scope">
-            <el-tag :type="scope.row.is_public ? 'success' : 'warning'" size="small">
+            <el-tag :type="scope.row.is_public ? 'success' : 'warning'" size="small" align="center">
               {{ scope.row.is_public ? '是' : '否' }}
             </el-tag>
           </template>
+        </el-table-column> -->
+        <el-table-column prop="auth_required" label="鉴权" width="95" align="center">
+          <template #default="scope">
+            <el-tag :type="scope.row.auth_required ? 'warning' : 'info'" size="small">
+              {{ scope.row.auth_required ? '启用' : '关闭' }}
+            </el-tag>
+          </template>
         </el-table-column>
-        <el-table-column prop="name" label="服务名称" min-width="120">
+        <el-table-column prop="name" label="服务名称" min-width="120" align="center">
           <template #default="scope">
             <el-text truncated>
               {{ scope.row.name }}
@@ -77,8 +96,8 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="140" />
-        <el-table-column fixed="right" label="操作" width="200">
+        <el-table-column prop="created_at" label="创建时间" width="120" />
+        <el-table-column label="操作" width="310">
           <template #default="scope">
             <div v-if="scope.row.can_edit">
               <el-button v-if="scope.row.status === 'running'" type="info" size="small"
@@ -95,6 +114,15 @@
               </el-button>
               <el-button type="primary" size="small" @click="$emit('view-params', scope.row)" title="查看参数">
                 参数
+              </el-button>
+              <el-button 
+                v-if="scope.row.auth_required" 
+                type="warning" 
+                size="small" 
+                @click="$emit('manage-auth', scope.row)" 
+                title="管理密钥"
+              >
+                密钥
               </el-button>
               <el-button type="danger" size="small" @click="$emit('uninstall-service', services[0].service_uuid)">
                 卸载
@@ -125,6 +153,7 @@ const emit = defineEmits<{
   (e: 'start-service', serviceUuid: string): void;
   (e: 'uninstall-service', serviceUuid: string): void;
   (e: 'view-params', service: McpServiceInfo): void;
+  (e: 'manage-auth', service: McpServiceInfo): void;
 }>();
 
 // 表格最大高度，设置为三行的高度（每行约51px，含表头总高约204px）
@@ -240,7 +269,7 @@ export default {
   align-items: center;
 }
 
-:deep(.el-button--primary) {
+/* :deep(.el-button--primary) {
   background: linear-gradient(135deg, #10b981, #059669);
   border: none;
   border-radius: 12px;
@@ -253,7 +282,7 @@ export default {
   background: linear-gradient(135deg, #059669, #047857);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-}
+} */
 
 :deep(.el-table) {
   --el-table-border-color: rgba(235, 235, 235, 0.6);
@@ -345,40 +374,9 @@ export default {
   transition: all 0.3s ease;
 }
 
-:deep(.el-tag) {
-  border-radius: 16px;
-  padding: 0 10px;
-  font-weight: 500;
-  border: 1px solid transparent;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
 
-:deep(.el-tag:hover) {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
-}
 
-:deep(.el-tag--success) {
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-}
-
-:deep(.el-tag--warning) {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: white;
-}
-
-:deep(.el-tag--danger) {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-}
-
-:deep(.el-tag--info) {
-  background: linear-gradient(135deg, #6b7280, #4b5563);
-  color: white;
-}
-
-:deep(.el-button--info) {
+/* :deep(.el-button--info) {
   background: linear-gradient(135deg, #6b7280, #4b5563);
   border: none;
   border-radius: 8px;
@@ -445,7 +443,7 @@ export default {
   height: 28px;
   padding: 0;
   border-radius: 50%;
-}
+} */
 
 h3 {
   color: #1e293b;

@@ -1,9 +1,172 @@
 // 颜色
+
 $primary-color: #1890ff;
+$primary-gradient-color: linear-gradient(135deg, #4f8ef7, #3b82f6);
+$primary-gradient-color-hover: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+$primary-gradient-color3: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+
 $success-color: #52c41a;
+$success-gradient-color: linear-gradient(135deg, #10b981, #059669);
+$success-gradient-color-hover: linear-gradient(135deg, #059669, #047857);
+$success-gradient-color3: linear-gradient(135deg, #10b981 0%, #059669 50%, #047857 100%);
+
 $warning-color: #faad14;
+$warning-gradient-color: linear-gradient(135deg, #f59e0b, #d97706);
+$warning-gradient-color-hover: linear-gradient(135deg, #d97706, #b45309, #92400e);
+$warning-gradient-color3: linear-gradient(135deg, #f59e0b 0%, #d97706 50%, #b45309 100%);
+
 $danger-color: #f5222d;
-$info-color: #1890ff;
+$danger-gradient-color: linear-gradient(135deg, #ef4444, #dc2626);
+$danger-gradient-color-hover: linear-gradient(135deg, #dc2626, #b91c1c, #991b1b);
+$danger-gradient-color3: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+
+$info-color: #6b7280;
+$info-gradient-color: linear-gradient(135deg, #6b7280, #4b5563);
+$info-gradient-color-hover: linear-gradient(135deg, #4b5563, #374151, #1f2937);
+$info-gradient-color3: linear-gradient(135deg, #6b7280 0%, #4b5563 50%, #374151 100%);
+
+
+
+// 渐变色定义
+$gradient-blue: linear-gradient(135deg, #409eff 0%, #2196f3 100%);
+$gradient-light-blue: linear-gradient(135deg, #cce5ff 0%, #90cdff 100%);
+$gradient-light-light-blue: linear-gradient(135deg, #c3e2ff 0%, #f5fbff 100%);
+$gradient-light-blue-hover: linear-gradient(135deg, #90cdff 0%, #409eff 100%);
+$gradient-green: linear-gradient(135deg, #67c23a 0%, #52c41a 100%);
+$gradient-light-green: linear-gradient(135deg, #e6f4ea 0%, #d1f2c2 100%);
+$gradient-light-gray: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+// 表格专用渐变色
+$gradient-table-header: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+$gradient-table-hover: linear-gradient(
+  135deg,
+  rgba(64, 158, 255, 0.03) 0%,
+  rgba(64, 158, 255, 0.08) 100%
+);
+$gradient-table-stripe: linear-gradient(
+  135deg,
+  rgba(245, 247, 250, 0.3) 0%,
+  rgba(245, 247, 250, 0.6) 100%
+);
+
+// 状态渐变色
+$gradient-success: linear-gradient(
+  135deg,
+  rgba(82, 196, 26, 0.1) 0%,
+  rgba(82, 196, 26, 0.05) 100%
+);
+$gradient-warning: linear-gradient(
+  135deg,
+  rgba(250, 173, 20, 0.1) 0%,
+  rgba(250, 173, 20, 0.05) 100%
+);
+$gradient-danger: linear-gradient(
+  135deg,
+  rgba(245, 34, 45, 0.1) 0%,
+  rgba(245, 34, 45, 0.05) 100%
+);
+$gradient-info: linear-gradient(
+  135deg,
+  rgba(24, 144, 255, 0.1) 0%,
+  rgba(24, 144, 255, 0.05) 100%
+);
+
+// 分页渐变色
+$gradient-pagination-active: linear-gradient(135deg, #409eff 0%, #2196f3 100%);
+$gradient-pagination-hover: linear-gradient(
+  135deg,
+  rgba(64, 158, 255, 0.1) 0%,
+  rgba(64, 158, 255, 0.2) 100%
+);
+
+// 卡片渐变色
+$gradient-card-header: linear-gradient(135deg, #fafbfc 0%, #f1f3f4 100%);
+$gradient-card-body: linear-gradient(135deg, #ffffff 0%, #fafbfc 100%);
+
+// 卡片专用颜色
+$card-bg-primary: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+$card-bg-secondary: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+$card-bg-success: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+$card-bg-warning: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+$card-bg-danger: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+
+// 卡片边框颜色
+$card-border-primary: #e2e8f0;
+$card-border-hover: #cbd5e1;
+$card-border-active: #94a3b8;
+
+// 卡片阴影
+$card-shadow-light: 0 4px 12px rgba(0, 0, 0, 0.05);
+$card-shadow-medium: 0 8px 24px rgba(0, 0, 0, 0.08);
+$card-shadow-heavy: 0 12px 32px rgba(0, 0, 0, 0.12);
+
+// 卡片头部装饰条
+$card-accent-primary: linear-gradient(
+  90deg,
+  #4f8ef7 0%,
+  #3b82f6 50%,
+  #2563eb 100%
+);
+$card-accent-success: linear-gradient(
+  90deg,
+  #10b981 0%,
+  #059669 50%,
+  #047857 100%
+);
+$card-accent-warning: linear-gradient(
+  90deg,
+  #f59e0b 0%,
+  #d97706 50%,
+  #b45309 100%
+);
+$card-accent-danger: linear-gradient(
+  90deg,
+  #ef4444 0%,
+  #dc2626 50%,
+  #b91c1c 100%
+);
+$card-accent-info: linear-gradient(
+  90deg,
+  #3b82f6 0%,
+  #2563eb 50%,
+  #1d4ed8 100%
+);
+
+// 卡片内容区域
+$card-content-bg: #ffffff;
+$card-footer-bg: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+
+// 卡片文本颜色
+$card-title-color: #1a202c;
+$card-subtitle-color: #4a5568;
+$card-text-color: #718096;
+$card-meta-color: #a0aec0;
+
+// 按钮渐变色
+$gradient-button-primary: linear-gradient(135deg, #409eff 0%, #2196f3 100%);
+$gradient-button-hover: linear-gradient(135deg, #66b3ff 0%, #42a5f5 100%);
+
+// 序号渐变色 (增强版)
+$gradient-index-primary: linear-gradient(135deg, #409eff 0%, #2196f3 100%);
+$gradient-index-success: linear-gradient(135deg, #67c23a 0%, #52c41a 100%);
+$gradient-index-warning: linear-gradient(135deg, #faad14 0%, #f39c12 100%);
+$gradient-index-danger: linear-gradient(135deg, #f5222d 0%, #e74c3c 100%);
+
+// 阴影渐变色
+$gradient-shadow-light: linear-gradient(
+  135deg,
+  rgba(0, 0, 0, 0.05) 0%,
+  rgba(0, 0, 0, 0.1) 100%
+);
+$gradient-shadow-medium: linear-gradient(
+  135deg,
+  rgba(0, 0, 0, 0.1) 0%,
+  rgba(0, 0, 0, 0.2) 100%
+);
+$gradient-shadow-dark: linear-gradient(
+  135deg,
+  rgba(0, 0, 0, 0.2) 0%,
+  rgba(0, 0, 0, 0.3) 100%
+);
 
 // 文本颜色
 $text-color: #333333;
@@ -20,10 +183,11 @@ $border-color: #e8e8e8;
 $border-color-dark: #d9d9d9;
 
 // 字体
-$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-  'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-  'Noto Color Emoji';
+$font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+  'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji',
+  'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 $font-size-base: 14px;
+$font-size-xs: 10px;
 $font-size-sm: 12px;
 $font-size-lg: 16px;
 $font-size-xl: 20px;
@@ -51,7 +215,7 @@ $breakpoints: (
   'sm': 768px,
   'md': 992px,
   'lg': 1200px,
-  'xl': 1600px
+  'xl': 1600px,
 );
 
 // z-index
@@ -117,4 +281,4 @@ $transition-base: 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 // 布局
 $header-height: 60px;
 $sidebar-width: 200px;
-$sidebar-collapsed-width: 64px; 
+$sidebar-collapsed-width: 64px;

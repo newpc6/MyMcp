@@ -1,0 +1,500 @@
+/* 
+ * 通用卡片样式使用指南
+ * 
+ * 基础卡片：
+ * <el-card class="card-basic">
+ * 
+ * 带装饰条的卡片：
+ * <el-card class="card-accent accent-primary">  // 蓝色装饰条
+ * <el-card class="card-accent accent-success">  // 绿色装饰条
+ * <el-card class="card-accent accent-warning">  // 黄色装饰条
+ * <el-card class="card-accent accent-danger">   // 红色装饰条
+ * <el-card class="card-accent accent-info">     // 信息色装饰条
+ * 
+ * 数据展示卡片：
+ * <el-card class="card-data">
+ *   <div class="data-item">
+ *     <div class="data-value">100</div>
+ *     <div class="data-label">总数</div>
+ *   </div>
+ * </el-card>
+ * 
+ * 表单卡片：
+ * <el-card class="card-form">
+ * 
+ * 内容卡片：
+ * <el-card class="card-content">
+ * 
+ * 信息展示卡片：
+ * <el-card class="card-info">
+ *   <div class="info-content">
+ * 
+ * 空状态卡片：
+ * <el-card class="card-empty">
+ * 
+ * 尺寸变体：
+ * <el-card class="card-sm">    // 小尺寸
+ * <el-card class="card-lg">    // 大尺寸
+ * 
+ * 主题变体：
+ * <el-card class="card-theme theme-primary">
+ * <el-card class="card-theme theme-success">
+ * <el-card class="card-theme theme-warning">
+ * <el-card class="card-theme theme-danger">
+ * 
+ * 交互效果：
+ * <el-card class="card-hover">      // 悬停效果
+ * <el-card class="card-clickable">  // 可点击效果
+ * 
+ * 布局：
+ * <div class="card-grid grid-2">    // 2列网格
+ * <div class="card-grid grid-3">    // 3列网格
+ * <div class="card-grid grid-4">    // 4列网格
+ * <div class="card-grid grid-auto"> // 自适应网格
+ * 
+ * <div class="card-flex">           // 弹性布局
+ * <div class="card-flex flex-wrap"> // 弹性布局+换行
+ * 
+ * 组合使用：
+ * <el-card class="card-data card-accent accent-success card-hover">
+ */
+
+// 基础卡片样式
+.el-card {
+  border-radius: 16px;
+  border: 1px solid $card-border-primary;
+  box-shadow: $card-shadow-light;
+  transition: $transition-all;
+  overflow: hidden;
+  background: $card-bg-primary;
+  position: relative;
+  
+  &:hover {
+    box-shadow: $card-shadow-medium;
+    transform: translateY(-2px);
+    border-color: $card-border-hover;
+  }
+  
+  // 卡片头部
+  .el-card__header {
+    background: $gradient-card-header;
+    border-bottom: 1px solid $card-border-primary;
+    padding: $spacing-lg;
+    position: relative;
+    
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 0;
+      
+      h1, h2, h3, h4, h5, h6 {
+        margin: 0;
+        color: $card-title-color;
+        font-weight: 600;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      }
+      
+      h1 { font-size: $font-size-xl; }
+      h2 { font-size: $font-size-lg; }
+      h3 { font-size: $font-size-base; }
+      h4 { font-size: $font-size-sm; }
+      h5, h6 { font-size: $font-size-xs; }
+    }
+  }
+  
+  // 卡片主体
+  .el-card__body {
+    padding: $spacing-lg;
+    background: $card-content-bg;
+    color: $card-text-color;
+    line-height: $line-height-base;
+  }
+}
+
+// 带装饰条的卡片
+.card-accent {
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: $card-accent-primary;
+    border-radius: 16px 16px 0 0;
+    z-index: 1;
+  }
+  
+  &.accent-primary::before {
+    background: $card-accent-primary;
+  }
+  
+  &.accent-success::before {
+    background: $card-accent-success;
+  }
+  
+  &.accent-warning::before {
+    background: $card-accent-warning;
+  }
+  
+  &.accent-danger::before {
+    background: $card-accent-danger;
+  }
+  
+  &.accent-info::before {
+    background: $card-accent-info;
+  }
+}
+
+// 数据展示卡片
+.card-data {
+  .el-card__body {
+    padding: $spacing-lg;
+    text-align: center;
+    background: $card-bg-primary;
+  }
+  
+  .data-item {
+    padding: $spacing-lg;
+    background: $card-bg-secondary;
+    border-radius: $border-radius-lg;
+    margin-bottom: $spacing-md;
+    transition: $transition-all;
+    border: 1px solid $card-border-primary;
+    
+    &:hover {
+      background: $card-bg-primary;
+      box-shadow: $card-shadow-light;
+      transform: translateY(-1px);
+    }
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+  
+  .data-value {
+    font-size: $font-size-xl;
+    font-weight: 700;
+    color: $primary-color;
+    margin-bottom: $spacing-sm;
+    background: $gradient-blue;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    
+    // 降级支持
+    @supports not (-webkit-background-clip: text) {
+      background: none;
+      color: $primary-color;
+    }
+  }
+  
+  .data-label {
+    font-size: $font-size-base;
+    color: $card-subtitle-color;
+    font-weight: 500;
+  }
+}
+
+// 表单卡片
+.card-form {
+  .el-card__header {
+    background: $gradient-card-header;
+    
+    .card-header h3 {
+      color: $card-title-color;
+      font-size: $font-size-lg;
+      margin: 0;
+    }
+  }
+  
+  .el-card__body {
+    padding: $spacing-lg;
+  }
+  
+  .el-select, .el-input {
+    .el-input__inner {
+      background: $card-content-bg;
+      border-color: $card-border-primary;
+      
+      &:focus {
+        border-color: $primary-color;
+      }
+    }
+  }
+}
+
+// 内容卡片
+.card-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  
+  .el-card__header {
+    background: $gradient-card-header;
+    border-bottom: 1px solid $card-border-primary;
+    
+    .card-header h3 {
+      color: $card-title-color;
+      font-size: $font-size-lg;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+  
+  .el-card__body {
+    flex: 1;
+    padding: $spacing-lg;
+    background: $card-content-bg;
+  }
+}
+
+// 信息展示卡片
+.card-info {
+  .el-card__header {
+    background: $gradient-card-header;
+    
+    .card-header h3 {
+      color: $card-title-color;
+      margin: 0;
+    }
+  }
+  
+  .info-content {
+    padding: $spacing-md 0;
+    
+    .el-row {
+      margin-bottom: -$spacing-md;
+    }
+    
+    .el-col {
+      margin-bottom: $spacing-md;
+    }
+  }
+}
+
+// 空状态卡片
+.card-empty {
+  .el-card__body {
+    padding: $spacing-xl;
+    text-align: center;
+    background: $card-bg-primary;
+    
+    .el-empty {
+      .el-empty__description {
+        color: $card-text-color;
+        font-size: $font-size-base;
+      }
+    }
+  }
+}
+
+// 卡片尺寸变体
+.card-sm {
+  .el-card__header,
+  .el-card__body {
+    padding: $spacing-md;
+  }
+  
+  .data-item {
+    padding: $spacing-md;
+  }
+  
+  .data-value {
+    font-size: $font-size-lg;
+  }
+}
+
+.card-lg {
+  .el-card__header,
+  .el-card__body {
+    padding: $spacing-xl;
+  }
+  
+  .data-item {
+    padding: $spacing-xl;
+  }
+  
+  .data-value {
+    font-size: 32px;
+  }
+}
+
+// 卡片主题变体
+.card-theme {
+  &.theme-primary {
+    border-color: $primary-color;
+    
+    &::before {
+      background: $card-accent-primary;
+    }
+  }
+  
+  &.theme-success {
+    border-color: $success-color;
+    background: $card-bg-success;
+    
+    &::before {
+      background: $card-accent-success;
+    }
+  }
+  
+  &.theme-warning {
+    border-color: $warning-color;
+    background: $card-bg-warning;
+    
+    &::before {
+      background: $card-accent-warning;
+    }
+  }
+  
+  &.theme-danger {
+    border-color: $danger-color;
+    background: $card-bg-danger;
+    
+    &::before {
+      background: $card-accent-danger;
+    }
+  }
+}
+
+// 卡片交互效果
+.card-hover {
+  cursor: pointer;
+  transition: $transition-all;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $card-shadow-heavy;
+  }
+}
+
+.card-clickable {
+  cursor: pointer;
+  transition: $transition-all;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $card-shadow-medium;
+  }
+  
+  &:active {
+    transform: translateY(0);
+    box-shadow: $card-shadow-light;
+  }
+}
+
+// 卡片布局
+.card-grid {
+  display: grid;
+  gap: $spacing-lg;
+  
+  &.grid-1 {
+    grid-template-columns: 1fr;
+  }
+  
+  &.grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  &.grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  &.grid-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  &.grid-auto {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+}
+
+.card-flex {
+  display: flex;
+  gap: $spacing-lg;
+  
+  &.flex-wrap {
+    flex-wrap: wrap;
+  }
+  
+  &.flex-column {
+    flex-direction: column;
+  }
+}
+
+// 响应式卡片
+@media (max-width: 1200px) {
+  .card-grid {
+    &.grid-4 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+}
+
+@media (max-width: 992px) {
+  .card-grid {
+    &.grid-3,
+    &.grid-4 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  .card-flex {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .el-card {
+    border-radius: $border-radius-lg;
+    
+    .el-card__header,
+    .el-card__body {
+      padding: $spacing-md;
+    }
+  }
+  
+  .card-grid {
+    &.grid-2,
+    &.grid-3,
+    &.grid-4 {
+      grid-template-columns: 1fr;
+    }
+    
+    gap: $spacing-md;
+  }
+  
+  .card-flex {
+    gap: $spacing-md;
+  }
+  
+  .data-item {
+    padding: $spacing-md;
+  }
+  
+  .data-value {
+    font-size: $font-size-lg;
+  }
+}
+
+@media (max-width: 576px) {
+  .el-card {
+    border-radius: $border-radius;
+    
+    .el-card__header,
+    .el-card__body {
+      padding: $spacing-sm;
+    }
+  }
+  
+  .data-item {
+    padding: $spacing-sm;
+  }
+  
+  .data-value {
+    font-size: $font-size-base;
+  }
+}

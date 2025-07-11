@@ -2,7 +2,7 @@
 @import '@/styles/mixins.scss';
 @import '@/styles/card.scss';
 @import '@/styles/table.scss';
-
+@import '@/styles/components/index.scss';
 // 重置默认样式
 * {
   margin: 0;
@@ -487,12 +487,25 @@ body {
   width: 66.666667%;
 }
 
-.mt-20 {
-  margin-top: 20px;
-}
-
-.mt-15 {
-  margin-top: 15px;
+.mt- {
+  &2 {
+    margin-top: 2px;
+  }
+  &5 {
+    margin-top: 5px;
+  }  
+  &10 {
+    margin-top: 10px;
+  }
+  &15 {
+    margin-top: 15px;
+  }
+  &16 {
+    margin-top: 16px;
+  }
+  &20 {
+    margin-top: 20px;
+  }  
 }
 
 .ml-5 {

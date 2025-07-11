@@ -1,6 +1,7 @@
 import api from './index';
 import { apiPrefix } from './index';
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
+import { ApiResponse, McpServiceInfo } from '@/types/marketplace';
 
 /**
  * 获取MCP服务状态
@@ -49,6 +50,19 @@ export async function loadTool(
 }
 
 /**
+ * 获取模块的服务列表
+ * @param moduleId - 可选的模块ID
+ */
+export async function listServices(moduleId?: number): Promise<ApiResponse<McpServiceInfo[]>> {
+  let url = `${apiPrefix}/service/list`
+  if (moduleId) {
+    url += `?module_id=${moduleId}`
+  }
+  const response = await api.get(url)
+  return response.data
+}
+
+/**
  * 卸载工具
  * @param toolName 工具名称
  */
@@ -80,7 +94,7 @@ export async function connectToMcpSse(sseUrl: string) {
     let headers: HeadersInit = {
       Accept: "text/event-stream",
     };
-    
+
     // 从localStorage获取token
     const userInfoStr = localStorage.getItem('userInfo');
     if (userInfoStr) {
@@ -104,7 +118,7 @@ export async function connectToMcpSse(sseUrl: string) {
     });
 
     await transport.start();
-    return { 
+    return {
       success: true,
       transport,
       message: '成功连接到MCP SSE服务'
@@ -125,12 +139,12 @@ export async function connectToMcpSse(sseUrl: string) {
 export async function testMcpSseConnection(sseUrl: string) {
   try {
     const connection = await connectToMcpSse(sseUrl);
-    
+
     // 如果连接成功，立即关闭
     if (connection.success && connection.transport) {
       await connection.transport.close();
     }
-    
+
     return {
       success: connection.success,
       message: connection.success ? '连接测试成功' : connection.error

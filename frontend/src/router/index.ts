@@ -24,13 +24,13 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/marketplace/:id',
     name: 'module-detail',
-    component: () => import('../views/marketplace/ModuleDetail.vue'),
+    component: () => import('../views/marketplace/McpTemplateDetail.vue'),
     meta: { title: 'MCP 模块详情' }
   },
   {
     path: '/mcp-services',
     name: 'mcp-services',
-    component: () => import('../views/mcp/index.vue'),
+    component: () => import('../views/mcp/McpLayout.vue'),
     meta: { title: 'MCP 服务管理' }
   },
   {
@@ -68,6 +68,19 @@ const routes: Array<RouteRecordRaw> = [
     name: 'scheduled-tasks',
     component: () => import('../views/system/ScheduledTasks.vue'),
     meta: { title: '定时任务管理', adminOnly: true }
+  },
+  // 鉴权管理路由
+  {
+    path: '/mcp-auth/secret-management',
+    name: 'mcp-auth-secret-management',
+    component: () => import('../views/mcp-auth/SecretManagement.vue'),
+    meta: { title: '密钥管理' }
+  },
+  {
+    path: '/mcp-auth/access-logs',
+    name: 'mcp-auth-access-logs',
+    component: () => import('../views/mcp-auth/AccessLogs.vue'),
+    meta: { title: '访问日志' }
   }
 ]
 

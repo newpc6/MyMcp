@@ -17,9 +17,16 @@
 
             <!-- 服务发布卡片 -->
             <div class="service-publish-section">
-              <ServicePublishCard :services="services" :loadingServices="loadingServices"
-                @publish="handlePublishService" @stop-service="handleStopService" @start-service="handleStartService"
-                @uninstall-service="handleUninstallService" @view-params="viewServiceParams" />
+              <ServicePublishCard 
+                :services="services" 
+                :loading-services="loadingServices"
+                @publish="handlePublishService"
+                @stop-service="handleStopService"
+                @start-service="handleStartService"
+                @uninstall-service="handleUninstallService"
+                @view-params="viewServiceParams"
+                @manage-auth="handleManageAuth"
+              />
             </div>
           </div>
 
@@ -29,7 +36,7 @@
               <el-tabs v-model="activeTab" class="detail-tabs">
                 <el-tab-pane name="service-details">
                   <template #label>
-                    <span style="padding-left: 24px;">服务详情</span>
+                    <span style="padding-left: 24px;">模板详情</span>
                   </template>
                   <div class="tab-content">
                     <ServiceDetailsPanel :moduleInfo="moduleInfo" />
@@ -38,7 +45,7 @@
 
                 <el-tab-pane name="tool-test">
                   <template #label>
-                    <span>工具测试</span>
+                    <span>模板工具测试</span>
                   </template>
                   <div class="tab-content">
                     <ToolTestPanel :tools="moduleTools" :moduleId="moduleId" :configSchema="moduleInfo.config_schema" @test="handleToolTest" />
@@ -63,7 +70,7 @@
     </el-container>
 
     <!-- 编辑模块对话框 -->
-    <el-dialog v-model="editDialogVisible" title="编辑MCP服务" width="60%" :destroy-on-close="true" class="edit-dialog">
+    <el-dialog v-model="editDialogVisible" title="编辑MCP模板" width="60%" :destroy-on-close="true" class="edit-dialog">
       <McpServiceForm v-model="editForm" :categories="categories" :isSubmitting="updating" ref="editFormRef">
         <template #actions>
           <div class="dialog-actions">
@@ -133,6 +140,28 @@
           <el-switch v-model="configForm.is_public" class="form-switch" />
         </el-form-item>
 
+        <!-- 鉴权配置 -->
+        <el-form-item label="启用鉴权" prop="auth_required">
+          <el-switch v-model="configForm.auth_required" class="form-switch" />
+          <div class="form-item-tip">
+            启用后，访问此服务需要提供有效的密钥
+          </div>
+        </el-form-item>
+
+        <el-form-item
+          v-if="configForm.auth_required"
+          label="鉴权模式"
+          prop="auth_mode"
+        >
+          <el-radio-group v-model="configForm.auth_mode">
+            <el-radio label="secret">密钥鉴权</el-radio>
+            <el-radio label="token" disabled>令牌鉴权（待实现）</el-radio>
+          </el-radio-group>
+          <div class="form-item-tip">
+            选择鉴权验证方式
+          </div>
+        </el-form-item>
+
         <div v-if="!hasConfigSchema" class="no-config-alert">
           <el-alert type="info" :closable="false" show-icon title="此模块没有需要配置的参数，可以直接发布。" />
         </div>
@@ -188,6 +217,27 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 鉴权管理对话框 -->
+    <el-dialog v-model="authManageDialogVisible" title="鉴权管理" width="50%" :destroy-on-close="true"
+      class="auth-manage-dialog">
+      <div class="auth-manage-content">
+        <p>当前服务：{{ currentService?.service_name }}</p>
+        <p>服务UUID：{{ currentService?.service_uuid }}</p>
+        <p>服务状态：{{ currentService?.status }}</p>
+        <p>服务配置：{{ JSON.stringify(currentService?.config_params) }}</p>
+        <p>服务路径：{{ currentService?.sse_path }}</p>
+        <p>服务协议：{{ currentService?.protocol_type === 1 ? 'SSE' : 'StreamableHttp' }}</p>
+        <p>服务公开：{{ currentService?.is_public ? '是' : '否' }}</p>
+        <p>服务鉴权：{{ currentService?.auth_required ? '是' : '否' }}</p>
+        <p>服务模式：{{ currentService?.auth_mode === 'secret' ? '密钥鉴权' : '令牌鉴权' }}</p>
+      </div>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="authManageDialogVisible = false" class="cancel-btn">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -197,12 +247,13 @@ import { useRoute, useRouter } from 'vue-router';
 import { ElNotification, ElMessage, ElMessageBox } from 'element-plus';
 import {
   getModule, getModuleTools, testModuleTool, updateModule,
-  listServices, publishModule, stopService, startService, uninstallService,
+  publishModule, stopService, startService, uninstallService,
   testModuleFunction,
   listGroup,
   deleteModule,
   getService
 } from '../../api/marketplace';
+import { listServices } from '../../api/mcp';
 import { updateServiceParams } from '../../api/mcpServer';
 import api from '../../api/index';
 import type { McpModuleInfo, McpToolInfo, McpServiceInfo, McpCategoryInfo } from '../../types/marketplace';
@@ -212,10 +263,10 @@ import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/co
 // 引入拆分的组件
 import ModuleInfoCard from './components/ModuleInfoCard.vue';
 import ServicePublishCard from './components/ServicePublishCard.vue';
-import ServiceDetailsPanel from './components/ServiceDetailsPanel.vue';
+import ServiceDetailsPanel from './components/McpTemplateDetailsPanel.vue';
 import ToolTestPanel from './components/ToolTestPanel.vue';
 import CodeEditorPanel from './components/CodeEditorPanel.vue';
-import McpServiceForm from './components/McpServiceForm.vue';
+import McpServiceForm from './components/McpTemplateForm.vue';
 // @ts-ignore
 import ServiceParamsManager from '../../components/ServiceParamsManager.vue';
 
@@ -317,13 +368,17 @@ const configForm = ref<{
   config_params: Record<string, any>;
   sse_path: string;
   use_full_custom_path: boolean;
+  auth_required: boolean;
+  auth_mode: string;
 }>({
   service_name: '',
   is_public: false,
   protocol_type: 1, // 默认为SSE
   config_params: {},
   sse_path: '',
-  use_full_custom_path: false
+  use_full_custom_path: false,
+  auth_required: false,
+  auth_mode: 'secret'
 });
 const configRules = ref<Record<string, any>>({});
 const publishing = ref(false);
@@ -334,12 +389,15 @@ const hasConfigSchema = computed(() => {
     Object.keys(moduleInfo.value.config_schema).length > 0;
 });
 
-// 服务参数对话框相关
+// 服务参数编辑对话框相关
 const serviceParamsDialogVisible = ref(false);
-const currentService = ref<McpServiceInfo | null>(null);
 const serviceParamsForm = ref<Record<string, any>>({});
+const currentService = ref<McpServiceInfo | null>(null);
 const serviceParamsManagerRef = ref();
 const updatingParams = ref(false);
+
+// 鉴权管理对话框相关
+const authManageDialogVisible = ref(false);
 
 // 加载模块详情
 async function loadModuleInfo() {
@@ -477,7 +535,9 @@ function initConfigForm() {
     protocol_type: 1, // 默认为SSE
     config_params: {},
     sse_path: '',
-    use_full_custom_path: false
+    use_full_custom_path: false,
+    auth_required: false,
+    auth_mode: 'secret'
   };
   configRules.value = {
     service_name: [{ required: true, message: '请输入服务名称', trigger: 'blur' }],
@@ -844,6 +904,15 @@ const handleToolTest = (toolName: string, params: Record<string, any>, configPar
     });
 };
 
+// 处理管理鉴权
+const handleManageAuth = (service: McpServiceInfo) => {
+  // 跳转到鉴权管理页面，并传递服务ID
+  router.push({
+    path: '/mcp-auth/secret-management',
+    query: { serviceId: service.id.toString() }
+  });
+};
+
 // 页面加载时获取模块详情
 onMounted(() => {
   loadUserInfo(); // 加载用户信息
@@ -1014,24 +1083,28 @@ onMounted(() => {
 /* 对话框样式 */
 .edit-dialog :deep(.el-dialog),
 .publish-dialog :deep(.el-dialog),
-.params-dialog :deep(.el-dialog) {
+.params-dialog :deep(.el-dialog),
+.auth-manage-dialog :deep(.el-dialog) {
   border-radius: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  background: linear-gradient(135deg, #ffffff 0%, #f8fcff 100%);
-  overflow: hidden;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .edit-dialog :deep(.el-dialog__header),
 .publish-dialog :deep(.el-dialog__header),
-.params-dialog :deep(.el-dialog__header) {
+.params-dialog :deep(.el-dialog__header),
+.auth-manage-dialog :deep(.el-dialog__header) {
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   padding: 24px 32px;
-  border-bottom: 1px solid rgba(235, 235, 235, 0.8);
+  border-radius: 20px 20px 0 0;
+  border-bottom: 1px solid rgba(235, 235, 235, 0.6);
 }
 
 .edit-dialog :deep(.el-dialog__title),
 .publish-dialog :deep(.el-dialog__title),
-.params-dialog :deep(.el-dialog__title) {
+.params-dialog :deep(.el-dialog__title),
+.auth-manage-dialog :deep(.el-dialog__title) {
   font-size: 18px;
   font-weight: 600;
   color: #1e293b;
@@ -1039,7 +1112,8 @@ onMounted(() => {
 
 .edit-dialog :deep(.el-dialog__body),
 .publish-dialog :deep(.el-dialog__body),
-.params-dialog :deep(.el-dialog__body) {
+.params-dialog :deep(.el-dialog__body),
+.auth-manage-dialog :deep(.el-dialog__body) {
   padding: 32px;
 }
 
@@ -1346,6 +1420,36 @@ onMounted(() => {
   border-left: 1px solid #e5e7eb;
 }
 
+/* 表单项提示样式 */
+.form-item-tip {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* 鉴权管理内容样式 */
+.auth-manage-content {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.auth-manage-content p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: #374151;
+}
+
+.auth-manage-content p:first-child {
+  margin-top: 0;
+}
+
+.auth-manage-content p:last-child {
+  margin-bottom: 0;
+}
+
 /* 响应式设计 */
 @media (max-width: 1200px) {
   .top-cards-section {
@@ -1375,7 +1479,8 @@ onMounted(() => {
 
   .edit-dialog :deep(.el-dialog),
   .publish-dialog :deep(.el-dialog),
-  .params-dialog :deep(.el-dialog) {
+  .params-dialog :deep(.el-dialog),
+  .auth-manage-dialog :deep(.el-dialog) {
     width: 95% !important;
     margin: 0 auto;
   }

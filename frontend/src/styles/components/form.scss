@@ -1,0 +1,346 @@
+// 表单样式
+.form-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.form-section {
+  margin-bottom: $spacing-lg;
+  padding: $spacing-md;
+  background: $bg-color;
+  border-radius: $border-radius-lg;
+  box-shadow: $card-shadow-light;
+  border: 1px solid $border-color-light;
+}
+
+.form-section-header {
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-sm;
+  border-bottom: 1px solid $border-color-lighter;
+  
+  .section-title {
+    font-size: $font-size-lg;
+    font-weight: 600;
+    color: $text-color-primary;
+    margin: 0;
+  }
+  
+  .section-subtitle {
+    font-size: $font-size-sm;
+    color: $text-color-secondary;
+    margin-top: $spacing-xs;
+  }
+}
+
+.form-item-tip {
+  font-size: $font-size-sm;
+  color: $text-color-light;
+  margin-top: $spacing-xs;
+  line-height: $line-height-base;
+}
+
+.form-item-description {
+  font-size: $font-size-sm;
+  color: $text-color-secondary;
+  margin-top: $spacing-xs;
+  line-height: $line-height-base;
+}
+
+.form-actions {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-lg;
+  padding-top: $spacing-md;
+  border-top: 1px solid $border-color-lighter;
+  background-color: $primary-gradient-color3;
+  .el-button {
+    min-width: 80px;
+  }
+}
+
+.form-divider {
+  height: 1px;
+  background: $border-color-lighter;
+  margin: $spacing-md 0;
+}
+
+.form-group {
+  display: flex;
+  gap: $spacing-md;
+  align-items: flex-start;
+  
+  .form-item {
+    flex: 1;
+  }
+}
+
+.form-inline {
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
+  
+  .el-form-item {
+    margin-bottom: 0;
+  }
+}
+
+.form-compact {
+  .el-form-item {
+    margin-bottom: $spacing-sm;
+  }
+  
+  .el-form-item__label {
+    padding-bottom: $spacing-xs;
+  }
+}
+
+.form-spacious {
+  .el-form-item {
+    margin-bottom: $spacing-lg;
+  }
+  
+  .el-form-item__label {
+    padding-bottom: $spacing-sm;
+  }
+}
+
+// 表单验证样式
+.form-error {
+  .el-form-item__content {
+    .el-input__wrapper,
+    .el-textarea__wrapper {
+      border-color: $danger-color;
+      box-shadow: 0 0 0 1px rgba($danger-color, 0.2);
+    }
+  }
+}
+
+.form-success {
+  .el-form-item__content {
+    .el-input__wrapper,
+    .el-textarea__wrapper {
+      border-color: $success-color;
+      box-shadow: 0 0 0 1px rgba($success-color, 0.2);
+    }
+  }
+}
+
+// 表单状态样式
+.form-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.form-loading {
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba($bg-color, 0.8);
+    z-index: 1;
+  }
+}
+
+// 表单提示样式
+.form-hint {
+  background: $gradient-light-blue;
+  border: 1px solid rgba($primary-color, 0.2);
+  border-radius: $border-radius;
+  padding: $spacing-sm;
+  margin-top: $spacing-xs;
+  
+  .hint-title {
+    font-weight: 600;
+    color: $text-color-primary;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .hint-content {
+    color: $text-color-secondary;
+    font-size: $font-size-sm;
+    line-height: $line-height-base;
+  }
+}
+
+.form-warning {
+  background: $gradient-light-green;
+  border: 1px solid rgba($success-color, 0.2);
+  border-radius: $border-radius;
+  padding: $spacing-sm;
+  margin-top: $spacing-xs;
+  
+  .warning-title {
+    font-weight: 600;
+    color: $text-color-primary;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .warning-content {
+    color: $text-color-secondary;
+    font-size: $font-size-sm;
+    line-height: $line-height-base;
+  }
+}
+
+.form-error-hint {
+  background: $gradient-danger;
+  border: 1px solid rgba($danger-color, 0.2);
+  border-radius: $border-radius;
+  padding: $spacing-sm;
+  margin-top: $spacing-xs;
+  
+  .error-title {
+    font-weight: 600;
+    color: $text-color-primary;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .error-content {
+    color: $text-color-secondary;
+    font-size: $font-size-sm;
+    line-height: $line-height-base;
+  }
+}
+
+// 表单字段组样式
+.form-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-sm;
+  padding: $spacing-md;
+  background: $bg-color-light;
+  border-radius: $border-radius;
+  border: 1px solid $border-color-lighter;
+  
+  .field-group-title {
+    font-weight: 600;
+    color: $text-color-primary;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .field-group-description {
+    font-size: $font-size-sm;
+    color: $text-color-secondary;
+    margin-bottom: $spacing-sm;
+  }
+}
+
+// 表单布局样式
+.form-layout-horizontal {
+  .el-form-item {
+    display: flex;
+    align-items: flex-start;
+    
+    .el-form-item__label {
+      flex-shrink: 0;
+      width: 120px;
+      text-align: right;
+      padding-right: $spacing-sm;
+    }
+    
+    .el-form-item__content {
+      flex: 1;
+    }
+  }
+}
+
+.form-layout-vertical {
+  .el-form-item {
+    display: block;
+    
+    .el-form-item__label {
+      display: block;
+      text-align: left;
+      margin-bottom: $spacing-xs;
+    }
+    
+    .el-form-item__content {
+      width: 100%;
+    }
+  }
+}
+
+// 响应式表单
+@media (max-width: map-get($breakpoints, 'sm')) {
+  .form-group {
+    flex-direction: column;
+    gap: $spacing-sm;
+  }
+  
+  .form-layout-horizontal {
+    .el-form-item {
+      flex-direction: column;
+      align-items: stretch;
+      
+      .el-form-item__label {
+        width: 100%;
+        text-align: left;
+        margin-bottom: $spacing-xs;
+      }
+    }
+  }
+  
+  .form-actions {
+    flex-direction: column;
+    background-color: $primary-gradient-color3;
+    .el-button {
+      width: 100%;
+    }
+  }
+}
+
+/*
+使用说明：
+
+1. 基础表单容器：
+   <el-form class="form-container">
+     <!-- 表单内容 -->
+   </el-form>
+
+2. 表单区域：
+   <div class="form-section">
+     <div class="form-section-header">
+       <h3 class="section-title">标题</h3>
+       <p class="section-subtitle">副标题</p>
+     </div>
+     <!-- 表单字段 -->
+   </div>
+
+3. 表单提示：
+   <div class="form-item-tip">提示文本</div>
+
+4. 表单操作按钮：
+   <div class="form-actions">
+     <el-button>取消</el-button>
+     <el-button type="primary">保存</el-button>
+   </div>
+
+5. 表单字段组：
+   <div class="form-field-group">
+     <div class="field-group-title">字段组标题</div>
+     <div class="field-group-description">字段组描述</div>
+     <!-- 表单字段 -->
+   </div>
+
+6. 表单布局：
+   - form-layout-horizontal: 水平布局
+   - form-layout-vertical: 垂直布局
+   - form-compact: 紧凑布局
+   - form-spacious: 宽松布局
+
+7. 表单状态：
+   - form-disabled: 禁用状态
+   - form-loading: 加载状态
+   - form-error: 错误状态
+   - form-success: 成功状态
+
+8. 表单提示样式：
+   - form-hint: 信息提示
+   - form-warning: 警告提示
+   - form-error-hint: 错误提示
+*/ 

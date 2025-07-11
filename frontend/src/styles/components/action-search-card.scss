@@ -1,0 +1,90 @@
+/* ActionSearchCard 全局样式 */
+.action-search-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  border: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.action-search-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
+  border-radius: 16px 16px 0 0;
+}
+
+.action-search-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 32px !important;
+  .el-form {
+    height: 32px !important;
+  }
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.search-form .search-input .el-input__wrapper {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.search-form .search-input .el-input__wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-form .search-input .el-input__wrapper.is-focus {
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
+  border-color: #4f8ef7;
+}
+
+.search-form .creator-select .el-input__wrapper {
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.search-form .creator-select .el-input__wrapper:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.search-form .creator-select .el-input__wrapper.is-focus {
+  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
+  border-color: #4f8ef7;
+}
+
+/* 用户下拉选择器样式 */
+.el-select-dropdown__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+}
+
+.el-select-dropdown__item .option-text {
+  flex: 1;
+  font-weight: 500;
+}
+
+.el-select-dropdown__item .el-tag {
+  margin-left: 8px;
+  font-size: 11px;
+  padding: 2px 6px;
+} 

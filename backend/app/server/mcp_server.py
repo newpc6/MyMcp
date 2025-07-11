@@ -252,6 +252,7 @@ def start_mcp_server():
     # 导入中间件和路由配置 - 在函数内部导入，避免循环导入
     from app.middleware.logging_middleware import APILoggingMiddleware
     from app.middleware.tool_execution_middleware import ToolExecutionMiddleware
+    from app.middleware.mcp_auth_middleware import McpAuthMiddleware
     from app.models.engine import init_db
     init_db()
 
@@ -286,6 +287,8 @@ def start_mcp_server():
     app.add_middleware(APILoggingMiddleware)
     # 添加工具执行中间件
     app.add_middleware(ToolExecutionMiddleware)
+    # 添加MCP鉴权中间件
+    app.add_middleware(McpAuthMiddleware)
 
     # 在实例创建后导入和注册路由，避免循环导入
     from app.api.urls import get_router

@@ -3,77 +3,35 @@
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
-        <div class="title-section">
-          <h1 class="page-title">
-            <el-icon class="title-icon">
-              <Promotion />
-            </el-icon>
-            MCP服务管理
-          </h1>
-          <!-- <p class="page-subtitle">管理和监控您的MCP服务实例</p> -->
-        </div>
-        
         <!-- 搜索和操作区域 -->
         <div class="header-actions">
           <div class="search-section">
-            <el-input 
-              v-model="pageQuery.condition.name" 
-              placeholder="搜索服务名称" 
-              clearable 
-              @clear="handleSearch"
-              @keyup.enter="handleSearch" 
-              class="search-input"
-            >
+            <el-input v-model="pageQuery.condition.name" placeholder="搜索服务名称" clearable @clear="handleSearch"
+              @keyup.enter="handleSearch" class="search-input">
               <template #prefix>
-                <el-icon><Search /></el-icon>
+                <el-icon>
+                  <Search />
+                </el-icon>
               </template>
             </el-input>
-            
-            <el-select 
-              v-model="pageQuery.condition.module_id" 
-              placeholder="选择模板" 
-              clearable 
-              @clear="handleSearch"
-              @change="handleSearch" 
-              class="filter-select"
-            >
-              <el-option 
-                v-for="(module, index) in modules" 
-                :key="index" 
-                :label="module.name" 
-                :value="module.id"
-              >
+
+            <el-select v-model="pageQuery.condition.module_id" placeholder="选择模板" clearable @clear="handleSearch"
+              @change="handleSearch" class="filter-select">
+              <el-option v-for="(module, index) in modules" :key="index" :label="module.name" :value="module.id">
                 <span class="option-text">{{ index + 1 }}. {{ module.name }}</span>
               </el-option>
             </el-select>
-            
-            <el-select 
-              v-model="pageQuery.condition.status" 
-              placeholder="选择状态" 
-              clearable 
-              @clear="handleSearch"
-              @change="handleSearch" 
-              class="filter-select"
-            >
+
+            <el-select v-model="pageQuery.condition.status" placeholder="选择状态" clearable @clear="handleSearch"
+              @change="handleSearch" class="filter-select">
               <el-option label="运行中" value="running" />
               <el-option label="已停止" value="stopped" />
               <el-option label="错误" value="error" />
             </el-select>
-            
-            <el-select 
-              v-model="pageQuery.condition.user_id" 
-              placeholder="选择创建者" 
-              clearable 
-              @clear="handleSearch"
-              @change="handleSearch" 
-              class="filter-select"
-            >
-              <el-option 
-                v-for="(user, index) in users" 
-                :key="user.id" 
-                :label="user.username" 
-                :value="user.id"
-              >
+
+            <el-select v-model="pageQuery.condition.user_id" placeholder="选择创建者" clearable @clear="handleSearch"
+              @change="handleSearch" class="filter-select">
+              <el-option v-for="(user, index) in users" :key="user.id" :label="user.username" :value="user.id">
                 <span class="option-text">{{ index + 1 }}. {{ user.username }}</span>
                 <el-icon v-if="user.is_admin" class="admin-icon">
                   <UserFilled />
@@ -81,33 +39,26 @@
               </el-option>
             </el-select>
           </div>
-          
+
           <div class="action-buttons">
-            <el-button 
-              type="primary" 
-              @click="handleSearch" 
-              class="search-btn"
-            >
-              <el-icon><Search /></el-icon>
+            <el-button type="primary" @click="handleSearch" class="search-btn">
+              <el-icon>
+                <Search />
+              </el-icon>
               搜索
             </el-button>
-            
-            <el-button 
-              type="default" 
-              @click="loadServices" 
-              :loading="loading" 
-              class="refresh-btn"
-            >
-              <el-icon><Refresh /></el-icon>
+
+            <el-button type="default" @click="loadServices" :loading="loading" class="refresh-btn">
+              <el-icon>
+                <Refresh />
+              </el-icon>
               刷新
             </el-button>
-            
-            <el-button 
-              type="success" 
-              @click="showCreateThirdPartyDialog" 
-              class="create-btn"
-            >
-              <el-icon><Plus /></el-icon>
+
+            <el-button type="success" @click="showCreateThirdPartyDialog" class="create-btn">
+              <el-icon>
+                <Plus />
+              </el-icon>
               创建第三方服务
             </el-button>
           </div>
@@ -118,52 +69,34 @@
     <!-- 服务卡片网格 -->
     <div class="services-grid" v-loading="loading">
       <!-- 服务卡片 -->
-      <div 
-        v-for="service in services" 
-        :key="service.id"
-        class="service-card"
-        :class="{ 'service-running': service.status === 'running' }"
-      >
+      <div v-for="service in services" :key="service.id" class="service-card"
+        :class="{ 'service-running': service.status === 'running' }">
         <div class="card-header">
           <div class="status-section">
             <div class="status-indicator" :class="getStatusClass(service.status)">
               <span class="status-dot"></span>
               <span class="status-text">{{ getStatusText(service.status) }}</span>
             </div>
-            
+
             <div class="service-type-badge">
-              <el-tag 
-                :type="service.service_type === 2 ? 'warning' : 'primary'" 
-                size="small" 
-                effect="light"
-              >
+              <el-tag :type="service.service_type === 2 ? 'warning' : 'primary'" size="small" effect="light">
                 {{ service.service_type_name || '内置服务' }}
               </el-tag>
             </div>
-            
+
             <div class="visibility-badge">
-              <el-tooltip 
-                :content="canManageService(service) ? '点击切换公开/私有状态' : (service.is_public ? '公开服务' : '私有服务')" 
-                placement="top"
-              >
-                <el-tag 
-                  :type="service.is_public ? 'success' : 'info'" 
-                  size="small" 
-                  effect="light"
+              <el-tooltip :content="canManageService(service) ? '点击切换公开/私有状态' : (service.is_public ? '公开服务' : '私有服务')"
+                placement="top">
+                <el-tag :type="service.is_public ? 'success' : 'info'" size="small" effect="light"
                   @click.stop="canManageService(service) ? handleToggleVisibility(service) : null"
-                  :class="{ 'clickable-tag': canManageService(service) }"
-                >
+                  :class="{ 'clickable-tag': canManageService(service) }">
                   {{ service.is_public ? '公开' : '私有' }}
                 </el-tag>
               </el-tooltip>
             </div>
-            
+
             <div class="protocol-badge">
-              <el-tag 
-                :type="getProtocolTagType(service.protocol_type)" 
-                size="small" 
-                effect="light"
-              >
+              <el-tag :type="getProtocolTagType(service.protocol_type)" size="small" effect="light">
                 {{ getProtocolText(service.protocol_type) }}
               </el-tag>
             </div>
@@ -180,50 +113,38 @@
             <!-- 有权限时显示管理按钮 -->
             <div v-else class="action-buttons">
               <el-tooltip content="参数管理" v-if="hasConfigParams(service)">
-                <el-button 
-                  type="info" 
-                  circle 
-                  size="small" 
-                  @click.stop="handleViewServiceParams(service)"
-                  class="action-btn"
-                >
-                  <el-icon><Setting /></el-icon>
+                <el-button type="info" circle size="small" @click.stop="handleViewServiceParams(service)"
+                  class="action-btn">
+                  <el-icon>
+                    <Setting />
+                  </el-icon>
                 </el-button>
               </el-tooltip>
 
               <el-tooltip content="启动服务" v-if="service.status !== 'running'">
-                <el-button 
-                  type="success" 
-                  circle 
-                  size="small" 
-                  @click.stop="handleStartService(service)"
-                  class="action-btn"
-                >
-                  <el-icon><VideoPlay /></el-icon>
+                <el-button type="success" circle size="small" @click.stop="handleStartService(service)"
+                  class="action-btn">
+                  <el-icon>
+                    <VideoPlay />
+                  </el-icon>
                 </el-button>
               </el-tooltip>
 
               <el-tooltip content="停止服务" v-if="service.status === 'running'">
-                <el-button 
-                  type="warning" 
-                  circle 
-                  size="small" 
-                  @click.stop="handleStopService(service)"
-                  class="action-btn"
-                >
-                  <el-icon><VideoPause /></el-icon>
+                <el-button type="warning" circle size="small" @click.stop="handleStopService(service)"
+                  class="action-btn">
+                  <el-icon>
+                    <VideoPause />
+                  </el-icon>
                 </el-button>
               </el-tooltip>
 
               <el-tooltip content="删除服务">
-                <el-button 
-                  type="danger" 
-                  circle 
-                  size="small" 
-                  @click.stop="handleUninstallService(service)"
-                  class="action-btn"
-                >
-                  <el-icon><Delete /></el-icon>
+                <el-button type="danger" circle size="small" @click.stop="handleUninstallService(service)"
+                  class="action-btn">
+                  <el-icon>
+                    <Delete />
+                  </el-icon>
                 </el-button>
               </el-tooltip>
             </div>
@@ -259,28 +180,23 @@
                 </el-tooltip>
                 <div class="url-actions">
                   <el-tooltip content="复制URL" placement="top">
-                    <el-button 
-                      link 
-                      type="primary" 
-                      @click.stop="copyToClipboard(service.sse_url)" 
-                      class="url-btn"
-                    >
-                      <el-icon><CopyDocument /></el-icon>
+                    <el-button link type="primary" @click.stop="copyToClipboard(service.sse_url)" class="url-btn">
+                      <el-icon>
+                        <CopyDocument />
+                      </el-icon>
                     </el-button>
                   </el-tooltip>
                   <el-tooltip content="复制为egovakb格式" placement="top">
-                    <el-button 
-                      link 
-                      type="success" 
-                      @click.stop="copyAsEgovakbUrl(service.sse_url, service.protocol_type)" 
-                      class="url-btn"
-                    >
-                      <el-icon><Connection /></el-icon>
+                    <el-button link type="success"
+                      @click.stop="copyAsEgovakbUrl(service.sse_url, service.protocol_type)" class="url-btn">
+                      <el-icon>
+                        <Connection />
+                      </el-icon>
                     </el-button>
                   </el-tooltip>
                 </div>
               </div>
-              
+
               <div v-if="service.status === 'error'" class="error-message">
                 <el-text type="danger" size="small">
                   {{ service.error_message }}
@@ -292,7 +208,7 @@
       </div>
 
       <!-- 添加新服务卡片 -->
-      <div class="add-service-card" @click="goToCreateService">
+      <!-- <div class="add-service-card" @click="goToCreateService">
         <div class="add-content">
           <el-icon class="add-icon">
             <Plus />
@@ -300,7 +216,7 @@
           <span class="add-text">创建新服务</span>
           <span class="add-subtitle">点击开始创建MCP服务</span>
         </div>
-      </div>
+      </div> -->
 
       <!-- 空状态 -->
       <div v-if="services.length === 0 && !loading" class="empty-state">
@@ -311,11 +227,15 @@
           </template>
           <div class="empty-actions">
             <el-button type="primary" @click="goToCreateService" size="large">
-              <el-icon><Plus /></el-icon>
+              <el-icon>
+                <Plus />
+              </el-icon>
               创建服务
             </el-button>
             <el-button @click="loadServices" size="large">
-              <el-icon><Refresh /></el-icon>
+              <el-icon>
+                <Refresh />
+              </el-icon>
               刷新
             </el-button>
           </div>
@@ -324,37 +244,20 @@
     </div>
 
     <!-- 分页组件 -->
-    <div v-if="!loading && total > 0" class="pagination-wrapper">
+    <div v-if="!loading && total > 0" class="pagination-container">
       <el-config-provider :locale="zhCn">
-        <el-pagination 
-          :current-page="currentPage" 
-          :page-size="pageSize" 
-          :page-sizes="[7, 11, 15, 19]"
-          :background="true" 
-          layout="total, sizes, prev, pager, next, jumper" 
-          :total="total"
-          @size-change="handleSizeChange" 
-          @current-change="handleCurrentChange"
-          class="pagination"
-        />
+        <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 15]"
+          :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
+          @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination" />
       </el-config-provider>
     </div>
 
     <!-- 服务参数管理对话框 -->
-    <el-dialog 
-      v-model="serviceParamsDialogVisible" 
-      title="服务参数管理" 
-      width="50%" 
-      :destroy-on-close="true"
-      class="params-dialog"
-    >
-      <ServiceParamsManager 
-        v-if="currentService && currentServiceSchema" 
-        :config-params="serviceParamsForm"
-        :config-schema="currentServiceSchema" 
-        @update:config-params="updateServiceParamsForm"
-        ref="serviceParamsManagerRef" 
-      />
+    <el-dialog v-model="serviceParamsDialogVisible" title="服务参数管理" width="50%" :destroy-on-close="true"
+      class="params-dialog">
+      <ServiceParamsManager v-if="currentService && currentServiceSchema" :config-params="serviceParamsForm"
+        :config-schema="currentServiceSchema" @update:config-params="updateServiceParamsForm"
+        ref="serviceParamsManagerRef" />
       <div v-else class="dialog-empty">
         <el-empty description="无法加载服务参数" :image-size="60" />
       </div>
@@ -362,11 +265,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="serviceParamsDialogVisible = false">取消</el-button>
-          <el-button 
-            type="primary" 
-            @click="updateServiceParams" 
-            :loading="updatingParams"
-          >
+          <el-button type="primary" @click="updateServiceParams" :loading="updatingParams">
             更新参数
           </el-button>
         </div>
@@ -374,46 +273,24 @@
     </el-dialog>
 
     <!-- 创建第三方服务对话框 -->
-    <el-dialog 
-      v-model="createThirdPartyDialogVisible" 
-      title="创建第三方MCP服务" 
-      width="50%" 
-      :destroy-on-close="true"
-      class="create-dialog"
-    >
-      <el-form 
-        ref="thirdPartyFormRef" 
-        :model="thirdPartyForm" 
-        :rules="thirdPartyRules" 
-        label-width="120px"
-        class="third-party-form"
-      >
+    <el-dialog v-model="createThirdPartyDialogVisible" title="创建第三方MCP服务" width="50%" :destroy-on-close="true"
+      class="create-dialog">
+      <el-form ref="thirdPartyFormRef" :model="thirdPartyForm" :rules="thirdPartyRules" label-width="120px"
+        class="third-party-form">
         <el-form-item label="服务名称" prop="service_name">
-          <el-input 
-            v-model="thirdPartyForm.service_name" 
-            placeholder="请输入服务名称"
-            clearable
-          />
+          <el-input v-model="thirdPartyForm.service_name" placeholder="请输入服务名称" clearable />
         </el-form-item>
-        
+
         <el-form-item label="SSE URL" prop="sse_url">
-          <el-input 
-            v-model="thirdPartyForm.sse_url" 
-            placeholder="请输入第三方MCP服务的SSE URL，如：https://example.com/sse"
-            clearable
-          />
+          <el-input v-model="thirdPartyForm.sse_url" placeholder="请输入第三方MCP服务的SSE URL，如：https://example.com/sse"
+            clearable />
         </el-form-item>
-        
+
         <el-form-item label="服务描述" prop="description">
-          <el-input 
-            v-model="thirdPartyForm.description" 
-            type="textarea" 
-            :rows="3"
-            placeholder="请输入服务描述（可选）"
-            clearable
-          />
+          <el-input v-model="thirdPartyForm.description" type="textarea" :rows="3" placeholder="请输入服务描述（可选）"
+            clearable />
         </el-form-item>
-        
+
         <el-form-item label="访问权限" prop="is_public">
           <el-radio-group v-model="thirdPartyForm.is_public">
             <el-radio :label="false">私有</el-radio>
@@ -429,11 +306,7 @@
       <template #footer>
         <div class="dialog-footer">
           <el-button @click="createThirdPartyDialogVisible = false">取消</el-button>
-          <el-button 
-            type="primary" 
-            @click="createThirdPartyService" 
-            :loading="creatingThirdParty"
-          >
+          <el-button type="primary" @click="createThirdPartyService" :loading="creatingThirdParty">
             创建服务
           </el-button>
         </div>
@@ -447,16 +320,16 @@ import { ref, onMounted, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
-import { 
-  VideoPlay, 
-  VideoPause, 
-  Delete, 
-  Refresh, 
-  CopyDocument, 
-  Plus, 
-  Connection, 
-  Lock, 
-  Setting, 
+import {
+  VideoPlay,
+  VideoPause,
+  Delete,
+  Refresh,
+  CopyDocument,
+  Plus,
+  Connection,
+  Lock,
+  Setting,
   Search,
   Promotion,
   UserFilled
@@ -489,7 +362,7 @@ const services = ref<McpServiceInfo[]>([]);
 
 // 分页相关状态
 const currentPage = ref(1);
-const pageSize = ref(7);
+const pageSize = ref(6);
 const total = ref(0);
 
 // 用户信息
@@ -527,10 +400,10 @@ const thirdPartyRules = ref({
   ],
   sse_url: [
     { required: true, message: '请输入SSE URL', trigger: 'blur' },
-    { 
-      pattern: /^https?:\/\/[^\s/$.?#].[^\s]*$/, 
-      message: '请输入有效的HTTP/HTTPS URL', 
-      trigger: 'blur' 
+    {
+      pattern: /^https?:\/\/[^\s/$.?#].[^\s]*$/,
+      message: '请输入有效的HTTP/HTTPS URL',
+      trigger: 'blur'
     }
   ]
 });
@@ -557,7 +430,7 @@ const users = ref<{ id: number, username: string, is_admin: boolean }[]>([]);
 const loadModules = async () => {
   try {
     const data = await listModules();
-    if (data ) {
+    if (data) {
       modules.value = data.data;
     }
   } catch (error) {
@@ -777,13 +650,13 @@ const handleToggleVisibility = async (service: McpServiceInfo) => {
     );
 
     await updateServiceVisibility(service.id, newVisibility);
-    
+
     ElNotification({
       title: '成功',
       message: `服务已设置为${actionText}`,
       type: 'success'
     });
-    
+
     // 重新加载服务列表
     await loadServices();
   } catch (error: any) {
@@ -1057,8 +930,8 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.98);
   backdrop-filter: blur(20px);
   border-radius: 24px;
-  padding: 32px;
-  margin-bottom: 32px;
+  padding: 16px;
+  margin-bottom: 16px;
   box-shadow: 0 12px 40px rgba(25, 118, 210, 0.15);
   border: 1px solid rgba(25, 118, 210, 0.1);
   position: relative;
@@ -1078,8 +951,15 @@ onMounted(() => {
 }
 
 @keyframes shimmer {
-  0%, 100% { background-position: 200% 0; }
-  50% { background-position: -200% 0; }
+
+  0%,
+  100% {
+    background-position: 200% 0;
+  }
+
+  50% {
+    background-position: -200% 0;
+  }
 }
 
 .header-content {
@@ -1368,9 +1248,11 @@ onMounted(() => {
   0% {
     box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(76, 175, 80, 0);
   }
+
   100% {
     box-shadow: 0 0 0 4px rgba(76, 175, 80, 0);
   }
@@ -1380,9 +1262,11 @@ onMounted(() => {
   0% {
     box-shadow: 0 0 0 4px rgba(244, 67, 54, 0.3);
   }
+
   70% {
     box-shadow: 0 0 0 10px rgba(244, 67, 54, 0);
   }
+
   100% {
     box-shadow: 0 0 0 4px rgba(244, 67, 54, 0);
   }
@@ -1744,47 +1628,6 @@ onMounted(() => {
   box-shadow: 0 10px 25px rgba(25, 118, 210, 0.3);
 }
 
-.pagination-wrapper {
-  display: flex;
-  justify-content: center;
-  margin-top: 40px;
-  padding: 24px 0;
-}
-
-.pagination {
-  background: rgba(255, 255, 255, 0.98);
-  backdrop-filter: blur(20px);
-  border-radius: 20px;
-  padding: 20px 32px;
-  box-shadow: 0 12px 40px rgba(25, 118, 210, 0.15);
-  border: 1px solid rgba(25, 118, 210, 0.1);
-}
-
-.pagination :deep(.el-pagination__total),
-.pagination :deep(.el-pagination__sizes),
-.pagination :deep(.el-pagination__jump) {
-  color: #1565c0;
-  font-weight: 600;
-}
-
-.pagination :deep(.el-pager li) {
-  border-radius: 12px;
-  margin: 0 4px;
-  transition: all 0.3s ease;
-  font-weight: 600;
-}
-
-.pagination :deep(.el-pager li:hover) {
-  background: #e3f2fd;
-  color: #1976d2;
-}
-
-.pagination :deep(.el-pager li.is-active) {
-  background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
-  color: white;
-  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
-}
-
 .params-dialog {
   border-radius: 24px;
   overflow: hidden;
@@ -1882,47 +1725,47 @@ onMounted(() => {
   .mcp-services-container {
     padding: 16px;
   }
-  
+
   .page-header {
     padding: 24px;
   }
-  
+
   .header-content {
     flex-direction: column;
     gap: 24px;
   }
-  
+
   .header-actions {
     min-width: auto;
     width: 100%;
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-section {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
-  
+
   .search-input,
   .filter-select {
     width: 100%;
   }
-  
+
   .action-buttons {
     justify-content: center;
   }
-  
+
   .services-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .page-title {
     font-size: 24px;
   }
-  
+
   .title-section {
     min-width: auto;
   }
@@ -1949,32 +1792,32 @@ onMounted(() => {
     flex-direction: column;
     gap: 12px;
   }
-  
+
   .search-section {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .action-buttons {
     flex-direction: column;
     gap: 8px;
   }
-  
+
   .search-btn,
   .refresh-btn {
     width: 100%;
   }
-  
+
   .card-header {
     flex-direction: column;
     gap: 12px;
     align-items: flex-start;
   }
-  
+
   .action-section {
     align-self: flex-end;
   }
-  
+
   .meta-row {
     flex-direction: column;
     gap: 12px;
@@ -1986,40 +1829,40 @@ onMounted(() => {
   .mcp-services-container {
     background: linear-gradient(135deg, #0d1421 0%, #1a237e 50%, #283593 100%);
   }
-  
+
   .page-header,
   .service-card,
-  .pagination {
+  /* .pagination {
     background: rgba(13, 20, 33, 0.95);
     border-color: rgba(25, 118, 210, 0.3);
-  }
-  
+  } */
+
   .page-title {
     color: #64b5f6;
   }
-  
+
   .page-subtitle {
     color: #90caf9;
   }
-  
+
   .service-name {
     color: #64b5f6;
   }
-  
+
   .service-description,
   .meta-value {
     color: #b3e5fc;
   }
-  
+
   .url-container {
     background: linear-gradient(135deg, rgba(25, 118, 210, 0.2) 0%, rgba(13, 20, 33, 0.8) 100%);
     border-color: rgba(25, 118, 210, 0.4);
   }
-  
+
   .url-text {
     color: #81d4fa;
   }
-  
+
   .add-service-card {
     background: linear-gradient(135deg, rgba(25, 118, 210, 0.15) 0%, rgba(13, 20, 33, 0.95) 100%);
     border-color: #42a5f5;

@@ -37,6 +37,7 @@ export interface ApiResponse<T> {
   data: T
   message?: string
   success?: boolean
+  total?: number
 }
 
 /**
@@ -91,6 +92,12 @@ export interface McpServiceInfo {
   can_edit?: boolean // 是否可编辑/管理
   service_type?: number // 服务类型：1=内置服务, 2=第三方服务
   service_type_name?: string // 服务类型名称
+  // 鉴权相关字段
+  auth_required?: boolean // 是否启用鉴权
+  auth_mode?: string // 鉴权模式：secret=密钥鉴权, token=令牌鉴权
+  protocol_type?: number // 协议类型：1=SSE, 2=StreamableHttp
+  sse_path?: string // SSE路径
+  service_name?: string // 服务名称（用于显示）
 }
 
 /**

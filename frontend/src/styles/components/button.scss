@@ -1,0 +1,126 @@
+/* 全局按钮样式 */
+
+/* 基础按钮样式 */
+.el-button {
+  border-radius: 12px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0 2px;
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+.el-button:hover {
+  transform: translateY(-2px);
+}
+
+/* 成功按钮样式 */
+.el-button--success {
+  background: $success-gradient-color3;
+  border: none;
+}
+
+.el-button--success:hover {
+  background: $success-gradient-color-hover;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+/* 主要按钮样式 */
+.el-button--primary {
+  background: $primary-gradient-color3;
+  border: none;
+  border-radius: 12px;
+  padding: 8px 16px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.el-button--primary:hover {
+  background: $primary-gradient-color-hover;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+}
+
+/* 信息按钮样式 */
+.el-button--info {
+  background: $info-gradient-color;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.el-button--info:hover {
+  background: $info-gradient-color-hover;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(107, 114, 128, 0.3);
+}
+
+/* 警告按钮样式 */
+.el-button--warning {
+  background: $warning-gradient-color;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.el-button--warning:hover {
+  background: $warning-gradient-color-hover;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* 危险按钮样式 */
+.el-button--danger {
+  background: $danger-gradient-color;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.el-button--danger:hover {
+  background: $danger-gradient-color-hover;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* 次要按钮样式 */
+.el-button:not(.el-button--primary):not(.el-button--success):not(
+    .el-button--info
+  ):not(.el-button--warning):not(.el-button--danger) {
+  background: $gradient-light-light-blue;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.el-button:not(.el-button--primary):not(.el-button--success):not(
+    .el-button--info
+  ):not(.el-button--warning):not(.el-button--danger):hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+// /* 小尺寸按钮样式 */
+// .el-button--small {
+//   padding: 8px 16px;
+// }
+
+// /* 中等尺寸按钮样式 */
+// .el-button--medium {
+//   padding: 10px 20px;
+// }
+
+// /* 大尺寸按钮样式 */
+// .el-button--large {
+//   padding: 12px 24px;
+// }
+
+/* 圆形按钮样式 */
+.el-button.is-circle {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+}

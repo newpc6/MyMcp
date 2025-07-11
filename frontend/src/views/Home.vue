@@ -594,10 +594,4 @@ onMounted(() => {
     }
 }
 
-/* 分页容器 */
-.pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-}
 </style>

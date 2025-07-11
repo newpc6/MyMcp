@@ -135,6 +135,8 @@ class McpServiceManager:
         protocol_type = data.get("protocol_type", 1)  # 默认使用SSE协议
         custom_sse_path = data.get("sse_path", "").strip()  # 获取自定义SSE路径
         use_full_custom_path = data.get("use_full_custom_path", False)
+        auth_mode = data.get("auth_mode", "secret")
+        auth_required = data.get("auth_required", False)
 
         if not self._main_app:
             raise ValueError("主应用程序未初始化，无法发布服务")
@@ -257,7 +259,9 @@ class McpServiceManager:
                 user_id=user_id,
                 is_public=is_public,
                 config_params=params,
-                protocol_type=protocol_type  # 添加协议类型字段
+                protocol_type=protocol_type,
+                auth_mode=auth_mode,
+                auth_required=auth_required
             )
             db.add(service_record)
             db.commit()
@@ -541,6 +545,35 @@ class McpServiceManager:
                 McpService.service_uuid == service_uuid
             ).first()
             if service:
+                # 先删除关联的记录
+                from app.models.auth.mcp_service_secret import McpServiceSecret
+                from app.models.auth.mcp_access_log import McpAccessLog
+                from app.models.auth.mcp_secret_statistics import (
+                    McpSecretStatistics
+                )
+                
+                # 删除访问日志
+                access_logs = db.query(McpAccessLog).filter(
+                    McpAccessLog.service_id == service.id
+                ).all()
+                for log in access_logs:
+                    db.delete(log)
+                
+                # 删除统计信息
+                statistics = db.query(McpSecretStatistics).filter(
+                    McpSecretStatistics.service_id == service.id
+                ).all()
+                for stat in statistics:
+                    db.delete(stat)
+                
+                # 删除密钥记录
+                secrets = db.query(McpServiceSecret).filter(
+                    McpServiceSecret.service_id == service.id
+                ).all()
+                for secret in secrets:
+                    db.delete(secret)
+                
+                # 删除服务记录
                 db.delete(service)
                 db.commit()
                 return True
@@ -1082,6 +1115,10 @@ class McpServiceManager:
                 spec.loader.exec_module(module_obj)
                 mcp_logger.info(f"成功导入模块: {module_name}")
 
+                # 获取服务实例
+                server = self._running_services[service_uuid]["server"]
+                registered_tools = []
+                
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
                         module_obj, inspect.isfunction):
@@ -1094,13 +1131,43 @@ class McpServiceManager:
                         doc = inspect.getdoc(func)
 
                         # 将工具注册到对应的服务实例
-                        server = self._running_services[service_uuid]["server"]
-                        server.add_tool(func, name=name, description=doc)
+                        try:
+                            server.add_tool(func, name=name, description=doc)
+                            registered_tools.append(name)
+                        except Exception as e:
+                            mcp_logger.error(
+                                f"注册工具 {name} 失败: {str(e)}")
+                
+                # 记录注册的工具列表
+                mcp_logger.info(
+                    f"服务 {service_uuid} 成功注册了 {len(registered_tools)} 个工具: "
+                    f"{registered_tools}"
+                )
+                
+                # 验证工具是否真的注册到了服务实例中
+                try:
+                    if (hasattr(server, '_tool_manager')):
+                        available_tools = (
+                            server._tool_manager.list_tools()
+                        )
+                        tool_names = [tool.name for tool in available_tools]
                         mcp_logger.info(
-                            f"为服务 {service_uuid} 注册工具: {name}")
+                            f"服务 {service_uuid} 当前可用工具: {tool_names}"
+                        )
+                    else:
+                        mcp_logger.warning(
+                            f"服务 {service_uuid} 的MCP服务器结构异常"
+                        )
+                except Exception as e:
+                    mcp_logger.error(
+                        f"获取服务 {service_uuid} 工具列表失败: {str(e)}"
+                    )
+                    mcp_logger.info(f"服务 {service_uuid} 工具注册验证成功")
 
         except Exception as e:
             mcp_logger.error(f"为服务 {service_uuid} 注册工具失败: {str(e)}")
+            import traceback
+            mcp_logger.error(f"详细错误信息: {traceback.format_exc()}")
 
     def _create_mcp(self, service: McpService, module: McpModule):
         """创建MCP服务实例"""
@@ -1217,6 +1284,34 @@ class McpServiceManager:
         async def handle_sse(request: Request) -> None:
             try:
                 mcp_logger.info(f"开始处理SSE请求: service_uuid={service_uuid}")
+                
+                # 验证服务是否正在运行
+                if not self._running_services.get(service_uuid):
+                    mcp_logger.error(f"服务 {service_uuid} 不存在或已停止")
+                    return
+                
+                # 获取服务实例和MCP服务器
+                service_info = self._running_services[service_uuid]
+                server = service_info["server"]
+                mcp_server = server._mcp_server
+                
+                # 验证工具是否已注册
+                try:
+                    if hasattr(mcp_server, '_tool_manager'):
+                        available_tools = mcp_server._tool_manager.list_tools()
+                        tool_names = [tool.name for tool in available_tools]
+                        mcp_logger.info(
+                            f"SSE连接时服务 {service_uuid} 可用工具: {tool_names}"
+                        )
+                    else:
+                        mcp_logger.warning(
+                            f"服务 {service_uuid} 的MCP服务器缺少工具管理器"
+                        )
+                except Exception as e:
+                    mcp_logger.error(
+                        f"获取服务 {service_uuid} 工具列表失败: {str(e)}"
+                    )
+                
                 async with sse.connect_sse(
                         request.scope,
                         request.receive,
@@ -1235,6 +1330,8 @@ class McpServiceManager:
             except Exception as e:
                 mcp_logger.error(
                     f"处理SSE请求失败: service_uuid={service_uuid}, 错误: {str(e)}")
+                import traceback
+                mcp_logger.error(f"详细错误信息: {traceback.format_exc()}")
             finally:
                 mcp_logger.info(f"SSE连接关闭: service_uuid={service_uuid}")
 
@@ -1580,7 +1677,6 @@ class McpServiceManager:
                 }
                 for user in users
             ]
-
 
 # 创建全局实例
 service_manager = McpServiceManager()

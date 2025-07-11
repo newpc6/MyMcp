@@ -10,7 +10,7 @@ from starlette.responses import FileResponse
 import os
 from . import (
     auth, tools, mcp_service, history,
-    execution, log, marketplace, statistics, static, group, system
+    execution, log, marketplace, statistics, static, group, system, mcp_auth
 )
 from app.utils.logging import mcp_logger
 
@@ -97,6 +97,15 @@ def get_router(app) -> None:
     for route in marketplace.get_router():
         app.add_route(
             f"{settings.API_PREFIX}/marketplace{route.path}", 
+            route.endpoint, 
+            methods=route.methods, 
+            name=route.name
+        )
+    
+    # 添加MCP鉴权管理路由
+    for route in mcp_auth.get_router():
+        app.add_route(
+            f"{settings.API_PREFIX}/mcp-auth{route.path}", 
             route.endpoint, 
             methods=route.methods, 
             name=route.name

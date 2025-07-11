@@ -1,0 +1,32 @@
+.el-tag {
+  border-radius: 16px;
+  padding: 0 10px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.el-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.el-tag--success {
+  background: $success-gradient-color;
+  color: white;
+}
+
+.el-tag--warning {
+  background: $warning-gradient-color;
+  color: white;
+}
+
+.el-tag--danger {
+  background: $danger-gradient-color;
+  color: white;
+}
+
+.el-tag--info {
+  background: $info-gradient-color;
+  color: white;
+}

@@ -1,0 +1,436 @@
+// 序号单元格样式
+.index-cell {
+  background: $gradient-index-primary;
+  color: white;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: bold;
+  margin: 0 auto;
+  box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
+  transition: $transition-all;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(64, 158, 255, 0.4);
+  }
+}
+
+// 序号单元格状态变体
+.index-cell-success {
+  background: $gradient-index-success;
+  box-shadow: 0 2px 4px rgba(82, 196, 26, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(82, 196, 26, 0.4);
+  }
+}
+
+.index-cell-warning {
+  background: $gradient-index-warning;
+  box-shadow: 0 2px 4px rgba(250, 173, 20, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(250, 173, 20, 0.4);
+  }
+}
+
+.index-cell-danger {
+  background: $gradient-index-danger;
+  box-shadow: 0 2px 4px rgba(245, 34, 45, 0.3);
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(245, 34, 45, 0.4);
+  }
+}
+
+// Element Plus 表格全局样式
+.el-table {
+  font-family: $font-family;
+  font-size: $font-size-base;
+  color: $text-color-primary;
+  background-color: $bg-color;
+  border-radius: $border-radius-lg;
+  overflow: hidden;
+  box-shadow: $box-shadow-light;
+
+  // 表格头部样式
+  .el-table__header-wrapper {
+    .el-table__header {
+      th {
+        background: $gradient-table-header;
+        color: $text-color-primary;
+        font-weight: 600;
+        font-size: $font-size-base;
+        border-bottom: 2px solid $border-color-light;
+        padding: $spacing-md $spacing-sm;
+        position: relative;
+
+        // 添加头部装饰线
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 3px;
+          background: $gradient-blue;
+          opacity: 0.8;
+        }
+
+        .cell {
+          color: $text-color-primary;
+          font-weight: 600;
+        }
+
+        &:hover {
+          background: $gradient-card-header;
+          transform: translateY(-1px);
+          transition: $transition-all;
+        }
+      }
+    }
+  }
+
+  // 表格主体样式
+  .el-table__body-wrapper {
+    .el-table__body {
+      tr {
+        transition: $transition-all;
+
+        &:hover {
+          background: $gradient-table-hover;
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(64, 158, 255, 0.1);
+        }
+
+        &:nth-child(even) {
+          background: $gradient-table-stripe;
+        }
+
+        td {
+          padding: $spacing-md $spacing-sm;
+          border-bottom: 1px solid $border-color-extra-light;
+
+          .cell {
+            color: $text-color-regular;
+            line-height: $line-height-base;
+
+            // 文本截断样式
+            &.el-tooltip {
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 空数据样式
+  .el-table__empty-block {
+    background: $gradient-card-body;
+
+    .el-table__empty-text {
+      color: $text-color-placeholder;
+      font-size: $font-size-base;
+    }
+  }
+
+  // 固定列样式
+  .el-table__fixed,
+  .el-table__fixed-right {
+    box-shadow: $box-shadow-base;
+
+    .el-table__fixed-header-wrapper,
+    .el-table__fixed-body-wrapper {
+      background: $gradient-card-body;
+    }
+  }
+
+  // 排序样式
+  .el-table__column-resize-proxy {
+    border-left: 2px solid $primary-color;
+  }
+
+  // 排序图标样式
+  .caret-wrapper {
+    .sort-caret {
+      &.ascending {
+        border-bottom-color: $primary-color;
+      }
+
+      &.descending {
+        border-top-color: $primary-color;
+      }
+    }
+  }
+
+  // 选择框样式
+  .el-checkbox {
+    .el-checkbox__input {
+      &.is-checked {
+        .el-checkbox__inner {
+          background: $gradient-button-primary;
+          border-color: $primary-color;
+        }
+      }
+
+      &.is-indeterminate {
+        .el-checkbox__inner {
+          background: $gradient-button-primary;
+          border-color: $primary-color;
+        }
+      }
+    }
+  }
+
+  // 加载状态样式
+  &.is-loading {
+    .el-table__loading-wrapper {
+      background: $gradient-card-body;
+
+      .el-loading-spinner {
+        .el-loading-text {
+          color: $text-color-regular;
+        }
+      }
+    }
+  }
+
+  // 边框样式
+  &.el-table--border {
+    border: 1px solid $border-color-light;
+
+    .el-table__header-wrapper {
+      th {
+        border-right: 1px solid $border-color-light;
+      }
+    }
+
+    .el-table__body-wrapper {
+      td {
+        border-right: 1px solid $border-color-extra-light;
+      }
+    }
+  }
+
+  // 条纹样式
+  &.el-table--striped {
+    .el-table__body {
+      tr.el-table__row--striped {
+        background: $gradient-table-stripe;
+
+        &:hover {
+          background: $gradient-table-hover;
+        }
+      }
+    }
+  }
+
+  // 响应式样式
+  @media (max-width: 768px) {
+    font-size: $font-size-sm;
+
+    .el-table__header-wrapper th,
+    .el-table__body-wrapper td {
+      padding: $spacing-sm $spacing-xs;
+    }
+
+    .el-table__header-wrapper th .cell,
+    .el-table__body-wrapper td .cell {
+      font-size: $font-size-sm;
+    }
+  }
+}
+
+// 表格标签样式
+.el-table {
+  .el-tag {
+    border-radius: $border-radius;
+    font-size: $font-size-sm;
+    padding: $spacing-xs $spacing-sm;
+    border: none;
+    font-weight: 500;
+
+    &.el-tag--success {
+      background: $gradient-success;
+      color: $success-color;
+    }
+
+    &.el-tag--danger {
+      background: $gradient-danger;
+      color: $danger-color;
+    }
+
+    &.el-tag--warning {
+      background: $gradient-warning;
+      color: $warning-color;
+    }
+
+    &.el-tag--info {
+      background: $gradient-info;
+      color: $info-color;
+    }
+  }
+}
+
+// 分页容器样式
+// .pagination-container {
+//   margin-top: $spacing-lg;
+//   padding: $spacing-md 0;
+//   display: flex;
+//   justify-content: flex-end;
+//   border-top: 1px solid $border-color-extra-light;
+//   background: $gradient-card-body;
+
+//   .el-pagination {
+//     .el-pagination__total {
+//       color: $text-color-regular;
+//       font-size: $font-size-sm;
+//       font-weight: 500;
+//     }
+
+//     .el-pagination__sizes {
+//       .el-select {
+//         .el-input__inner {
+//           font-size: $font-size-sm;
+//           background: $gradient-card-body;
+//         }
+//       }
+//     }
+
+//     .btn-prev,
+//     .btn-next {
+//       background: $gradient-card-body;
+//       color: $text-color-regular;
+//       border: 1px solid $border-color-light;
+//       border-radius: $border-radius;
+//       transition: $transition-all;
+
+//       &:hover {
+//         background: $gradient-pagination-hover;
+//         color: $primary-color;
+//         border-color: $primary-color;
+//         transform: translateY(-1px);
+//       }
+
+//       &.disabled {
+//         color: $text-color-placeholder;
+//         border-color: $border-color-extra-light;
+//         background: $bg-color-light;
+//       }
+//     }
+
+//     .el-pager {
+//       li {
+//         background: $gradient-card-body;
+//         color: $text-color-regular;
+//         border: 1px solid $border-color-light;
+//         margin: 0 $spacing-xs;
+//         border-radius: $border-radius;
+//         transition: $transition-all;
+
+//         &:hover {
+//           background: $gradient-pagination-hover;
+//           color: $primary-color;
+//           border-color: $primary-color;
+//           transform: translateY(-1px);
+//         }
+
+//         &.active {
+//           background: $gradient-pagination-active;
+//           color: white;
+//           border-color: $primary-color;
+//           box-shadow: 0 2px 4px rgba(64, 158, 255, 0.3);
+//         }
+//       }
+//     }
+
+//     .el-pagination__jump {
+//       color: $text-color-regular;
+//       font-size: $font-size-sm;
+
+//       .el-input__inner {
+//         font-size: $font-size-sm;
+//         background: $gradient-card-body;
+//       }
+//     }
+//   }
+
+//   // 响应式分页样式
+//   @media (max-width: 768px) {
+//     justify-content: center;
+
+//     .el-pagination {
+//       .el-pagination__total,
+//       .el-pagination__jump {
+//         display: none;
+//       }
+//     }
+//   }
+// }
+
+// 表格卡片样式增强
+.logs-card {
+  .el-card__header {
+    background: $gradient-card-header;
+    border-bottom: 1px solid $border-color-light;
+    padding: $spacing-md $spacing-lg;
+
+    h3 {
+      color: $text-color-primary;
+      font-size: $font-size-lg;
+      font-weight: 600;
+      margin: 0;
+    }
+  }
+
+  .el-card__body {
+    padding: $spacing-lg;
+    background: $gradient-card-body;
+  }
+}
+
+// 表格行状态样式
+.el-table {
+  .table-row-success {
+    background: $gradient-success !important;
+
+    &:hover {
+      background: rgba(82, 196, 26, 0.15) !important;
+    }
+  }
+
+  .table-row-warning {
+    background: $gradient-warning !important;
+
+    &:hover {
+      background: rgba(250, 173, 20, 0.15) !important;
+    }
+  }
+
+  .table-row-danger {
+    background: $gradient-danger !important;
+
+    &:hover {
+      background: rgba(245, 34, 45, 0.15) !important;
+    }
+  }
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .info-value {
+    font-size: 14px;
+    color: #303133;
+  }
+}

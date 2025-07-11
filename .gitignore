@@ -103,3 +103,5 @@ mcp.service
 backend/server.log
 deploy
 dev.md
+MCP服务鉴权功能实施计划.md
+cmd.md

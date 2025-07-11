@@ -4,13 +4,15 @@
 使用Starlette框架
 """
 from starlette.responses import JSONResponse
+from app.utils.const.error_code import error_code
 
 
 def success_response(
     data=None, 
     message="操作成功", 
-    code=0, 
-    http_status_code=200
+    code=error_code.SUCCESS, 
+    http_status_code=200,
+    total=None
 ):
     """
     成功响应
@@ -31,7 +33,10 @@ def success_response(
     
     if data is not None:
         response["data"] = data
+    if total is not None:
+        response["total"] = total
     
+
     return JSONResponse(content=response, status_code=http_status_code)
 
 
@@ -39,7 +44,8 @@ def error_response(
     message="操作失败", 
     data=None, 
     code=400, 
-    http_status_code=400
+    http_status_code=400,
+    total=None
 ):
     """
     错误响应
@@ -60,5 +66,7 @@ def error_response(
     
     if data is not None:
         response["data"] = data
+    if total is not None:
+        response["total"] = total
     
     return JSONResponse(content=response, status_code=http_status_code) 

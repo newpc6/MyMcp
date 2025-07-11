@@ -20,7 +20,7 @@
         </el-select>
       </el-form-item>
 
-      <el-form-item label="服务详情">
+      <el-form-item label="模板详情">
         <div class="markdown-container">
           <div class="markdown-edit-area">
             <div class="edit-header">
@@ -134,6 +134,8 @@
           <el-radio :value="false">私有</el-radio>
         </el-radio-group>
       </el-form-item>
+
+      <!-- 移除鉴权配置，因为鉴权配置应该在服务发布时和发布后进行管理 -->
     </el-form>
 
     <div class="form-actions">
@@ -185,6 +187,8 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 移除密钥管理对话框和访问日志对话框，因为这些应该在服务发布后管理 -->
   </div>
 </template>
 
