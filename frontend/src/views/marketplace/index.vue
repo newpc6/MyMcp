@@ -9,7 +9,7 @@
               <el-icon class="mr-2">
                 <Menu />
               </el-icon>
-              <span class="text-lg font-semibold">MCP 分类</span>
+              <span class="text-lg font-semibold">MCP模板分类</span>
             </div>
             <div>
               <el-button size="small" @click="showCreateCategoryDialog">
