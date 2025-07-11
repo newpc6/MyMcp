@@ -188,6 +188,7 @@ const handleServiceChange = (serviceId) => {
         path: route.path,
         query: { ...route.query, serviceId: serviceId.toString() }
     })
+    loadStatistics()
 }
 
 const loadStatistics = async () => {
@@ -233,6 +234,7 @@ const handleAuthConfigUpdated = () => {
     ElMessage.success('鉴权配置已更新')
     // 重新加载服务列表
     loadServices()
+    loadStatistics()
 }
 
 // 生命周期

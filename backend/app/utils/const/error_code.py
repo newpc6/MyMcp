@@ -1,7 +1,7 @@
 
 class ErrorCode:
     SUCCESS = 0
-    
+    HTTP_SUCCESS = 200
     HTTP_UNAUTHORIZED = 401
     UNAUTHORIZED = 401
     HTTP_FORBIDDEN = 403
@@ -12,6 +12,8 @@ class ErrorCode:
     AUTH_KEY_INVALID = 20002
     AUTH_KEY_EXPIRED = 20003
     AUTH_KEY_REQUIRED = 20004
+    
+    NOT_FOUND = 10005
     
     @staticmethod
     def to_message(code):
@@ -33,6 +35,8 @@ class ErrorCode:
             return '密钥已过期'
         elif code == ErrorCode.AUTH_KEY_REQUIRED:
             return '需要密钥'
+        elif code == ErrorCode.NOT_FOUND:
+            return '未找到'
         else:
             return '未知错误'
 

@@ -13,7 +13,7 @@ from app.services.auth.secret_manager import SecretManager
 from app.utils.logging import mcp_logger
 from app.utils.response import success_response, error_response
 from app.utils.permissions import get_user_info
-from app.utils.const import error_code
+from app.utils.const.error_code import error_code
 from app.utils.http.utils import body_page_params
 
 
@@ -67,7 +67,7 @@ async def get_secrets(request: Request) -> JSONResponse:
 
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         # 如果无法获取用户信息，返回错误
         if user_id is None and not is_admin:
             return error_response("用户未认证", status_code=error_code.UNAUTHORIZED)
@@ -303,7 +303,7 @@ async def get_secret_info(request: Request) -> JSONResponse:
 
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         # 如果无法获取用户信息，返回错误
         if user_id is None and not is_admin:
             return error_response("用户未认证", status_code=error_code.UNAUTHORIZED)
@@ -315,7 +315,9 @@ async def get_secret_info(request: Request) -> JSONResponse:
         )
 
         if secret_info is None:
-            return error_response("未找到密钥信息或无权限访问", status_code=error_code.HTTP_NOT_FOUND)
+            return error_response(message="未找到密钥信息或无权限访问",
+                                  code=error_code.NOT_FOUND,
+                                  http_status_code=error_code.HTTP_SUCCESS)
 
         return success_response(data=secret_info, message="获取密钥信息成功")
 

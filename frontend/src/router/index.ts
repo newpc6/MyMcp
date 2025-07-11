@@ -28,8 +28,8 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: 'MCP 模块详情' }
   },
   {
-    path: '/mcp-services',
-    name: 'mcp-services',
+    path: '/server',
+    name: 'server',
     component: () => import('../views/mcp/McpLayout.vue'),
     meta: { title: 'MCP 服务管理' }
   },
