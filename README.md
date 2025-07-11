@@ -86,13 +86,51 @@ qq 群：979958989
 还有点小问题，未完全实现
 ![python-install-2.jpg](https://img.picui.cn/free/2025/07/09/686e3820dab5d.jpg)
 
+
+## 20250711新增功能
+
+### MCP服务秘钥管理
+
+#### 功能概述
+新增MCP服务秘钥配置功能，支持对API访问进行权限控制和用量管理。
+
+#### 秘钥管理界面
+![mcp-secret-manage-1.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c42238f58.jpg)
+
+#### 秘钥详情查看
+![mcp-secret-manage-2.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c4219145c.jpg)
+
+#### 秘钥创建与编辑
+支持新增和编辑MCP服务访问秘钥，配置访问权限和用量限制。
+
+![mcp-secret-add-2.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c421aab03.jpg)
+![mcp-secret-add-3.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c4222c549.jpg)
+![mcp-secret-add-success.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c4221b567.jpg)
+
+#### 访问记录统计
+提供详细的秘钥使用记录和统计信息，便于监控和管理API使用情况。
+
+![mcp-secret-access-1.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c49b3c878.jpg)
+
+#### 客户端测试示例
+
+**未使用秘钥（401错误）**
+当客户端未提供有效秘钥时，系统返回401未授权错误。
+
+![mcp-secret-401.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c49b0cafa.jpg)
+
+**超出当日限额**
+当秘钥使用次数超过设定的每日限额时，系统会拒绝请求并提示超出限额。
+
+![mcp-secret-out-of-limit.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c49b4cfdd.jpg)
+
 ## 临时体验地址
 
 http://111.4.141.154:7002
 
-guest/123456
+guest/123456（只能看公开的，和自己的）
 
-admin/mcp@12345(管理员账号请勿随意删除修改数据，主要是为了看功能)
+admin/mcp@12345（能管理所有的）
 
 ## 安装教程
 
