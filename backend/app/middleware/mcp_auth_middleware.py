@@ -8,7 +8,7 @@ import re
 from typing import Optional, Dict, Any
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
-from starlette.responses import Response, JSONResponse
+from starlette.responses import Response
 
 from app.models.engine import get_db
 from app.models.modules.mcp_services import McpService
@@ -19,7 +19,7 @@ from app.utils.logging import mcp_logger
 from sqlalchemy import and_
 from datetime import date
 
-from app.utils.response import success_response, error_response
+from app.utils.response import error_response
 from app.utils.const.error_code import error_code
 
 
@@ -62,7 +62,12 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
             # 鉴权成功，记录成功日志
             SecretManager.log_access(
                 service_id=service_id,
-                secret_id=secret_info.get('id'),
+                secret_id=(
+                    secret_info.get('id') 
+                    if isinstance(secret_info, dict) 
+                    and secret_info.get('id') 
+                    else None
+                ),
                 client_ip=client_ip,
                 user_agent=user_agent,
                 success=True,
@@ -85,8 +90,12 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
 
             # 返回鉴权失败响应
             return error_response(
-                message=error_code.to_message(auth_result) if secret_info is None or isinstance(
-                    secret_info, str) is False else secret_info,
+                message=(
+                    error_code.to_message(auth_result) 
+                    if secret_info is None 
+                    or isinstance(secret_info, str) is False 
+                    else secret_info
+                ),
                 code=auth_result,
                 http_status_code=401
             )
