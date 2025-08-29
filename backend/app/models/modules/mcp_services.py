@@ -4,6 +4,11 @@ from app.core.utils import now_beijing
 from sqlalchemy.sql import text
 from sqlalchemy.orm import relationship
 import json
+from enum import Enum
+
+class ServiceType(Enum):
+    LOCAL = 1
+    THIRD = 2
 
 
 class McpService(Base):
@@ -31,6 +36,10 @@ class McpService(Base):
     # 新增鉴权相关字段
     auth_required = Column(Boolean, default=False)  # 是否需要鉴权
     auth_mode = Column(String(20), default='')  # 鉴权模式: '', 'secret', 'token'
+    
+    # 新增代理转发相关字段
+    proxy_enabled = Column(Boolean, default=False)  # 是否启用代理转发
+    custom_proxy_path = Column(String(255), nullable=True)  # 自定义代理路由路径
     
     # 关系定义
     secrets = []
@@ -151,5 +160,8 @@ class McpService(Base):
             "auth_required": self.auth_required,
             "auth_mode": self.auth_mode,
             "auth_mode_name": self.get_auth_mode_name(),
-            "active_secrets_count": self.get_active_secrets_count() if show_secret_count else None
-        } 
+            "active_secrets_count": self.get_active_secrets_count() if show_secret_count else None,
+            # 代理转发相关字段
+            "proxy_enabled": self.proxy_enabled,
+            "custom_proxy_path": self.custom_proxy_path
+        }

@@ -18,7 +18,7 @@ from app.core.config import settings
 from app.utils.logging import mcp_logger
 from app.models.engine import get_db
 from backend.app.models.modules.mcp_modules import McpModule
-from app.models.modules.mcp_services import McpService
+from app.models.modules.mcp_services import McpService, ServiceType
 from app.models.modules.users import User
 from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
@@ -30,6 +30,9 @@ import sys
 import tempfile
 from app.utils.permissions import add_edit_permission
 from app.utils.http import PageParams, build_page_response
+import httpx
+import requests
+from starlette.responses import StreamingResponse
 
 
 class McpServiceManager:
@@ -72,11 +75,15 @@ class McpServiceManager:
                         continue
                     # 尝试重新启动已发布的服务
                     try:
-                        if service.service_type == 2:  # 第三方服务
-                            # 第三方服务只需要保持状态，不需要创建路由
-                            mcp_logger.info(
-                                f"第三方服务已加载: "
-                                f"{service.service_uuid} {service.name}")
+                        if service.service_type == ServiceType.THIRD.value:  # 第三方服务
+                            # 第三方服务需要检查是否启用了代理转发
+                            if service.proxy_enabled and service.custom_proxy_path:
+                                # 为启用代理转发的第三方服务创建代理路由
+                                self._create_third_party_proxy_routes(service)
+                            else:
+                                mcp_logger.info(
+                                    f"第三方服务已加载: "
+                                    f"{service.service_uuid} {service.name}")
                         else:  # 内置服务
                             module = db.query(McpModule).filter(
                                 McpModule.id == service.module_id
@@ -286,7 +293,7 @@ class McpServiceManager:
         Args:
             user_id: 当前用户ID，可选
             is_admin: 是否为管理员用户
-            data: 服务数据，包含name, sse_url, description等
+            data: 服务数据，包含name, sse_url, description, proxy_enabled, custom_proxy_path等
 
         Returns:
             McpService: 创建的服务记录
@@ -299,6 +306,8 @@ class McpServiceManager:
         sse_url = data.get("sse_url")
         description = data.get("description", "")
         is_public = data.get("is_public", False)
+        proxy_enabled = data.get("proxy_enabled", False)
+        custom_proxy_path = data.get("custom_proxy_path", "")
 
         if not name:
             raise ValueError("服务名称不能为空")
@@ -310,6 +319,15 @@ class McpServiceManager:
         url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
         if not re.match(url_pattern, sse_url):
             raise ValueError("SSE URL格式不正确")
+            
+        # 如果启用代理转发，验证自定义代理路径
+        if proxy_enabled:
+            if not custom_proxy_path:
+                raise ValueError("启用代理转发时，自定义代理路径不能为空")
+            # 验证路径格式（允许字母、数字、连字符、下划线和斜杠）
+            path_pattern = r'^[a-zA-Z0-9/_-]+$'
+            if not re.match(path_pattern, custom_proxy_path.lstrip('/')):
+                raise ValueError("自定义代理路径格式不正确，只允许字母、数字、连字符、下划线和斜杠")
 
         with get_db() as db:
             # 生成唯一ID
@@ -327,13 +345,17 @@ class McpServiceManager:
                 is_public=is_public,
                 service_type=2,  # 第三方服务类型
                 description=description,
-                config_params=""  # 第三方服务暂不支持配置参数
+                config_params="",  # 第三方服务暂不支持配置参数
+                proxy_enabled=proxy_enabled,
+                custom_proxy_path=custom_proxy_path if proxy_enabled else None
             )
             db.add(service_record)
             db.commit()
             db.refresh(service_record)
 
             mcp_logger.info(f"成功创建第三方服务: {service_uuid} - {name}")
+            if proxy_enabled:
+                mcp_logger.info(f"第三方服务启用代理转发: {custom_proxy_path}")
             return service_record
 
     def stop_service(self, service_uuid: str, user_id: Optional[int] = None, 
@@ -478,7 +500,20 @@ class McpServiceManager:
 
             # 根据服务类型处理
             if service.service_type == 2:  # 第三方服务
-                # 第三方服务只需要更新状态，不需要创建路由
+                # 第三方服务需要检查是否启用代理转发
+                if service.proxy_enabled and service.custom_proxy_path:
+                    try:
+                        # 创建代理转发路由
+                        self._create_third_party_proxy_routes(service)
+                        mcp_logger.info(f"第三方服务代理路由已创建: {service_uuid} - {service.name}")
+                    except Exception as e:
+                        mcp_logger.error(f"创建第三方服务代理路由失败: {service_uuid}, 错误: {str(e)}")
+                        service.status = "error"
+                        service.error_message = f"创建代理路由失败: {str(e)}"
+                        db.commit()
+                        return False
+                
+                # 更新服务状态
                 service.status = "running"
                 service.error_message = ""
                 service.enabled = True
@@ -683,6 +718,29 @@ class McpServiceManager:
             mcp_logger.error(f"获取指定模块ID的服务失败: {str(e)}")
             return None
 
+    def _get_third_sse_url(self, service,
+                           request: Optional[Request] = None) -> str:
+        """获取第三方服务的SSE URL
+        
+        如果开启了代理转发，返回代理路由；否则返回原始SSE URL
+        
+        Args:
+            service: 服务对象
+            request: HTTP请求对象，用于构建完整URL
+            
+        Returns:
+            str: 完整的SSE URL或代理路由
+        """
+        if service.proxy_enabled and service.custom_proxy_path:
+            # 如果开启了代理转发，返回代理路由
+            proxy_path = service.custom_proxy_path
+            if not proxy_path.startswith('/'):
+                proxy_path = '/' + proxy_path
+            return self._get_full_sse_url(proxy_path, request)
+        else:
+            # 否则返回原始SSE URL
+            return self._get_full_sse_url(service.sse_url, request)
+
     def _get_full_sse_url(self, sse_url: str, 
                           request: Optional[Request] = None) -> str:
         """获取完整的SSE URL
@@ -880,10 +938,19 @@ class McpServiceManager:
                     # 第三方服务，使用服务本身的描述
                     service_dict["description"] = service.description or ""
 
-                # 替换SSE URL为完整URL
-                sse_url = service.sse_url
-                service_dict["sse_url"] = self._get_full_sse_url(
-                    sse_url, request)
+                # 替换SSE URL为完整URL或代理路由
+                if service.proxy_enabled and service.custom_proxy_path:
+                    # 如果开启了代理转发，返回代理路由
+                    proxy_path = service.custom_proxy_path
+                    if not proxy_path.startswith('/'):
+                        proxy_path = '/' + proxy_path
+                    service_dict["sse_url"] = self._get_full_sse_url(
+                        proxy_path, request)
+                else:
+                    # 否则返回原始SSE URL
+                    sse_url = service.sse_url
+                    service_dict["sse_url"] = self._get_full_sse_url(
+                        sse_url, request)
 
                 # 检查服务是否正在运行
                 running_info = self._running_services.get(service.service_uuid)
@@ -1020,9 +1087,15 @@ class McpServiceManager:
 
                 # 替换SSE URL为完整URL
                 sse_url = service.sse_url
-                service_dict["sse_url"] = self._get_full_sse_url(
-                    sse_url, request
-                )
+                if service.service_type == ServiceType.THIRD.value:
+                    # 第三方服务使用专门的方法处理SSE URL
+                    service_dict["sse_url"] = self._get_third_sse_url(
+                        service, request
+                    )
+                else:
+                    service_dict["sse_url"] = self._get_full_sse_url(
+                        sse_url, request
+                    )
 
                 # 检查服务是否正在运行
                 running_info = self._running_services.get(
@@ -1588,6 +1661,213 @@ class McpServiceManager:
         mcp_logger.info(
             f"流式HTTP服务已启动: {service_uuid} at {streamable_http_path}"
         )
+
+
+    def _create_third_party_proxy_routes(self, service: McpService):
+        """为第三方服务创建代理转发路由
+        
+        Args:
+            service: 第三方MCP服务记录
+        """
+        if not service.proxy_enabled or not service.custom_proxy_path:
+            mcp_logger.info(f"第三方服务 {service.service_uuid} 未启用代理转发")
+            return
+            
+        service_uuid = service.service_uuid
+        # 使用用户自定义的代理路径，如果不以/开头则自动添加
+        proxy_path = service.custom_proxy_path if service.custom_proxy_path.startswith('/') else f'/{service.custom_proxy_path}'
+        # 从sse_url中提取基础URL，移除MCP服务特定的路径部分
+        sse_url = service.sse_url.rstrip('/')
+        if '/mcp-' in sse_url:
+            # 提取基础URL部分（协议+域名+端口）
+            base_url = sse_url.split('/mcp-')[0]
+        else:
+            base_url = sse_url
+        target_url = base_url
+        
+        # 从SSE URL中提取UUID路径
+        uuid_path = None
+        if '/mcp-' in sse_url:
+            uuid_part = sse_url.split('/mcp-')[1].split('/')[0]
+            uuid_path = f'/mcp-{uuid_part}'
+        
+        mcp_logger.info(f"为第三方服务 {service_uuid} 创建代理路由: {proxy_path} -> {target_url}")
+        if uuid_path:
+            mcp_logger.info(f"同时支持UUID路径: {uuid_path} -> {target_url}")
+        
+        # 删除现有代理路由（如果存在）
+        routes_to_delete = []
+        for route in self._main_app.routes:
+            if hasattr(route, 'path') and (route.path.startswith(proxy_path) or (uuid_path and route.path.startswith(uuid_path))):
+                routes_to_delete.append(route)
+                
+        for route in routes_to_delete:
+            try:
+                self._main_app.routes.remove(route)
+                mcp_logger.info(f"已删除现有代理路由: {route.path}")
+            except Exception as e:
+                mcp_logger.error(f"删除代理路由失败: {route.path}, 错误: {str(e)}")
+        
+        # 创建代理处理函数
+        async def proxy_handler(request: Request):
+            """代理转发处理函数"""
+            try:
+                # 构建目标URL
+                request_path = request.url.path
+                
+                if request_path == proxy_path or request_path.startswith(f"{proxy_path}/"):
+                    # 简化路径匹配，转发到第三方服务
+                    if request_path == proxy_path:
+                        target_full_url = sse_url
+                    else:
+                        # 子路径，构建完整目标URL
+                        sub_path = request_path[len(proxy_path):]
+                        target_full_url = f"{target_url}/mcp-{sse_url.split('/mcp-')[1].split('/')[0]}{sub_path}"
+                elif uuid_path and (request_path == uuid_path or request_path.startswith(f"{uuid_path}/")):
+                    # UUID路径匹配，直接转发
+                    if request_path == uuid_path:
+                        target_full_url = sse_url
+                    else:
+                        # 子路径，构建完整目标URL
+                        sub_path = request_path[len(uuid_path):]
+                        target_full_url = f"{target_url}/mcp-{sse_url.split('/mcp-')[1].split('/')[0]}{sub_path}"
+                else:
+                    # 默认转发到SSE端点
+                    target_full_url = sse_url
+                
+                # 复制请求头，排除一些不需要的头
+                headers = dict(request.headers)
+                headers.pop('host', None)
+                headers.pop('content-length', None)
+                
+                # 获取请求体
+                body = await request.body()
+                
+                mcp_logger.info(f"代理转发请求: {request.method} {target_full_url}")
+                
+                # 使用requests进行同步请求转发，支持流式响应
+                try:
+                    # 发起请求
+                    response = requests.request(
+                        method=request.method,
+                        url=target_full_url,
+                        headers=headers,
+                        data=body,
+                        params=request.query_params,
+                        stream=True,
+                        timeout=30
+                    )
+                    
+                    # 检查响应状态
+                    response.raise_for_status()
+                    
+                    # 检查是否是SSE响应
+                    content_type = response.headers.get('content-type', '')
+                    if 'text/event-stream' in content_type:
+                        # SSE流式响应 - 使用requests的iter_content处理流
+                        response_headers = {
+                            'Content-Type': 'text/event-stream',
+                            'Cache-Control': 'no-cache',
+                            'Connection': 'keep-alive',
+                            'Access-Control-Allow-Origin': '*',
+                            'Access-Control-Allow-Headers': 'Cache-Control'
+                        }
+                        
+                        # 创建生成器来处理流式响应
+                        def stream_generator():
+                            try:
+                                for chunk in response.iter_content(chunk_size=1024):
+                                    if chunk:
+                                        yield chunk
+                            finally:
+                                response.close()
+                        
+                        return StreamingResponse(
+                            stream_generator(),
+                            status_code=response.status_code,
+                            headers=response_headers,
+                            media_type='text/event-stream'
+                        )
+                    else:
+                        # 普通响应 - 直接返回内容
+                        content = response.content
+                        response.close()
+                        
+                        return StreamingResponse(
+                            iter([content]),
+                            status_code=response.status_code,
+                            headers=dict(response.headers)
+                        )
+                except Exception as e:
+                    if 'response' in locals():
+                        response.close()
+                    raise e
+                        
+            except httpx.TimeoutException:
+                mcp_logger.error(f"代理转发超时: {target_full_url}")
+                from starlette.responses import JSONResponse
+                return JSONResponse(
+                    {"error": "代理转发超时"},
+                    status_code=504
+                )
+            except httpx.HTTPStatusError as e:
+                mcp_logger.error(f"代理转发HTTP错误: {e.response.status_code} - {target_full_url}")
+                from starlette.responses import JSONResponse
+                return JSONResponse(
+                    {"error": f"代理转发HTTP错误: {e.response.status_code}"},
+                    status_code=e.response.status_code
+                )
+            except Exception as e:
+                mcp_logger.error(f"代理转发失败: {str(e)}")
+                from starlette.responses import JSONResponse
+                return JSONResponse(
+                    {"error": f"代理转发失败: {str(e)}"},
+                    status_code=502
+                )
+        
+        # 创建代理路由，支持所有HTTP方法和路径
+        # 同时支持精确匹配和路径匹配
+        proxy_routes = [
+            # 精确匹配代理路径本身
+            Route(
+                path=proxy_path,
+                endpoint=proxy_handler,
+                methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+                name=None,
+                include_in_schema=True,
+            ),
+            # 匹配代理路径下的子路径
+            Route(
+                path=f"{proxy_path}/{{path:path}}",
+                endpoint=proxy_handler,
+                methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+            ),
+        ]
+        
+        # 如果有UUID路径，也添加UUID路径的路由
+        if uuid_path:
+            proxy_routes.extend([
+                # 精确匹配UUID路径本身
+                Route(
+                    path=uuid_path,
+                    endpoint=proxy_handler,
+                    methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"],
+                    name=None,
+                    include_in_schema=True,
+                ),
+                # 匹配UUID路径下的子路径
+                 Route(
+                     path=f"{uuid_path}/{{path:path}}",
+                     endpoint=proxy_handler,
+                     methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
+                 )
+             ])
+        
+        # 在所有路由之前插入代理路由
+        for route in proxy_routes:
+            self._main_app.routes.insert(0, route)
+        
+        mcp_logger.info(f"成功创建第三方服务 {service_uuid} 的代理路由: {proxy_path}")
 
     def _remove_service_routes(self, service_uuid: str):
         """移除服务路由

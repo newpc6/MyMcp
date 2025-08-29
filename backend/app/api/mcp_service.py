@@ -200,11 +200,22 @@ async def create_third_party_service(request: Request):
         # 验证必填字段
         name = data.get("service_name", None)
         sse_url = data.get("sse_url", None)
+        proxy_enabled = data.get("proxy_enabled", False)
+        custom_proxy_path = data.get("custom_proxy_path", None)
 
         if not name:
             return error_response("服务名称不能为空", code=400, http_status_code=400)
         if not sse_url:
             return error_response("SSE URL不能为空", code=400, http_status_code=400)
+        
+        # 验证代理转发配置
+        if proxy_enabled:
+            if not custom_proxy_path:
+                return error_response("启用代理转发时，自定义代理路径不能为空", code=400, http_status_code=400)
+            import re
+            path_pattern = r'^[a-zA-Z0-9/_-]+$'
+            if not re.match(path_pattern, custom_proxy_path.lstrip('/')):
+                return error_response("自定义代理路径格式不正确，只允许字母、数字、连字符、下划线和斜杠", code=400, http_status_code=400)
 
         from app.services.mcp_service.service_manager import service_manager
 

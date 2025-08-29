@@ -291,6 +291,21 @@
             clearable />
         </el-form-item>
 
+        <el-form-item label="代理转发" prop="proxy_enabled">
+          <el-switch v-model="thirdPartyForm.proxy_enabled" active-text="启用" inactive-text="禁用" />
+          <div class="form-tip">
+            <span>启用后将在本服务创建自定义代理路由，访问此路由会转发到第三方MCP服务</span>
+          </div>
+        </el-form-item>
+
+        <el-form-item label="自定义代理路径" prop="custom_proxy_path" v-if="thirdPartyForm.proxy_enabled">
+          <el-input v-model="thirdPartyForm.custom_proxy_path" placeholder="请输入自定义代理路径，如：mcp-proxy-myservice"
+            clearable />
+          <div class="form-tip">
+            <span>自定义代理路由路径，只允许字母、数字、连字符、下划线和斜杠，访问 /{路径} 会转发到第三方MCP服务</span>
+          </div>
+        </el-form-item>
+
         <el-form-item label="访问权限" prop="is_public">
           <el-radio-group v-model="thirdPartyForm.is_public">
             <el-radio :label="false">私有</el-radio>
@@ -392,7 +407,9 @@ const thirdPartyForm = ref({
   service_name: '',
   sse_url: '',
   description: '',
-  is_public: false
+  is_public: false,
+  proxy_enabled: false,
+  custom_proxy_path: ''
 });
 const thirdPartyRules = ref({
   service_name: [
@@ -403,6 +420,24 @@ const thirdPartyRules = ref({
     {
       pattern: /^https?:\/\/[^\s/$.?#].[^\s]*$/,
       message: '请输入有效的HTTP/HTTPS URL',
+      trigger: 'blur'
+    }
+  ],
+  custom_proxy_path: [
+    {
+      validator: (rule: any, value: string, callback: Function) => {
+        if (thirdPartyForm.value.proxy_enabled) {
+          if (!value) {
+            callback(new Error('启用代理转发时，自定义代理路径不能为空'));
+          } else if (!/^[a-zA-Z0-9\-_\/]+$/.test(value)) {
+            callback(new Error('代理路径只允许字母、数字、连字符、下划线和斜杠'));
+          } else {
+            callback();
+          }
+        } else {
+          callback();
+        }
+      },
       trigger: 'blur'
     }
   ]
@@ -837,7 +872,9 @@ const showCreateThirdPartyDialog = () => {
     service_name: '',
     sse_url: '',
     description: '',
-    is_public: false
+    is_public: false,
+    proxy_enabled: false,
+    custom_proxy_path: ''
   };
   createThirdPartyDialogVisible.value = true;
 };
