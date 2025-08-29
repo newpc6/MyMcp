@@ -194,13 +194,15 @@ async def get_access_logs(request: Request) -> JSONResponse:
             status = condition.get('status')
         if condition.get('date_range') is not None:
             date_range = condition.get('date_range')
-
+        user_id, is_admin = get_user_info(request)
         logs, total = SecretManager.get_access_logs(
             service_id=service_id,
             page_params=page_params,
             secret_id=int(secret_id) if secret_id else None,
             status=status,
-            date_range=date_range
+            date_range=date_range,
+            is_admin=is_admin,
+            user_id=user_id
         )
 
         return success_response(data=logs, message="获取访问日志成功", total=total)

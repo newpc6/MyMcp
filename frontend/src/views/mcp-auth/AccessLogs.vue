@@ -80,7 +80,7 @@
                         </template>
                     </el-table-column>
                     <el-table-column prop="client_ip" label="客户端IP" width="120" />
-                    <el-table-column prop="secret_name" label="使用密钥" width="150">
+                    <el-table-column prop="secret_name" label="密钥" show-overflow-tooltip>
                         <template #default="{ row }">
                             <span v-if="row.secret_name">
                                 {{ row.secret_name }}
@@ -93,6 +93,7 @@
                             </span>
                         </template>
                     </el-table-column>
+                    <el-table-column prop="service_name" label="服务" show-overflow-tooltip></el-table-column>
                     <el-table-column prop="status" label="状态" width="90">
                         <template #default="{ row }">
                             <el-tag :type="row.status === 'success' ? 'success' : 'danger'" size="small">
@@ -110,7 +111,7 @@
                             </span>
                         </template>
                     </el-table-column>
-                    <el-table-column prop="user_agent" label="用户代理" width="200" show-overflow-tooltip />
+                    <el-table-column prop="user_agent" label="用户代理" show-overflow-tooltip />
                     <el-table-column label="操作" width="100">
                         <template #default="{ row }">
                             <el-button size="small" @click="showLogDetail(row)">
@@ -142,6 +143,9 @@
                     </el-descriptions-item>
                     <el-descriptions-item label="使用密钥">
                         {{ currentLog.secret_name || '未使用密钥' }}
+                    </el-descriptions-item>
+                    <el-descriptions-item label="服务">
+                        {{ currentLog.service_name }}
                     </el-descriptions-item>
                     <el-descriptions-item label="状态">
                         <el-tag :type="currentLog.status === 'success' ? 'success' : 'danger'" size="small">
@@ -249,10 +253,10 @@ const loadSecrets = async (serviceId) => {
 }
 
 const loadLogs = async () => {
-    if (!queryPage.value.condition.service_id) {
-        ElMessage.warning('请先选择服务')
-        return
-    }
+    // if (!queryPage.value.condition.service_id) {
+    //     ElMessage.warning('请先选择服务')
+    //     return
+    // }
 
     loading.value = true
     try {
@@ -263,8 +267,11 @@ const loadLogs = async () => {
                 delete params.condition[key]
             }
         })
-
-        const data = await mcpAuthApi.getAccessLogs(queryPage.value.condition.service_id, params)
+        let service_id = queryPage.value.condition.service_id
+        if (!service_id) {
+            service_id = 0
+        }
+        const data = await mcpAuthApi.getAccessLogs(service_id, params)
         logs.value = data.data || []
         total.value = data.total || 0
 

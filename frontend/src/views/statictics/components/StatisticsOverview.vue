@@ -312,7 +312,8 @@ const formatNumber = (num) => {
 }
 
 .card-content {
-  display: flex;
+  display: flex !important;
+  flex-direction: row !important;
   align-items: center;
   gap: 16px;
   position: relative;

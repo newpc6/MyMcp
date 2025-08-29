@@ -6,6 +6,7 @@ from typing import Dict, Any, Callable
 
 from app.models.engine import get_db
 from app.models.modules.mcp_tool import McpTool
+from app.services.execution.sandbox import sandboxed
 
 
 async def execute_tool_by_name(tool_name: str, params: Dict[str, Any]) -> Any:
@@ -20,13 +21,34 @@ async def execute_tool_by_name(tool_name: str, params: Dict[str, Any]) -> Any:
         Any: 工具执行结果
     """
     try:
+        # 增强安全检查
+        def is_dangerous(value):
+            if not isinstance(value, str):
+                return False
+            dangerous_patterns = [
+                '..', '/', '\\',  # 路径遍历
+                'rm ', 'del ', 'erase ',  # 删除命令
+                ';', '|', '&', '`', '$',  # 命令注入
+                '..\\', '../',  # 路径遍历
+                'file://', 'http://', 'ftp://'  # 外部资源
+            ]
+            return any(p in value.lower() for p in dangerous_patterns)
+            
+        if any(is_dangerous(v) for v in params.values()):
+            return {"error": "参数包含潜在危险操作"}
+            
         # 查找工具函数
         tool_func = await _find_tool_function(tool_name)
         if not tool_func:
             return {"error": f"找不到工具: {tool_name}"}
         
-        # 执行工具函数
-        result = tool_func(**params)
+        # 在沙箱中执行工具函数
+        result = sandboxed(tool_func)(**params)
+        
+        # 结果安全检查
+        if isinstance(result, dict) and 'path' in result:
+            return {"error": "工具返回了潜在危险路径"}
+            
         return result
     except Exception as e:
         return {"error": f"执行失败: {str(e)}"}
@@ -61,4 +83,4 @@ async def _find_tool_function(tool_name: str) -> Callable:
             return func
         except Exception as e:
             print(f"查找工具函数 {tool_name} 时出错: {str(e)}")
-            return None 
+            return None

@@ -214,7 +214,8 @@ def init_demo_modules():
                 "http_client",
                 "数据库助手", 
                 "file_manager",
-                "text_processor"
+                "text_processor",
+                "file_operator"
             ]
             
             # 检查数据库中是否已存在这些模块

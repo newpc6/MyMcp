@@ -124,9 +124,9 @@ class SecretManager:
                         McpSecretStatistics.statistics_date == today
                     )
                 ).first()
-                
+
                 current_calls = today_stats.call_count if today_stats else 0
-                
+
                 # 如果设置了限制且当前调用次数已达到限制，则拒绝访问
                 if current_calls >= secret_record.limit_count:
                     msg = (f"MCP服务: {service_id} "
@@ -380,7 +380,7 @@ class SecretManager:
             ).order_by(McpSecretStatistics.statistics_date.desc()).all()
 
             return [stat.to_dict() for stat in stats]
-        
+
     @staticmethod
     def get_secret_info(service_id: int, user_id: Optional[int] = None,
                         is_admin: bool = False) -> Dict[str, Any]:
@@ -403,7 +403,7 @@ class SecretManager:
             else:
                 query = query.where((McpServiceSecret.user_id == user_id)
                                     | (McpServiceSecret.user_id.is_(None)))
-            
+
             secrets = query.all()
             if not secrets:
                 return None
@@ -412,18 +412,19 @@ class SecretManager:
             result['secret_count'] = len(secrets)
             active_secrets = [secret for secret in secrets if secret.is_active]
             result['active_secret_count'] = len(active_secrets)
-            inactive_secrets = [secret for secret in secrets if not secret.is_active]
+            inactive_secrets = [
+                secret for secret in secrets if not secret.is_active]
             result['inactive_secret_count'] = len(inactive_secrets)
             secrets_statistics = {}
             for secret in secrets:
                 stats = SecretManager.get_secret_statistics(secret.id)
                 secrets_statistics[secret.id] = stats
-            
+
             # 计算统计数据，处理空列表的情况
             all_stats = []
             for stats_list in secrets_statistics.values():
                 all_stats.extend(stats_list)
-            
+
             if all_stats:
                 result['total_call_count'] = sum([
                     stat['call_count'] for stat in all_stats
@@ -436,23 +437,26 @@ class SecretManager:
                 ])
                 # 过滤掉None值，避免max函数错误
                 access_times = [
-                    stat['last_access_at'] for stat in all_stats 
+                    stat['last_access_at'] for stat in all_stats
                     if stat['last_access_at'] is not None
                 ]
-                result['last_access_time'] = max(access_times) if access_times else None
+                result['last_access_time'] = max(
+                    access_times) if access_times else None
             else:
                 result['total_call_count'] = 0
                 result['total_success_count'] = 0
                 result['total_error_count'] = 0
                 result['last_access_time'] = None
-            
+
             return result
 
     @staticmethod
     def get_access_logs(service_id: int, page_params: PageParams,
                         secret_id: Optional[int] = None,
                         status: Optional[str] = None,
-                        date_range: Optional[Tuple[date, date]] = None) -> Tuple[List[Dict[str, Any]], int]:
+                        date_range: Optional[Tuple[date, date]] = None,
+                        is_admin: bool = False,
+                        user_id: Optional[int] = None) -> Tuple[List[Dict[str, Any]], int]:
         """获取访问日志
 
         Args:
@@ -464,27 +468,43 @@ class SecretManager:
             List[Dict]: 访问日志列表
         """
         with get_db() as db:
-            query = db.query(McpAccessLog).filter(
-                McpAccessLog.service_id == service_id
-            )
+            query = db.query(McpAccessLog)
+            if service_id != 0:
+                query = query.filter(
+                    McpAccessLog.service_id == service_id
+                )
 
             if secret_id:
                 query = query.filter(McpAccessLog.secret_id == secret_id)
             if status:
                 query = query.filter(McpAccessLog.status == status)
             if date_range:
-                query = query.filter(McpAccessLog.access_time >= date_range[0], McpAccessLog.access_time <= date_range[1])
+                query = query.filter(
+                    McpAccessLog.access_time >= date_range[0], McpAccessLog.access_time <= date_range[1])
             total = query.count()
             query = query.order_by(
                 McpAccessLog.access_time.desc()
             ).offset(page_params.offset).limit(page_params.size)
             logs = query.all()
             logs_list = [log.to_dict() for log in logs]
+
             secert_ids = [log['secret_id'] for log in logs_list]
             secrets = db.query(McpServiceSecret).filter(
                 McpServiceSecret.id.in_(secert_ids)
             ).all()
-            secrets_dict = {secret.id: secret.secret_name for secret in secrets}
+            secrets_dict = {
+                secret.id: secret.secret_name for secret in secrets}
             for log in logs_list:
                 log['secret_name'] = secrets_dict.get(log['secret_id'])
+
+            service_ids = [log['service_id'] for log in logs_list]
+            services = db.query(McpService).filter(
+                McpService.id.in_(service_ids)
+            ).all()
+            services_dict = {
+                service.id: service for service in services
+            }
+            for log in logs_list:
+                log['service_name'] = services_dict.get(log['service_id']).name
+
             return logs_list, total
