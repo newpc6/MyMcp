@@ -5,7 +5,7 @@
 qq 群：979958989
 加群更及时交流、讨论
 
-![qq-group.png](https://img.picui.cn/free/2025/07/09/686e35890b48d.png)
+![qq-group.png](pic/qq-group.png)
 
 ## 介绍
 
@@ -19,15 +19,15 @@ qq 群：979958989
 
 ### 登录页面
 
-![login-v2.jpg](https://img.picui.cn/free/2025/07/09/686e3587a0106.jpg)
+![login-v2.jpg](pic/login-v2.jpg)
 
 ### MCP 模板广场
 
-![mcp-squera-v2.jpg](https://img.picui.cn/free/2025/07/09/686e358951af2.jpg)
+![mcp-squera-v2.jpg](pic/mcp-squera-v2.jpg)
 
 #### MCP 模板-详情
 
-![detail-v2.jpg](https://img.picui.cn/free/2025/07/09/686e35867a75d.jpg)
+![detail-v2.jpg](pic/detail-v2.jpg)
 
 #### MCP 模板-工具测试
 
@@ -38,56 +38,55 @@ qq 群：979958989
 - 工具执行（如果配置了工具函数参数，需要填写）
 - 工具函数代码（了解工具执行原理）
 
-![tool-test.jpg](https://img.picui.cn/free/2025/07/09/686e3589229a2.jpg)
+![tool-test.jpg](pic/tool-test.jpg)
 
 #### MCP 模板-参数配置
 
-![template-params.jpg](https://img.picui.cn/free/2025/07/09/686e36be6b488.jpg)
+![template-params.jpg](pic/template-params.jpg)
 
 #### MCP 模板-发布服务
 
-![template-publish.jpg](https://img.picui.cn/free/2025/07/09/686e36be074a0.jpg)
+![template-publish.jpg](pic/template-publish.jpg)
 
 #### MCP 模板-代码编辑
 
-![template-code.jpg](https://img.picui.cn/free/2025/07/09/686e36be029a6.jpg)
+![template-code.jpg](pic/template-code.jpg)
 
 ### MCP 服务
 
 支持管理内置服务
-![mcp-service-v2-1.jpg](https://img.picui.cn/free/2025/07/09/686e36bf35f74.jpg)
+![mcp-service-v2-1.jpg](pic/mcp-service-v2-1.jpg)
 
 支持新增第三方 http sse 地址
 
-![mcp-service-v2-third.jpg](https://img.picui.cn/free/2025/07/09/686e36bd37291.jpg)
+![mcp-service-v2-third.jpg](pic/mcp-service-v2-third.jpg)
 
 ### MCP 统计
 
-![mcp-stat-v2-1.jpg](https://img.picui.cn/free/2025/07/09/686e379a27de3.jpg)
-![mcp-stat-v2-2.jpg](https://img.picui.cn/free/2025/07/09/686e379996aee.jpg)
-![mcp-stat-v2-3.jpg](https://img.picui.cn/free/2025/07/09/686e379a642c5.jpg)
+![mcp-stat-v2-1.jpg](pic/mcp-stat-v2-1.jpg) 
+![mcp-stat-v2-2.jpg](pic/mcp-stat-v2-2.jpg)
+![mcp-stat-v2-3.jpg](pic/mcp-stat-v2-3.jpg)
 
 ### 用户管理
 
-![user-v2.jpg](https://img.picui.cn/free/2025/07/09/686e379a4bddb.jpg)
+![user-v2.jpg](pic/user-v2.jpg)
 
 ### 租户管理
 
+
 ## 系统管理
 
-![system-v2.jpg](https://img.picui.cn/free/2025/07/09/686e3820ef2d2.jpg)
+![system-v2.jpg](pic/system-v2.jpg)
 
 ### 定时任务
 
-![system-schedule-v2.jpg](https://img.picui.cn/free/2025/07/09/686e3821080d2.jpg)
+![system-schedule-v2.jpg](pic/system-schedule-v2.jpg)
 
 ### python 包管理
 
-还有点小问题，未完全实现
-![python-install-2.jpg](https://img.picui.cn/free/2025/07/09/686e3820dab5d.jpg)
+![python-install-2.jpg](pic/python-install-2.jpg)
 
-
-## 20250711新增功能
+### 20250711新增功能
 
 ### MCP服务秘钥管理
 
@@ -95,34 +94,34 @@ qq 群：979958989
 新增MCP服务秘钥配置功能，支持对API访问进行权限控制和用量管理。
 
 #### 秘钥管理界面
-![mcp-secret-manage-1.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c42238f58.jpg)
+![mcp-secret-manage-1.jpg](pic/mcp-secret-manage-1.jpg)
 
 #### 秘钥详情查看
-![mcp-secret-manage-2.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c4219145c.jpg)
+![mcp-secret-manage-2.jpg](pic/mcp-secret-manage-2.jpg)
 
 #### 秘钥创建与编辑
 支持新增和编辑MCP服务访问秘钥，配置访问权限和用量限制。
 
-![mcp-secret-add-2.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c421aab03.jpg)
-![mcp-secret-add-3.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c4222c549.jpg)
-![mcp-secret-add-success.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c4221b567.jpg)
+![mcp-secret-add-2.jpg](pic/mcp-secret-add-2.jpg)
+![mcp-secret-add-3.jpg](pic/mcp-secret-add-3.jpg)   
+![mcp-secret-add-success.jpg](pic/mcp-secret-add-success.jpg)
 
 #### 访问记录统计
 提供详细的秘钥使用记录和统计信息，便于监控和管理API使用情况。
 
-![mcp-secret-access-1.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c49b3c878.jpg)
+![mcp-secret-access-1.jpg](pic/mcp-secret-access-1.jpg)
 
 #### 客户端测试示例
 
 **未使用秘钥（401错误）**
 当客户端未提供有效秘钥时，系统返回401未授权错误。
 
-![mcp-secret-401.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c49b0cafa.jpg)
+![mcp-secret-401.jpg](pic/mcp-secret-401.jpg)
 
 **超出当日限额**
 当秘钥使用次数超过设定的每日限额时，系统会拒绝请求并提示超出限额。
 
-![mcp-secret-out-of-limit.jpg](https://cdn.picui.cn/vip/2025/07/11/6870c49b4cfdd.jpg)
+![mcp-secret-out-of-limit.jpg](pic/mcp-secret-out-of-limit.jpg)
 
 ## 临时体验地址
 
