@@ -32,7 +32,7 @@
         "statistics_interval": 1
     },
     "platform": {
-        "egova-kb": "",
+        "egova-kb": ""
     },
     "user": {
         "default_password": "mcp@12345"
