@@ -33,8 +33,9 @@
   --common-border-color: var(--zartd-border-color);
   --common-input-border-color: var(--zartd-input-border-color);
   --common-background-color: #f1f6fa;
+  --header-background-color: #ffffff;
   --header-background-image: linear-gradient(90deg, #105ac2 0%, #3388ff 64%, #428aef 100%);
-  --header-border-color: var(--zartd-primary-fade-10);
+  --header-border-color: #dbe5ef;
   --header-shadow-color: rgb(0 114 255 / 10%);
   --menu-background-image: linear-gradient(0deg, #242e4b 0%, #344468 100%);
   --menu-border-color: rgb(255 255 255 / 12%);
@@ -83,7 +84,16 @@ body {
 }
 
 .app-page-header {
-  margin-bottom: 16px;
+  min-height: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-bottom: 8px;
+  padding: 8px 16px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+  box-shadow: var(--common-shadow-sm);
 }
 
 .app-page-title {
@@ -104,13 +114,13 @@ body {
 .app-panel {
   background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
-  border-radius: var(--common-radius-lg);
+  border-radius: var(--common-radius-md);
   box-shadow: var(--common-shadow-sm);
 }
 
 .app-section-grid {
   display: grid;
-  gap: 16px;
+  gap: 8px;
 }
 
 .users-container,

@@ -248,20 +248,21 @@ const goToHome = () => {
   display: flex;
   align-items: center;
   gap: 12px;
-  height: 60px;
+  height: 52px;
   padding: 0 16px;
   cursor: pointer;
   border-bottom: 1px solid var(--menu-border-color);
 }
 
 .brand-icon {
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: var(--common-primary-color);
+  background: var(--menu-panel-background-color);
+  border: 1px solid var(--menu-border-color);
   color: var(--common-text-color-positive);
   flex: 0 0 auto;
 }
@@ -279,7 +280,7 @@ const goToHome = () => {
 
 .brand-name {
   color: var(--common-text-color-positive);
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
   letter-spacing: 0;
 }
@@ -292,16 +293,16 @@ const goToHome = () => {
 
 .nav-menu {
   flex: 1;
-  padding: 12px 8px;
+  padding: 8px;
   border-right: 0;
   background: transparent;
 }
 
 .nav-menu :deep(.el-menu-item) {
   height: 40px;
-  margin: 4px 0;
+  margin: 2px 0;
   padding: 0 14px !important;
-  border-radius: 8px;
+  border-radius: var(--common-radius-sm);
   color: var(--menu-text-color);
   line-height: 40px;
   transition: background 0.2s ease, color 0.2s ease;
@@ -321,7 +322,7 @@ const goToHome = () => {
   background: var(--common-primary-color);
   color: var(--common-text-color-positive);
   font-weight: 600;
-  box-shadow: var(--common-shadow-md);
+  box-shadow: none;
 }
 
 .sidebar-footer {

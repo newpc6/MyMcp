@@ -1,49 +1,159 @@
 <template>
-  <div class="system-management">
-    <div class="header">
-      <h1>系统管理</h1>
-      <p>管理系统配置、Python环境及相关服务</p>
+  <div class="system-management app-page">
+    <div class="app-page-header">
+      <h1 class="app-page-title">系统管理</h1>
+      <p class="app-page-description">管理系统配置、Python 环境及平台运行资源</p>
     </div>
 
-    <div class="management-grid">
-      <div class="management-card" @click="$router.push('/system/python-packages')">
-        <div class="card-icon">
-          <i class="icon-python"></i>
+    <div class="system-layout">
+      <section class="system-panel module-panel">
+        <div class="panel-header">
+          <div>
+            <h2>功能入口</h2>
+            <p>常用运维能力集中入口</p>
+          </div>
         </div>
-        <div class="card-content">
-          <h3>Python包管理</h3>
-          <p>安装、卸载和管理Python第三方库</p>
-        </div>
-        <div class="card-arrow">
-          <i class="arrow-right"></i>
-        </div>
-      </div>
 
-      <div class="management-card" @click="$router.push('/system/scheduled-tasks')">
-        <div class="card-icon">
-          <i class="icon-schedule"></i>
-        </div>
-        <div class="card-content">
-          <h3>定时任务管理</h3>
-          <p>查看和管理系统定时任务</p>
-        </div>
-        <div class="card-arrow">
-          <i class="arrow-right"></i>
-        </div>
-      </div>
+        <div class="management-grid">
+          <button class="management-card" type="button" @click="$router.push('/system/python-packages')">
+            <span class="card-icon">
+              <el-icon><Box /></el-icon>
+            </span>
+            <span class="card-content">
+              <strong>Python 包管理</strong>
+              <em>安装、卸载和管理 Python 第三方库</em>
+            </span>
+            <el-icon class="card-arrow"><ArrowRight /></el-icon>
+          </button>
 
-      <div class="management-card" @click="handleLogManagement">
-        <div class="card-icon">
-          <i class="icon-log"></i>
+          <button class="management-card" type="button" @click="$router.push('/system/scheduled-tasks')">
+            <span class="card-icon">
+              <el-icon><Timer /></el-icon>
+            </span>
+            <span class="card-content">
+              <strong>定时任务管理</strong>
+              <em>查看和管理系统定时任务</em>
+            </span>
+            <el-icon class="card-arrow"><ArrowRight /></el-icon>
+          </button>
+
+          <button class="management-card" type="button" @click="handleLogManagement">
+            <span class="card-icon">
+              <el-icon><Document /></el-icon>
+            </span>
+            <span class="card-content">
+              <strong>日志管理</strong>
+              <em>查看和管理系统运行日志</em>
+            </span>
+            <el-icon class="card-arrow"><ArrowRight /></el-icon>
+          </button>
         </div>
-        <div class="card-content">
-          <h3>日志管理</h3>
-          <p>查看和管理系统运行日志</p>
+      </section>
+
+      <section class="system-panel status-panel">
+        <div class="panel-header">
+          <div>
+            <h2>系统状态</h2>
+            <p>基础运行信息与服务状态</p>
+          </div>
+          <el-button size="small" @click="loadSystemInfo">
+            <el-icon><Refresh /></el-icon>
+            刷新
+          </el-button>
         </div>
-        <div class="card-arrow">
-          <i class="arrow-right"></i>
+        <div class="status-grid">
+          <div class="status-item">
+            <span class="status-label">Python 版本</span>
+            <span class="status-value">{{ systemInfo.pythonVersion }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">系统运行时间</span>
+            <span class="status-value">{{ systemInfo.uptime }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">MCP 服务状态</span>
+            <span class="status-value" :class="{ 'status-online': systemInfo.mcpStatus === 'running' }">
+              {{ systemInfo.mcpStatus }}
+            </span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">操作系统</span>
+            <span class="status-value">{{ systemInfo.platform }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">系统架构</span>
+            <span class="status-value">{{ systemInfo.architecture }}</span>
+          </div>
+          <div class="status-item">
+            <span class="status-label">处理器</span>
+            <span class="status-value">{{ systemInfo.processor }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="system-panel resource-panel">
+        <div class="panel-header">
+          <div>
+            <h2>资源监控</h2>
+            <p>内存与磁盘使用情况</p>
+          </div>
+        </div>
+        <div class="resource-grid">
+        <div class="resource-info">
+          <div class="resource-header">
+              <span>内存使用情况</span>
+            <span class="percentage">{{ systemInfo.memory?.percent || 0 }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" :style="{ width: (systemInfo.memory?.percent || 0) + '%' }"></div>
+          </div>
+            <div class="resource-total">
+              {{ formatBytes(systemInfo.memory?.used || 0) }} / {{ formatBytes(systemInfo.memory?.total || 0) }}
+            </div>
+          <div class="resource-details">
+            <div class="detail-item">
+                <span>已用</span>
+                <strong>{{ formatBytes(systemInfo.memory?.used || 0) }}</strong>
+            </div>
+            <div class="detail-item">
+                <span>可用</span>
+                <strong>{{ formatBytes(systemInfo.memory?.available || 0) }}</strong>
+            </div>
+            <div class="detail-item">
+                <span>总计</span>
+                <strong>{{ formatBytes(systemInfo.memory?.total || 0) }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="resource-info">
+          <div class="resource-header">
+              <span>磁盘使用情况</span>
+            <span class="percentage">{{ systemInfo.disk?.percent || 0 }}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill disk" :style="{ width: (systemInfo.disk?.percent || 0) + '%' }"></div>
+          </div>
+            <div class="resource-total">
+              {{ formatBytes(systemInfo.disk?.used || 0) }} / {{ formatBytes(systemInfo.disk?.total || 0) }}
+            </div>
+          <div class="resource-details">
+            <div class="detail-item">
+                <span>已用</span>
+                <strong>{{ formatBytes(systemInfo.disk?.used || 0) }}</strong>
+            </div>
+            <div class="detail-item">
+                <span>可用</span>
+                <strong>{{ formatBytes(systemInfo.disk?.free || 0) }}</strong>
+            </div>
+            <div class="detail-item">
+                <span>总计</span>
+                <strong>{{ formatBytes(systemInfo.disk?.total || 0) }}</strong>
+            </div>
+          </div>
         </div>
       </div>
+      </section>
     </div>
 
     <!-- 定时任务对话框 -->
@@ -110,93 +220,6 @@
         </el-table>
       </div>
     </el-dialog>
-
-    <div class="system-status">
-      <h2>系统状态</h2>
-      
-      <!-- 基础信息 -->
-      <div class="status-section">
-        <h3>基础信息</h3>
-        <div class="status-grid">
-          <div class="status-item">
-            <span class="status-label">Python版本:</span>
-            <span class="status-value">{{ systemInfo.pythonVersion }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">系统运行时间:</span>
-            <span class="status-value">{{ systemInfo.uptime }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">MCP服务状态:</span>
-            <span class="status-value" :class="{ 'status-online': systemInfo.mcpStatus === 'running' }">
-              {{ systemInfo.mcpStatus }}
-            </span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">操作系统:</span>
-            <span class="status-value">{{ systemInfo.platform }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">系统架构:</span>
-            <span class="status-value">{{ systemInfo.architecture }}</span>
-          </div>
-          <div class="status-item">
-            <span class="status-label">处理器:</span>
-            <span class="status-value">{{ systemInfo.processor }}</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- 内存使用情况 -->
-      <div class="status-section">
-        <h3>内存使用情况</h3>
-        <div class="resource-info">
-          <div class="resource-header">
-            <span>{{ formatBytes(systemInfo.memory?.used || 0) }} / {{ formatBytes(systemInfo.memory?.total || 0) }}</span>
-            <span class="percentage">{{ systemInfo.memory?.percent || 0 }}%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" :style="{ width: (systemInfo.memory?.percent || 0) + '%' }"></div>
-          </div>
-          <div class="resource-details">
-            <div class="detail-item">
-              <span>已用: {{ formatBytes(systemInfo.memory?.used || 0) }}</span>
-            </div>
-            <div class="detail-item">
-              <span>可用: {{ formatBytes(systemInfo.memory?.available || 0) }}</span>
-            </div>
-            <div class="detail-item">
-              <span>总计: {{ formatBytes(systemInfo.memory?.total || 0) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- 磁盘使用情况 -->
-      <div class="status-section">
-        <h3>磁盘使用情况</h3>
-        <div class="resource-info">
-          <div class="resource-header">
-            <span>{{ formatBytes(systemInfo.disk?.used || 0) }} / {{ formatBytes(systemInfo.disk?.total || 0) }}</span>
-            <span class="percentage">{{ systemInfo.disk?.percent || 0 }}%</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill disk" :style="{ width: (systemInfo.disk?.percent || 0) + '%' }"></div>
-          </div>
-          <div class="resource-details">
-            <div class="detail-item">
-              <span>已用: {{ formatBytes(systemInfo.disk?.used || 0) }}</span>
-            </div>
-            <div class="detail-item">
-              <span>可用: {{ formatBytes(systemInfo.disk?.free || 0) }}</span>
-            </div>
-            <div class="detail-item">
-              <span>总计: {{ formatBytes(systemInfo.disk?.total || 0) }}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -204,7 +227,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { ArrowRight, Box, Document, Refresh, Timer } from '@element-plus/icons-vue'
 import { getSystemInfo, getScheduledTasks, executeScheduledTask, type ScheduledTask } from '../../api/system'
 
 const router = useRouter()
@@ -412,186 +435,207 @@ onMounted(() => {
 
 <style scoped>
 .system-management {
-  padding: 0;
-  max-width: none;
-  margin: 0;
   color: var(--common-text-color);
 }
 
-.header {
-  margin-bottom: 32px;
+.system-layout {
+  display: grid;
+  grid-template-columns: minmax(360px, 420px) minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
 }
 
-.header h1 {
-  font-size: 18px;
-  font-weight: 600;
+.system-panel {
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+  box-shadow: var(--common-shadow-sm);
+}
+
+.module-panel {
+  grid-row: span 2;
+}
+
+.panel-header {
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+.panel-header h2 {
+  margin: 0;
   color: var(--common-text-color-heavy);
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
 }
 
-.header p {
+.panel-header p {
+  margin: 2px 0 0;
   color: var(--common-text-color-light);
   font-size: 12px;
+  line-height: 18px;
 }
 
 .management-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-  margin-bottom: 40px;
+  gap: 8px;
+  padding: 8px;
 }
 
 .management-card {
+  width: 100%;
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) 18px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  color: var(--common-text-color);
+  text-align: left;
   background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
-  border-radius: var(--common-radius-lg);
-  padding: 20px;
+  border-radius: var(--common-radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 16px;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .management-card:hover {
+  background: var(--common-hover-background-color);
   border-color: var(--common-primary-color);
-  box-shadow: var(--common-shadow-md);
-  transform: none;
+  box-shadow: var(--common-shadow-sm);
 }
 
 .card-icon {
-  width: 48px;
-  height: 48px;
-  background: var(--common-primary-background-color);
-  border-radius: var(--common-radius-md);
-  display: flex;
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
   color: var(--common-primary-color);
+  background: var(--common-primary-background-color);
+  border-radius: var(--common-radius-md);
+  font-size: 20px;
 }
 
 .card-content {
-  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.card-content h3 {
-  font-size: 18px;
-  font-weight: 600;
+.card-content strong {
   color: var(--common-text-color-heavy);
-  margin-bottom: 4px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 22px;
 }
 
-.card-content p {
+.card-content em {
+  margin-top: 2px;
+  overflow: hidden;
   color: var(--common-text-color-light);
-  font-size: 14px;
+  font-size: 12px;
+  font-style: normal;
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .card-arrow {
   color: var(--common-text-color-lighter);
-  font-size: 18px;
-}
-
-.system-status {
-  background: var(--common-panel-background-color);
-  border: 1px solid var(--common-border-color);
-  border-radius: var(--common-radius-lg);
-  padding: 24px;
-  box-shadow: var(--common-shadow-sm);
-}
-
-.system-status h2 {
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--common-text-color-heavy);
-  margin-bottom: 24px;
-}
-
-.status-section {
-  margin-bottom: 32px;
-}
-
-.status-section:last-child {
-  margin-bottom: 0;
-}
-
-.status-section h3 {
   font-size: 16px;
-  font-weight: 600;
-  color: var(--common-text-color-heavy);
-  margin-bottom: 16px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--common-border-color);
 }
 
 .status-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(45%, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  padding: 8px;
+  background: var(--common-border-color);
 }
 
 .status-item {
-  display: flex;
-  justify-content: space-between;
+  min-height: 48px;
+  display: grid;
+  grid-template-columns: 128px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
-  padding: 12px 16px;
-  background: var(--common-hover-background-color);
-  border-radius: var(--common-radius-md);
-}
-
-.status-item.full-width {
-  grid-column: 1 / -1;
+  padding: 8px 12px;
+  background: var(--common-panel-background-color);
 }
 
 .status-label {
   color: var(--common-text-color-light);
-  font-weight: 500;
+  font-size: 12px;
+  line-height: 20px;
 }
 
 .status-value {
+  min-width: 0;
+  overflow: hidden;
   color: var(--common-text-color-heavy);
+  font-size: 13px;
   font-weight: 600;
+  line-height: 20px;
   text-align: right;
-  word-break: break-all;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .status-online {
   color: var(--common-success-color) !important;
 }
 
+.resource-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding: 8px;
+}
+
 .resource-info {
+  padding: 16px;
   background: var(--common-hover-background-color);
+  border: 1px solid var(--common-border-color);
   border-radius: var(--common-radius-md);
-  padding: 20px;
 }
 
 .resource-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
+  color: var(--common-text-color-heavy);
+  font-size: 14px;
   font-weight: 600;
-  color: var(--common-text-color);
+  line-height: 22px;
 }
 
 .percentage {
-  color: var(--common-text-color-light);
-  font-size: 14px;
+  color: var(--common-primary-color);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 24px;
 }
 
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: var(--common-border-color);
-  border-radius: 4px;
   overflow: hidden;
-  margin-bottom: 16px;
+  background: var(--common-border-color);
+  border-radius: var(--common-radius-sm);
 }
 
 .progress-fill {
   height: 100%;
   background: var(--common-primary-color);
-  border-radius: 4px;
+  border-radius: var(--common-radius-sm);
   transition: width 0.3s ease;
 }
 
@@ -599,48 +643,58 @@ onMounted(() => {
   background: var(--common-success-color);
 }
 
+.resource-total {
+  margin-top: 8px;
+  color: var(--common-text-color-light);
+  font-size: 12px;
+  line-height: 20px;
+}
+
 .resource-details {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 16px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
 }
 
 .detail-item {
-  padding: 8px 12px;
+  min-width: 0;
+  padding: 8px;
   background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
   border-radius: var(--common-radius-sm);
-  text-align: center;
-  font-size: 14px;
-  color: var(--common-text-color);
 }
 
-/* 图标样式 */
-.icon-python::before {
-  content: "🐍";
+.detail-item span,
+.detail-item strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.icon-schedule::before {
-  content: "⏰";
+.detail-item span {
+  color: var(--common-text-color-light);
+  font-size: 12px;
+  line-height: 18px;
 }
 
-.icon-log::before {
-  content: "📝";
+.detail-item strong {
+  margin-top: 2px;
+  color: var(--common-text-color-heavy);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
-.arrow-right::before {
-  content: "→";
-}
-
-/* 定时任务对话框样式 */
 .scheduled-tasks-container {
   padding: 8px 0;
 }
 
 .tasks-header {
-  margin-bottom: 20px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
+  margin-bottom: 8px;
 }
 
 .task-category-tag {
@@ -653,29 +707,10 @@ onMounted(() => {
 }
 
 .task-status-running {
-  color: #10b981;
+  color: var(--common-success-color);
 }
 
 .task-status-stopped {
-  color: #f59e0b;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-  .management-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .status-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .resource-details {
-    grid-template-columns: 1fr;
-  }
-  
-  .system-management {
-    padding: 16px;
-  }
+  color: var(--common-warning-color);
 }
 </style>
