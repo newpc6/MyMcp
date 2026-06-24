@@ -237,6 +237,8 @@ const changePassword = async () => {
 .nav-menu :deep(.el-menu-item),
 .nav-menu :deep(.el-sub-menu__title) {
   height: 44px;
+  display: flex;
+  align-items: center;
   margin: 4px 8px;
   padding: 0 14px !important;
   color: var(--common-text-color);
@@ -244,6 +246,17 @@ const changePassword = async () => {
   font-size: var(--common-font-size-base);
   line-height: 44px;
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.nav-menu :deep(.el-menu--inline .el-menu-item) {
+  padding-left: 34px !important;
+}
+
+.nav-menu :deep(.el-sub-menu__icon-arrow) {
+  right: 16px;
+  margin-top: -6px;
+  color: var(--common-text-color-light);
+  font-size: 12px;
 }
 
 .nav-menu :deep(.el-menu-item:hover),
@@ -255,6 +268,12 @@ const changePassword = async () => {
 
 .nav-menu :deep(.el-menu-item.is-active) {
   font-weight: 600;
+}
+
+.nav-menu :deep(.el-menu-item.is-active .menu-icon-box),
+.nav-menu :deep(.el-sub-menu.is-active > .el-sub-menu__title .menu-icon-box) {
+  color: var(--common-on-primary-color);
+  background: var(--common-primary-color);
 }
 
 .menu-icon-box {

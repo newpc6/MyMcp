@@ -330,6 +330,9 @@ onMounted(() => {
 <style scoped>
 .statistics-container {
   min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   background: var(--common-background-color);
   padding: 0;
   position: relative;
@@ -339,9 +342,290 @@ onMounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
   gap: 16px;
-  margin-bottom: 16px;
   position: relative;
   z-index: 1;
+}
+
+.statistics-container :deep(.statistics-overview),
+.statistics-container :deep(.statistics-trend),
+.statistics-container :deep(.ranking-dashboard),
+.statistics-container :deep(.module-ranking),
+.statistics-container :deep(.tool-ranking),
+.statistics-container :deep(.service-ranking),
+.statistics-container :deep(.tool-execution-details) {
+  margin-bottom: 0 !important;
+}
+
+.statistics-container :deep(.overview-card),
+.statistics-container :deep(.trend-card),
+.statistics-container :deep(.dashboard-header),
+.statistics-container :deep(.ranking-card),
+.statistics-container :deep(.detail-card) {
+  overflow: hidden;
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-xs) !important;
+  transform: none !important;
+  backdrop-filter: none !important;
+}
+
+.statistics-container :deep(.overview-card:hover),
+.statistics-container :deep(.ranking-card:hover) {
+  transform: none !important;
+  box-shadow: var(--common-shadow-xs) !important;
+}
+
+.statistics-container :deep(.card-header),
+.statistics-container :deep(.dashboard-header) {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 !important;
+  padding: 12px 16px !important;
+  background: var(--common-panel-background-color) !important;
+  border-bottom: 1px solid var(--common-border-color) !important;
+}
+
+.statistics-container :deep(.header-title),
+.statistics-container :deep(.dashboard-title) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 !important;
+  color: var(--common-text-color-heavy) !important;
+  font-size: var(--common-font-size-title-md) !important;
+  font-weight: 600 !important;
+  line-height: 24px !important;
+}
+
+.statistics-container :deep(.header-icon),
+.statistics-container :deep(.title-icon),
+.statistics-container :deep(.section-title .el-icon) {
+  color: var(--common-primary-color) !important;
+  font-size: 18px !important;
+}
+
+.statistics-container :deep(.refresh-button),
+.statistics-container :deep(.details-button),
+.statistics-container :deep(.search-append-btn) {
+  border: 1px solid var(--common-primary-color) !important;
+  border-radius: var(--common-radius-md) !important;
+  background: var(--common-primary-color) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.statistics-container :deep(.refresh-button:hover),
+.statistics-container :deep(.details-button:hover),
+.statistics-container :deep(.search-append-btn:hover) {
+  background: var(--zartd-primary-7) !important;
+  transform: none !important;
+}
+
+.statistics-container :deep(.stats-grid),
+.statistics-container :deep(.trend-content) {
+  display: flex;
+  flex-direction: column;
+  gap: 16px !important;
+  padding: 16px !important;
+}
+
+.statistics-container :deep(.stats-section),
+.statistics-container :deep(.trend-section),
+.statistics-container :deep(.trend-summary) {
+  padding: 16px !important;
+  background: var(--common-surface-light-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: none !important;
+}
+
+.statistics-container :deep(.section-title),
+.statistics-container :deep(.summary-title) {
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px !important;
+  color: var(--common-text-color-heavy) !important;
+  font-size: var(--common-font-size-base) !important;
+  font-weight: 600 !important;
+  line-height: 24px !important;
+  text-align: left !important;
+}
+
+.statistics-container :deep(.stats-row),
+.statistics-container :deep(.summary-cards) {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px !important;
+}
+
+.statistics-container :deep(.stats-section:nth-child(2) .stats-row),
+.statistics-container :deep(.stats-section:nth-child(3) .stats-row) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.statistics-container :deep(.stats-card),
+.statistics-container :deep(.summary-card) {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  padding: 12px 14px !important;
+  color: var(--common-text-color) !important;
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.statistics-container :deep(.stats-card:hover),
+.statistics-container :deep(.summary-card:hover) {
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.statistics-container :deep(.card-content) {
+  width: 100%;
+  min-width: 0;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+}
+
+.statistics-container :deep(.stats-card .card-content),
+.statistics-container :deep(.summary-card .card-content) {
+  height: 100%;
+}
+
+.statistics-container :deep(.card-icon) {
+  width: 42px !important;
+  height: 42px !important;
+  flex: 0 0 42px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  margin: 0 !important;
+  color: var(--common-primary-color) !important;
+  background: var(--common-primary-background-color) !important;
+  border: 1px solid var(--zartd-primary-2);
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: var(--common-shadow-xs);
+  font-size: 18px !important;
+}
+
+.statistics-container :deep(.card-info),
+.statistics-container :deep(.summary-card .card-content) {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.statistics-container :deep(.trend-summary .summary-card) {
+  min-height: 86px;
+}
+
+.statistics-container :deep(.trend-summary .summary-card > .card-content) {
+  height: auto !important;
+  padding: 0 !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.statistics-container :deep(.card-value) {
+  margin: 0 0 3px !important;
+  color: var(--common-text-color-heavy) !important;
+  font-size: 24px !important;
+  font-weight: 700 !important;
+  line-height: 26px !important;
+  -webkit-text-fill-color: var(--common-text-color-heavy) !important;
+}
+
+.statistics-container :deep(.card-label),
+.statistics-container :deep(.card-today),
+.statistics-container :deep(.card-change),
+.statistics-container :deep(.card-success),
+.statistics-container :deep(.card-error) {
+  margin: 0 !important;
+  color: var(--common-text-color-light) !important;
+  opacity: 1 !important;
+  font-size: var(--common-font-size-secondary) !important;
+  font-weight: 400 !important;
+  line-height: 18px !important;
+}
+
+.statistics-container :deep(.trend-tables),
+.statistics-container :deep(.ranking-dashboard .ranking-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+.statistics-container :deep(.table-container) {
+  max-height: none !important;
+  overflow: auto;
+}
+
+.statistics-container :deep(.pagination-section) {
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 16px !important;
+  background: var(--common-surface-light-color) !important;
+  border-top: 1px solid var(--common-border-color) !important;
+}
+
+.statistics-container :deep(.ranking-badge) {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--common-radius-md);
+  font-weight: 600;
+  line-height: 26px;
+}
+
+.statistics-container :deep(.count-tag),
+.statistics-container :deep(.group-tag),
+.statistics-container :deep(.service-tag),
+.statistics-container :deep(.module-tag),
+.statistics-container :deep(.status-tag) {
+  border-radius: var(--common-radius-sm) !important;
+  background-image: none !important;
+  font-weight: 500 !important;
+}
+
+.statistics-container :deep(.group-name),
+.statistics-container :deep(.module-name),
+.statistics-container :deep(.tool-name),
+.statistics-container :deep(.service-name) {
+  color: var(--common-text-color-heavy) !important;
+  font-size: var(--common-font-size-base) !important;
+  font-weight: 600 !important;
+}
+
+.statistics-container :deep(.creator-name),
+.statistics-container :deep(.execution-time),
+.statistics-container :deep(.created-time),
+.statistics-container :deep(.rank-value) {
+  color: var(--common-text-color) !important;
+}
+
+.statistics-container :deep(.filter-input) {
+  width: 280px;
 }
 
 /* 响应式设计 */

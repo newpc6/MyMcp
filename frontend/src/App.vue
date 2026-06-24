@@ -294,17 +294,48 @@ onMounted(async () => {
 .app-tabs {
   height: 50px;
   flex: 0 0 50px;
+  display: flex;
+  align-items: flex-end;
   padding: 0 16px;
   background: var(--common-surface-gradient);
   box-shadow: var(--common-shadow-xs);
 }
 
+.app-tabs-bar {
+  width: 100%;
+}
+
 .app-tabs-bar .el-tabs__header {
+  height: 50px;
+  display: flex;
+  align-items: flex-end;
   margin: 0;
+}
+
+.app-tabs-bar .el-tabs__nav-wrap {
+  height: 50px;
+  display: flex;
+  align-items: flex-end;
+}
+
+.app-tabs-bar .el-tabs__nav-wrap::after {
+  display: none;
+}
+
+.app-tabs-bar .el-tabs__nav-scroll {
+  display: flex;
+  align-items: flex-end;
+}
+
+.app-tabs-bar .el-tabs__nav {
+  border: 0 !important;
 }
 
 .app-tabs-bar .el-tabs__item {
   height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 34px;
   margin-right: 2px;
   padding: 0 12px !important;
@@ -323,6 +354,18 @@ onMounted(async () => {
   background: var(--common-surface-gradient);
   box-shadow: var(--common-shadow-xs);
   font-weight: 500;
+}
+
+.app-tabs-bar .el-icon.is-icon-close {
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  border-radius: var(--common-radius-sm);
+}
+
+.app-tabs-bar .el-icon.is-icon-close:hover {
+  color: var(--common-primary-color);
+  background: var(--common-primary-background-color);
 }
 
 .app-tabs-bar .el-tabs__content {
