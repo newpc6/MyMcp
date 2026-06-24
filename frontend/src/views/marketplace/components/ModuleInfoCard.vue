@@ -109,25 +109,17 @@ export default {
 
 <style scoped>
 .module-info-card {
-  border-radius: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08) !important;
-  border: 1px solid rgba(235, 235, 235, 0.6);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs) !important;
+  border: 1px solid var(--common-border-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fcff 100%);
-  backdrop-filter: blur(10px);
+  background: var(--common-panel-background-color);
   position: relative;
 }
 
 .module-info-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4);
-  border-radius: 20px 20px 0 0;
+  display: none;
 }
 
 /* .module-info-card:hover {
@@ -137,142 +129,143 @@ export default {
 
 .module-info-descriptions {
   margin-top: 16px;
-  border-radius: 12px;
+  border-radius: var(--common-radius-md);
   overflow: hidden;
-  border: 1px solid rgba(235, 235, 235, 0.6);
+  border: 1px solid var(--common-border-color);
 }
 
 :deep(.el-descriptions__header) {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: var(--common-table-header-background-color);
   padding: 16px 20px;
-  border-bottom: 1px solid rgba(235, 235, 235, 0.6);
+  border-bottom: 1px solid var(--common-border-color);
 }
 
 :deep(.el-descriptions__body) {
-  background: rgba(255, 255, 255, 0.8);
+  background: var(--common-panel-background-color);
 }
 
 :deep(.info-label) {
-  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%) !important;
-  color: #475569 !important;
+  background: var(--common-table-header-background-color) !important;
+  color: var(--common-text-color) !important;
   font-weight: 600 !important;
-  border-right: 1px solid rgba(235, 235, 235, 0.6) !important;
+  border-right: 1px solid var(--common-border-color) !important;
   padding: 12px 16px !important;
 }
 
 :deep(.info-content) {
-  color: #64748b !important;
+  color: var(--common-text-color) !important;
   padding: 12px 16px !important;
-  background: rgba(255, 255, 255, 0.8) !important;
+  background: var(--common-panel-background-color) !important;
 }
 
 :deep(.el-descriptions__cell) {
-  border-bottom: 1px solid rgba(235, 235, 235, 0.4) !important;
+  border-bottom: 1px solid var(--common-border-color) !important;
 }
 
 .return-btn {
-  border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--common-radius-md);
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
   padding: 10px 20px;
   font-weight: 500;
-  border: 2px solid #e5e7eb;
-  background: #ffffff;
-  color: #6b7280;
+  border: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
+  color: var(--common-text-color);
 }
 
 .return-btn:hover {
-  background: #f9fafb;
-  border-color: #d1d5db;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  background: var(--common-hover-background-color);
+  border-color: var(--common-primary-color);
+  color: var(--common-primary-color);
+  transform: none;
+  box-shadow: none;
 }
 
 :deep(.el-button--primary) {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border: none;
-  border-radius: 12px;
+  background: var(--common-primary-color);
+  border: 1px solid var(--common-primary-color);
+  border-radius: var(--common-radius-md);
   padding: 10px 20px;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :deep(.el-button--primary:hover) {
-  background: linear-gradient(135deg, #2563eb, #1e40af);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: var(--zartd-primary-7);
+  transform: none;
+  box-shadow: none;
 }
 
 :deep(.el-button--danger) {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border: none;
-  border-radius: 12px;
+  background: var(--common-error-color);
+  border: 1px solid var(--common-error-color);
+  border-radius: var(--common-radius-md);
   padding: 10px 20px;
   font-weight: 600;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 :deep(.el-button--danger:hover) {
-  background: linear-gradient(135deg, #dc2626, #b91c1c);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+  background: var(--common-error-color);
+  transform: none;
+  box-shadow: none;
 }
 
 .tag-item {
-  border-radius: 20px;
+  border-radius: var(--common-radius-sm);
   padding: 0 12px;
   height: 26px;
   line-height: 24px;
   margin-right: 8px;
   margin-bottom: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: none;
   font-weight: 500;
   border: 1px solid transparent;
 }
 
 .tag-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: none;
+  box-shadow: none;
 }
 
 :deep(.el-tag--success) {
-  background: linear-gradient(135deg, #10b981, #059669);
-  border-color: transparent;
-  color: white;
+  background: var(--common-success-background-color);
+  border-color: var(--common-success-color);
+  color: var(--common-success-color);
 }
 
 :deep(.el-tag--primary) {
-  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-  border-color: transparent;
-  color: white;
+  background: var(--common-primary-background-color);
+  border-color: var(--common-primary-color);
+  color: var(--common-primary-color);
 }
 
 :deep(.el-tag--info) {
-  background: linear-gradient(135deg, #6b7280, #4b5563);
-  border-color: transparent;
-  color: white;
+  background: var(--common-info-background-color);
+  border-color: var(--common-border-color);
+  color: var(--common-text-color-light);
 }
 
 :deep(.el-tag--danger) {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border-color: transparent;
-  color: white;
+  background: var(--common-error-background-color);
+  border-color: var(--common-error-color);
+  color: var(--common-error-color);
 }
 
 :deep(.el-tag--warning) {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  border-color: transparent;
-  color: white;
+  background: var(--common-warning-background-color);
+  border-color: var(--common-warning-color);
+  color: var(--common-warning-color);
 }
 
 :deep(.el-avatar) {
-  background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-  color: #64748b;
-  border: 2px solid rgba(235, 235, 235, 0.6);
-  transition: all 0.3s ease;
+  background: var(--common-primary-background-color);
+  color: var(--common-primary-color);
+  border: 1px solid var(--zartd-primary-2);
+  transition: none;
 }
 
 h2 {
-  color: #1e293b;
+  color: var(--common-text-color-heavy);
   font-weight: 700;
   margin: 0;
   line-height: 1.4;

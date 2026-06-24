@@ -232,25 +232,17 @@ export default {
 }
 
 .service-card {
-  border-radius: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08) !important;
-  border: 1px solid rgba(235, 235, 235, 0.6);
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs) !important;
+  border: 1px solid var(--common-border-color);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   overflow: hidden;
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-  backdrop-filter: blur(10px);
+  background: var(--common-panel-background-color);
   position: relative;
 }
 
 .service-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
-  border-radius: 20px 20px 0 0;
+  display: none;
 }
 
 /* .service-card:hover {
@@ -259,9 +251,9 @@ export default {
 } */
 
 :deep(.el-card__header) {
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(235, 235, 235, 0.6);
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
 }
 
 .service-actions {
@@ -285,22 +277,22 @@ export default {
 } */
 
 :deep(.el-table) {
-  --el-table-border-color: rgba(235, 235, 235, 0.6);
-  --el-table-header-bg-color: rgba(248, 250, 252, 0.8);
-  border-radius: 12px;
+  --el-table-border-color: var(--common-border-color);
+  --el-table-header-bg-color: var(--common-table-header-background-color);
+  border-radius: var(--common-radius-md);
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: none;
 }
 
 :deep(.el-table th) {
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+  background: var(--common-table-header-background-color) !important;
   font-weight: 600;
-  color: #475569;
-  border-bottom: 2px solid rgba(59, 130, 246, 0.1);
+  color: var(--common-text-color);
+  border-bottom: 1px solid var(--common-border-color);
 }
 
 :deep(.el-table--enable-row-hover .el-table__body tr:hover > td) {
-  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05)) !important;
+  background: var(--common-hover-background-color) !important;
 }
 
 :deep(.el-table .cell) {
@@ -308,7 +300,7 @@ export default {
 }
 
 :deep(.el-table td) {
-  border-bottom: 1px solid rgba(235, 235, 235, 0.4);
+  border-bottom: 1px solid var(--common-border-color);
 }
 
 .table-container {
@@ -328,50 +320,48 @@ export default {
 }
 
 :deep(.el-table__body-wrapper::-webkit-scrollbar-thumb) {
-  background: linear-gradient(135deg, #cbd5e1, #94a3b8);
+  background: rgb(31 45 61 / 20%);
   border-radius: 4px;
 }
 
 :deep(.el-table__body-wrapper::-webkit-scrollbar-track) {
-  background: #f1f5f9;
+  background: var(--common-surface-light-color);
   border-radius: 4px;
 }
 
 :deep(.service-table .el-input__inner) {
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
   font-size: 12px;
-  color: #64748b;
-  background: linear-gradient(135deg, #f8fafc, #f1f5f9);
+  color: var(--common-text-color-light);
+  background: var(--common-surface-light-color);
 }
 
 :deep(.service-table .el-input__wrapper) {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(203, 213, 225, 0.6);
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  box-shadow: 0 0 0 1px var(--common-input-border-color) inset;
+  border: 0;
+  border-radius: var(--common-radius-md);
+  transition: box-shadow 0.2s ease;
 }
 
 :deep(.service-table .el-input__wrapper:hover) {
-  border-color: #94a3b8;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-  transform: translateY(-1px);
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset;
+  transform: none;
 }
 
 :deep(.service-table .el-input__wrapper.is-focus) {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset;
 }
 
 .service-count {
-  border-radius: 16px;
+  border-radius: var(--common-radius-sm);
   padding: 0 10px;
   font-size: 12px;
   height: 22px;
   line-height: 22px;
-  background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-  color: #475569;
+  background: var(--common-info-background-color);
+  color: var(--common-text-color-light);
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: none;
 }
 
 
@@ -446,7 +436,7 @@ export default {
 } */
 
 h3 {
-  color: #1e293b;
+  color: var(--common-text-color-heavy);
   font-weight: 700;
   margin: 0;
 }
@@ -454,14 +444,14 @@ h3 {
 /* 空状态样式 */
 :deep(.el-empty) {
   padding: 32px 20px;
-  background: rgba(248, 250, 252, 0.5);
-  border-radius: 16px;
-  border: 2px dashed rgba(203, 213, 225, 0.8);
+  background: var(--common-surface-light-color);
+  border-radius: var(--common-radius-lg);
+  border: 1px dashed var(--common-border-color);
   margin: 16px 0;
 }
 
 :deep(.el-empty__description) {
-  color: #64748b;
+  color: var(--common-text-color-light);
   font-size: 14px;
 }
 

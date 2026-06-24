@@ -1542,4 +1542,163 @@ onMounted(() => {
 .tabs-section {
   animation: fadeInUp 0.6s ease-out 0.2s both;
 }
+
+/* Platform console restyle */
+.module-detail-container {
+  min-height: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.detail-wrapper {
+  max-width: none;
+  margin: 0;
+}
+
+.loading-container,
+.tabs-card,
+.module-info-section :deep(.el-card),
+.service-publish-section :deep(.el-card) {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-xs) !important;
+  backdrop-filter: none !important;
+}
+
+.content-wrapper {
+  gap: 16px;
+  animation: none;
+}
+
+.top-cards-section {
+  display: grid;
+  grid-template-columns: minmax(360px, 2fr) minmax(520px, 3fr);
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.module-info-section,
+.service-publish-section {
+  min-height: 280px;
+}
+
+.top-cards-section > div,
+.tabs-section {
+  animation: none;
+}
+
+.tabs-card {
+  overflow: hidden;
+}
+
+.detail-tabs {
+  padding: 0;
+}
+
+:deep(.el-tabs__header) {
+  margin: 0;
+  padding: 0 16px;
+  background: var(--common-panel-background-color) !important;
+  border-bottom: 1px solid var(--common-border-color) !important;
+  border-radius: 0 !important;
+}
+
+:deep(.el-tabs__item) {
+  height: 42px;
+  line-height: 42px;
+  margin: 0 2px;
+  padding: 0 16px;
+  color: var(--common-text-color-light);
+  border-radius: var(--common-radius-md) var(--common-radius-md) 0 0;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+:deep(.el-tabs__item::before) {
+  display: none;
+}
+
+:deep(.el-tabs__item:hover),
+:deep(.el-tabs__item.is-active) {
+  color: var(--common-primary-color);
+  background: var(--common-hover-background-color) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.tab-content {
+  min-height: 420px;
+  padding: 16px;
+  background: var(--common-list-background-color);
+}
+
+.edit-dialog :deep(.el-dialog),
+.publish-dialog :deep(.el-dialog),
+.params-dialog :deep(.el-dialog),
+.auth-manage-dialog :deep(.el-dialog) {
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-lg);
+  backdrop-filter: none;
+}
+
+.edit-dialog :deep(.el-dialog__header),
+.publish-dialog :deep(.el-dialog__header),
+.params-dialog :deep(.el-dialog__header),
+.auth-manage-dialog :deep(.el-dialog__header) {
+  padding: 16px 20px;
+  background: var(--common-panel-background-color);
+  border-bottom: 1px solid var(--common-border-color);
+  border-radius: 0;
+}
+
+.edit-dialog :deep(.el-dialog__body),
+.publish-dialog :deep(.el-dialog__body),
+.params-dialog :deep(.el-dialog__body),
+.auth-manage-dialog :deep(.el-dialog__body) {
+  padding: 20px;
+}
+
+.protocol-radio,
+.config-item,
+.path-hint,
+.checkbox-hint,
+.empty-params,
+.auth-manage-content {
+  background: var(--common-surface-light-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.protocol-radio::before {
+  display: none;
+}
+
+.protocol-radio:hover,
+.protocol-radio.is-checked,
+.config-item:hover {
+  border-color: var(--zartd-primary-2) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.dialog-actions,
+.dialog-footer {
+  border-top: 1px solid var(--common-border-color);
+}
+
+.cancel-btn,
+.submit-btn {
+  border-radius: var(--common-radius-md);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.submit-btn,
+.form-switch :deep(.el-switch.is-checked .el-switch__core) {
+  background: var(--common-primary-color) !important;
+}
 </style>

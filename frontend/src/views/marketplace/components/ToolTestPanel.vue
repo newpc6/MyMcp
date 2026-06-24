@@ -719,6 +719,94 @@ export default {
     cursor: not-allowed !important;
 }
 
+/* Platform console restyle */
+.mcp-tool-list {
+    width: 300px;
+    padding-right: 16px;
+    border-right: 1px solid var(--common-border-color);
+}
+
+.tool-test-content {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.code-display-section {
+    width: 380px;
+    padding-left: 16px;
+    border-left: 1px solid var(--common-border-color);
+}
+
+.tool-card,
+.tool-params-card,
+.config-params-card,
+.execution-card,
+.result-card,
+.code-display-card {
+    background: var(--common-panel-background-color) !important;
+    border: 1px solid var(--common-border-color) !important;
+    border-radius: var(--common-radius-lg) !important;
+    box-shadow: var(--common-shadow-xs) !important;
+    backdrop-filter: none !important;
+    transform: none !important;
+}
+
+.tool-card {
+    padding: 12px;
+    margin-bottom: 8px !important;
+}
+
+.tool-card:hover,
+.tool-card-active {
+    background: var(--common-hover-background-color) !important;
+    border-color: var(--zartd-primary-2) !important;
+    transform: none !important;
+    box-shadow: var(--common-shadow-xs) !important;
+}
+
+.tool-card::before {
+    display: none;
+}
+
+.tool-params-card :deep(.el-card__header),
+.config-params-card :deep(.el-card__header),
+.result-card :deep(.el-card__header),
+.code-display-card :deep(.el-card__header) {
+    background: var(--common-panel-background-color) !important;
+    border-bottom: 1px solid var(--common-border-color) !important;
+}
+
+.execution-card :deep(.el-card__body) {
+    padding: 16px;
+}
+
+.result-content-wrapper {
+    background: var(--common-surface-light-color);
+    border: 1px solid var(--common-border-color);
+    border-radius: var(--common-radius-md);
+}
+
+:deep(.el-button.test-button) {
+    height: 36px;
+    background: var(--common-primary-color) !important;
+    border: 1px solid var(--common-primary-color) !important;
+    border-radius: var(--common-radius-md) !important;
+    box-shadow: none !important;
+    letter-spacing: 0;
+    transform: none !important;
+}
+
+:deep(.el-button.test-button:hover) {
+    background: var(--zartd-primary-7) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+:deep(.el-button.test-button.is-disabled) {
+    background: var(--common-info-color) !important;
+    border-color: var(--common-info-color) !important;
+}
+
 .required-params-alert {
     border-radius: 8px;
     border: 1px solid #f0ad4e;

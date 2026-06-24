@@ -69,7 +69,8 @@
   --common-shadow-lg: 0 16px 32px 0 #124ab429;
   --common-radius-sm: 4px;
   --common-radius-md: 8px;
-  --common-radius-lg: 16px;
+  --common-radius-lg: 12px;
+  --common-radius-xl: 16px;
   --common-font-size-title-xl: 32px;
   --common-font-size-title-lg: 24px;
   --common-font-size-title-md: 18px;
@@ -935,4 +936,330 @@ body {
 
 .ml-20 {
   margin-left: 20px;
+}
+
+// 平台视觉兜底：压住历史页面里的重渐变、大圆角、强阴影和玻璃态。
+.mcp-services-container,
+.module-detail-container,
+.users-container,
+.tenants-container,
+.system-management,
+.statistics-container,
+.marketplace-container,
+.secret-management-page,
+.access-logs-page,
+.python-packages,
+.scheduled-tasks-page {
+  background-color: transparent !important;
+}
+
+.mcp-services-container .page-header,
+.mcp-services-container .services-grid,
+.mcp-services-container .service-card,
+.module-detail-container .tabs-card,
+.module-detail-container .module-info-card,
+.module-detail-container .service-card,
+.module-detail-container .tool-card,
+.module-detail-container .tool-params-card,
+.module-detail-container .config-params-card,
+.module-detail-container .execution-card,
+.module-detail-container .result-card,
+.module-detail-container .code-display-card,
+.module-detail-container .markdown-content,
+.users-container .page-header,
+.users-container .table-card,
+.tenants-container .page-header,
+.tenants-container .tenants-content,
+.tenants-container .tree-container,
+.tenants-container .tenant-card {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-xs) !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+
+.mcp-services-container .services-grid,
+.module-detail-container .tab-content,
+.module-detail-container .tool-test-area,
+.tenants-container .tenants-content {
+  background: var(--common-list-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+}
+
+.mcp-services-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mcp-services-container .page-header {
+  padding: 12px 16px !important;
+}
+
+.mcp-services-container .header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mcp-services-container .search-section {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.mcp-services-container .services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  padding: 16px !important;
+}
+
+.mcp-services-container .service-card {
+  min-height: 240px;
+  padding: 16px !important;
+}
+
+.mcp-services-container .card-header {
+  margin: 0 0 12px !important;
+  padding: 0 0 12px !important;
+}
+
+.mcp-services-container .status-section,
+.mcp-services-container .action-section,
+.mcp-services-container .service-meta,
+.mcp-services-container .meta-row,
+.mcp-services-container .url-container {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.mcp-services-container .service-name,
+.users-container .card-title,
+.tenants-container .tree-title,
+.tenants-container .tenant-name {
+  color: var(--common-text-color-heavy) !important;
+}
+
+.mcp-services-container .service-module,
+.mcp-services-container .service-description,
+.mcp-services-container .meta-label,
+.mcp-services-container .meta-value,
+.tenants-container .tenant-description,
+.tenants-container .tenant-meta,
+.users-container .user-count {
+  color: var(--common-text-color-light) !important;
+}
+
+.mcp-services-container .url-section {
+  background: var(--common-surface-light-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+}
+
+.mcp-services-container .url-text {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+}
+
+.users-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.users-container .page-header,
+.tenants-container .page-header {
+  padding: 16px 20px !important;
+}
+
+.users-container .table-card {
+  overflow: hidden;
+}
+
+.users-container .card-header {
+  min-height: 54px;
+  padding: 14px 16px !important;
+}
+
+.users-container .card-content {
+  padding: 16px !important;
+  background: var(--common-list-background-color) !important;
+  border-top: 1px solid var(--common-border-color);
+}
+
+.users-container .user-avatar,
+.tenants-container .avatar-icon {
+  background: var(--common-primary-background-color) !important;
+  border: 1px solid var(--zartd-primary-2) !important;
+  color: var(--common-primary-color) !important;
+  box-shadow: none !important;
+}
+
+.tenants-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tenants-container .tenants-content,
+.tenants-container .tree-container {
+  padding: 16px !important;
+}
+
+.tenants-container .tree-header {
+  min-height: 52px;
+  padding: 0 0 12px !important;
+}
+
+.tenants-container .tenant-card {
+  padding: 12px 14px !important;
+  margin-bottom: 10px !important;
+}
+
+.mcp-services-container .service-card:hover,
+.module-detail-container .tool-card:hover,
+.module-detail-container .tool-card-active,
+.module-detail-container .markdown-content:hover,
+.users-container .action-btn:hover,
+.tenants-container .tenant-card:hover {
+  transform: none !important;
+  box-shadow: var(--common-shadow-sm) !important;
+}
+
+.module-detail-container .module-info-card::before,
+.module-detail-container .service-card::before,
+.mcp-services-container .service-card::before,
+.mcp-services-container .add-service-card::before,
+.users-container .page-header::before,
+.tenants-container .page-header::before {
+  display: none !important;
+}
+
+.module-detail-container .el-card__header,
+.module-detail-container .card-header,
+.module-detail-container .tree-header,
+.mcp-services-container .card-header,
+.users-container .card-header,
+.tenants-container .tree-header {
+  background: var(--common-panel-background-color) !important;
+  border-bottom: 1px solid var(--common-border-color) !important;
+}
+
+.module-detail-container .detail-tabs .el-tabs__header {
+  background: var(--common-panel-background-color) !important;
+  border-bottom: 1px solid var(--common-border-color) !important;
+  border-radius: 0 !important;
+}
+
+.module-detail-container .detail-tabs .el-tabs__item {
+  height: 42px !important;
+  line-height: 42px !important;
+  margin: 0 4px !important;
+  border-radius: var(--common-radius-md) var(--common-radius-md) 0 0 !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.module-detail-container .detail-tabs .el-tabs__item.is-active {
+  color: var(--common-primary-color) !important;
+  background: var(--common-hover-background-color) !important;
+}
+
+.module-detail-container .tag-item,
+.users-container .status-tag,
+.users-container .platform-tag,
+.users-container .tenant-tag,
+.tenants-container .status-tag,
+.tenants-container .code-tag {
+  border-radius: var(--common-radius-sm) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.statistics-container .overview-card,
+.statistics-container .trend-card,
+.system-management .system-panel {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-xs) !important;
+  overflow: hidden;
+  transform: none !important;
+}
+
+.statistics-container .stats-section,
+.statistics-container .chart-container,
+.statistics-container .trend-summary,
+.system-management .management-grid,
+.system-management .status-grid,
+.system-management .resource-grid {
+  background: var(--common-list-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+}
+
+.statistics-container .stats-card,
+.statistics-container .summary-card,
+.system-management .management-card,
+.system-management .status-item,
+.system-management .resource-info {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.statistics-container .stats-card:hover,
+.statistics-container .summary-card:hover,
+.system-management .management-card:hover,
+.system-management .status-item:hover,
+.system-management .resource-info:hover {
+  box-shadow: var(--common-shadow-sm) !important;
+  transform: none !important;
+}
+
+.statistics-container .stats-card::before,
+.statistics-container .summary-card::before,
+.system-management .management-card::before,
+.system-management .status-item::before,
+.system-management .resource-info::before {
+  display: none !important;
+}
+
+.statistics-container .card-icon,
+.system-management .card-icon {
+  background: var(--common-primary-background-color) !important;
+  border: 1px solid var(--zartd-primary-2) !important;
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: none !important;
+}
+
+.statistics-container .card-value,
+.system-management .status-value,
+.system-management .percentage {
+  color: var(--common-text-color-heavy) !important;
+}
+
+.statistics-container .card-label,
+.statistics-container .card-today,
+.statistics-container .card-change,
+.system-management .panel-header p,
+.system-management .card-content em,
+.system-management .status-label,
+.system-management .resource-total,
+.system-management .detail-item span {
+  color: var(--common-text-color-light) !important;
 }

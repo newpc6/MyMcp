@@ -100,6 +100,18 @@
       </ActionSearchCard>
 
       <section class="marketplace-list-panel">
+        <div class="list-panel-header">
+          <div>
+            <h2 class="list-panel-title">MCP模板列表</h2>
+            <p class="list-panel-subtitle">
+              当前分类：{{ activeCategory?.name || '全部' }}，共 {{ total }} 个模板
+            </p>
+          </div>
+          <div class="list-panel-meta">
+            <el-tag size="small" effect="plain">{{ modules.length }} 个当前结果</el-tag>
+          </div>
+        </div>
+
         <!-- 一行三列的卡片网格 -->
         <div class="module-grid">
           <div v-for="module in modules" :key="module.id" class="module-item">
@@ -1137,6 +1149,36 @@ function handleResetSearch() {
   border: 1px solid var(--common-border-color);
   border-radius: var(--common-radius-lg);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
+}
+
+.list-panel-header {
+  min-height: 48px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+.list-panel-title {
+  margin: 0;
+  color: var(--common-text-color-heavy);
+  font-size: var(--common-font-size-title-md);
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.list-panel-subtitle {
+  margin: 4px 0 0;
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-secondary);
+  line-height: 18px;
+}
+
+.list-panel-meta {
+  flex: 0 0 auto;
 }
 
 .module-grid {

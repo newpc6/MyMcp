@@ -26,24 +26,24 @@ export default {
 
 <style scoped>
 .markdown-content {
-  padding: 1.5rem;
-  background-color: #fff;
-  border-radius: 16px;
-  border: 1px solid #eee;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  transition: all 0.3s ease;
+  padding: 16px;
+  background-color: var(--common-panel-background-color);
+  border-radius: var(--common-radius-lg);
+  border: 1px solid var(--common-border-color);
+  box-shadow: var(--common-shadow-xs);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .markdown-content:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
+  box-shadow: var(--common-shadow-xs);
+  transform: none;
 }
 
 .markdown-body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
-  color: #333;
+  color: var(--common-text-color);
 }
 
 .markdown-body h1,
