@@ -99,11 +99,12 @@ async def create_module(request: Request):
 
         # 获取用户信息并添加到数据中
         user_id, is_admin = get_user_info(request)
-        if user_id:
-            data["user_id"] = user_id
+        if not user_id:
+            return error_response("请先登录后再创建MCP模块", code=401, http_status_code=401)
 
-            result = marketplace_service.create_module(data)
-            return success_response(result, code=0, http_status_code=200)
+        data["user_id"] = user_id
+        result = marketplace_service.create_module(data)
+        return success_response(result, code=0, http_status_code=200)
     except Exception as e:
         mcp_logger.error(f"创建MCP模块失败: {str(e)}")
         return error_response(

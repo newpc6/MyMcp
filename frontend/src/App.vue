@@ -1,10 +1,10 @@
 <template>
-  <el-container class="app-container">
-    <el-header padding="0" v-if="showNavbar">
+  <el-container class="app-container" :class="{ 'is-login': !showNavbar }">
+    <el-aside v-if="showNavbar" width="232px" class="app-sidebar">
       <NavbarComponent />
-    </el-header>
+    </el-aside>
     
-    <el-main :class="{ 'login-main': !showNavbar }">
+    <el-main class="app-main" :class="{ 'login-main': !showNavbar }">
       <router-view></router-view>
     </el-main>
   </el-container>
@@ -33,22 +33,29 @@ onMounted(async () => {
 .app-container {
   height: 100vh;
   display: flex;
-  flex-direction: column;
+  background: var(--common-background-color);
 }
 
-.el-header {
+.app-container.is-login {
+  display: block;
+}
+
+.app-sidebar {
   padding: 0;
-  height: auto;
-  z-index: 10;
+  overflow: hidden;
+  background-image: var(--menu-background-image);
 }
 
-.el-main {
-  padding: 20px;
+.app-main {
+  padding: 16px;
   flex: 1;
   overflow-y: auto;
+  background: var(--common-background-color);
+  min-width: 0;
 }
 
 .login-main {
   padding: 0;
+  height: 100vh;
 }
 </style>

@@ -1,29 +1,19 @@
 /* ActionSearchCard 全局样式 */
 .action-search-card {
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border: none;
+  background: var(--common-panel-background-color);
+  border-radius: 8px !important;
+  box-shadow: none;
+  border: 1px solid var(--common-border-color);
   position: relative;
   overflow: hidden;
-}
-
-.action-search-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border-radius: 16px 16px 0 0;
 }
 
 .action-search-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 32px !important;
+  min-height: 32px;
+  gap: 16px;
   .el-form {
     height: 32px !important;
   }
@@ -31,43 +21,44 @@
 
 .action-buttons {
   display: flex;
-  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .search-form {
   display: flex;
   align-items: center;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .search-form .search-input .el-input__wrapper {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--common-input-border-color) inset;
   transition: all 0.3s ease;
 }
 
 .search-form .search-input .el-input__wrapper:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 1px var(--common-border-color) inset;
 }
 
 .search-form .search-input .el-input__wrapper.is-focus {
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-  border-color: #4f8ef7;
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset;
 }
 
 .search-form .creator-select .el-input__wrapper {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 6px;
+  box-shadow: 0 0 0 1px var(--common-input-border-color) inset;
   transition: all 0.3s ease;
 }
 
 .search-form .creator-select .el-input__wrapper:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 0 1px var(--common-border-color) inset;
 }
 
 .search-form .creator-select .el-input__wrapper.is-focus {
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-  border-color: #4f8ef7;
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset;
 }
 
 /* 用户下拉选择器样式 */
@@ -87,4 +78,4 @@
   margin-left: 8px;
   font-size: 11px;
   padding: 2px 6px;
-} 
+}

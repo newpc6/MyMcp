@@ -3,6 +3,52 @@
 @import '@/styles/card.scss';
 @import '@/styles/table.scss';
 @import '@/styles/components/index.scss';
+
+:root {
+  --zartd-primary-color: #3388ff;
+  --zartd-success-color: #10b981;
+  --zartd-warning-color: #f59e0b;
+  --zartd-error-color: #ef4444;
+  --zartd-info-color: #6b7280;
+  --zartd-text-color: #223355;
+  --zartd-text-color-light: #667085;
+  --zartd-text-color-lighter: #98a2b3;
+  --zartd-text-color-heavy: #111827;
+  --zartd-text-color-positive: #ffffff;
+  --zartd-text-color-negative: #223355;
+  --zartd-border-color: #dbe5ef;
+  --zartd-input-border-color: #cfd8e3;
+  --zartd-primary-fade-10: rgb(51 136 255 / 10%);
+  --common-primary-color: var(--zartd-primary-color);
+  --common-success-color: var(--zartd-success-color);
+  --common-warning-color: var(--zartd-warning-color);
+  --common-error-color: var(--zartd-error-color);
+  --common-info-color: var(--zartd-info-color);
+  --common-text-color: var(--zartd-text-color);
+  --common-text-color-light: var(--zartd-text-color-light);
+  --common-text-color-lighter: var(--zartd-text-color-lighter);
+  --common-text-color-heavy: var(--zartd-text-color-heavy);
+  --common-text-color-positive: var(--zartd-text-color-positive);
+  --common-text-color-negative: var(--zartd-text-color-negative);
+  --common-border-color: var(--zartd-border-color);
+  --common-input-border-color: var(--zartd-input-border-color);
+  --common-background-color: #f1f6fa;
+  --header-background-image: linear-gradient(90deg, #105ac2 0%, #3388ff 64%, #428aef 100%);
+  --header-border-color: var(--zartd-primary-fade-10);
+  --header-shadow-color: rgb(0 114 255 / 10%);
+  --menu-background-image: linear-gradient(0deg, #242e4b 0%, #344468 100%);
+  --menu-border-color: rgb(255 255 255 / 12%);
+  --menu-text-color: rgb(255 255 255 / 78%);
+  --menu-text-color-light: rgb(255 255 255 / 72%);
+  --menu-hover-background-color: rgb(255 255 255 / 10%);
+  --menu-panel-background-color: rgb(255 255 255 / 8%);
+  --menu-panel-background-color-hover: rgb(255 255 255 / 14%);
+  --common-panel-background-color: #ffffff;
+  --common-primary-background-color: #ecf5ff;
+  --common-shadow-sm: 0 2px 8px 0 #124ab41f;
+  --common-shadow-md: 0 4px 16px 0 #124ab429;
+}
+
 // 重置默认样式
 * {
   margin: 0;

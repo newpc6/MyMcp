@@ -1,15 +1,15 @@
 <template>
   <el-container class="marketplace-container">
     <!-- 左侧分类列表，增加宽度 -->
-    <el-aside width="280px" class="pr-4">
-      <el-card shadow="never" class="mb-4">
+    <el-aside width="280px" class="marketplace-aside">
+      <el-card shadow="never" class="category-panel">
         <template #header>
           <div class="flex items-center justify-between">
             <div class="flex items-center">
               <el-icon class="mr-2">
                 <Menu />
               </el-icon>
-              <span class="text-lg font-semibold">MCP模板分类</span>
+              <span class="panel-title">MCP模板分类</span>
             </div>
             <div>
               <el-button size="small" @click="showCreateCategoryDialog">
@@ -54,7 +54,7 @@
     </el-aside>
 
     <!-- 右侧内容 -->
-    <el-main class="p-4">
+    <el-main class="marketplace-main">
       <!-- 操作和搜索区域 -->
       <ActionSearchCard>
         <template #search>
@@ -104,8 +104,8 @@
         <div v-for="module in modules" :key="module.id" class="module-item">
           <el-card class="module-card" shadow="hover" @click="goToModuleDetail(module.id)">
             <div class="card-header flex-between items-center">
-              <div class="flex items-center">
-                <el-avatar :icon="getModuleIcon(module)" :size="40" class="mr-2"></el-avatar>
+              <div class="card-title-wrap">
+                <el-avatar :icon="getModuleIcon(module)" :size="40" class="module-avatar mr-2"></el-avatar>
                 <h3 class="card-title">{{ module.name }}</h3>
               </div>
               <div>
@@ -127,10 +127,10 @@
                   创建者: {{ module.username }}
                 </el-tag>
               </div>
-              <div class="flex items-end">
+              <div class="module-actions">
                 <div class="text-gray-500 text-xs mb-1 time-display">更新时间: {{ formatDate(module.updated_at) }}</div>
                 <el-dropdown trigger="click" @click.stop>
-                  <el-button size="small" class="ml-10 mcp-template-morefill" @click.stop>
+                  <el-button size="small" class="icon-button" @click.stop>
                     <el-icon>
                       <MoreFilled />
                     </el-icon>
@@ -1032,433 +1032,215 @@ function handleResetSearch() {
 
 <style scoped>
 .marketplace-container {
-  height: calc(100vh - 80px);
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  min-height: calc(100vh - 32px);
+  background: var(--common-background-color);
+  gap: 16px;
 }
 
-.el-aside {
-  border-radius: 0 16px 16px 0;
-  padding-top: 16px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.05);
+.marketplace-aside {
+  padding: 0;
 }
 
-.el-card {
-  border-radius: 16px !important;
-  overflow: hidden;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  border: none;
-  position: relative;
+.category-panel {
+  height: 100%;
+  border: 1px solid var(--common-border-color);
+  border-radius: 16px;
+  box-shadow: var(--common-shadow-sm);
 }
 
-.el-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border-radius: 16px 16px 0 0;
+.category-panel :deep(.el-card__header) {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--common-border-color);
 }
 
-/* 移除左侧卡片悬浮效果 */
-.el-aside .el-card:hover {
-  transform: none;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08) !important;
-}
-
-/* 分类卡片头部样式 */
-:deep(.el-card__header) {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  color: white;
-  padding: 20px;
-  border-bottom: none;
-  margin-top: 4px;
-}
-
-:deep(.el-card__header .text-lg) {
-  color: white !important;
+.panel-title {
+  font-size: 15px;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.el-card__header .el-icon) {
-  color: white !important;
-}
-
-:deep(.el-card__header .el-button) {
-  background: rgba(255, 255, 255, 0.2) !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  color: white !important;
-  backdrop-filter: blur(10px);
-}
-
-:deep(.el-card__header .el-button:hover) {
-  background: rgba(255, 255, 255, 0.3) !important;
-  transform: translateY(-1px);
+  color: var(--common-text-color-heavy);
 }
 
 .category-menu {
-  max-height: calc(100vh - 150px);
+  max-height: calc(100vh - 205px);
   overflow-y: auto;
-  border-radius: 12px;
-  background: transparent;
+  border-right: 0;
   padding: 8px;
 }
 
-.category-item {
-  display: flex;
-  align-items: center;
-  border-radius: 12px;
-  margin-bottom: 6px;
-  transition: all 0.3s ease;
+.category-menu :deep(.el-menu-item) {
+  height: 40px;
+  line-height: 40px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  color: var(--common-text-color);
 }
 
-.el-menu-item {
-  border-radius: 12px;
-  margin: 4px 0;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 1px solid #e2e8f0;
-  color: #4a5568;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-}
-
-.el-menu-item:hover {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  color: white;
-  transform: translateX(4px);
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-}
-
-.el-menu-item.is-active {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%) !important;
-  color: white !important;
-  box-shadow: 0 4px 12px rgba(79, 142, 247, 0.3);
-}
-
-.el-menu-item.is-active .el-tag {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.el-menu-item:hover .el-tag {
-  background: rgba(255, 255, 255, 0.2) !important;
-  color: white !important;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+.category-menu :deep(.el-menu-item.is-active) {
+  background: var(--common-primary-background-color);
+  color: var(--common-primary-color);
+  font-weight: 600;
 }
 
 .category-name {
   flex: 1;
-  white-space: nowrap;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  margin-right: 8px;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  white-space: nowrap;
 }
 
-/* 分类图标样式 */
-.el-menu-item .el-icon {
-  margin-right: 8px;
-  font-size: 16px;
-  transition: all 0.3s ease;
-}
-
-.el-menu-item:hover .el-icon,
-.el-menu-item.is-active .el-icon {
-  color: white;
-  transform: scale(1.1);
-}
-
-/* 分类数量标签样式 */
-.el-menu-item .el-tag {
-  font-size: 12px;
-  padding: 2px 8px;
-  border-radius: 10px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-}
-
-/* 下拉菜单样式 */
-.el-dropdown {
-  margin-left: 4px;
-}
-
-.el-dropdown .el-icon {
-  opacity: 0.6;
-  transition: all 0.3s ease;
-}
-
-.el-menu-item:hover .el-dropdown .el-icon,
-.el-menu-item.is-active .el-dropdown .el-icon {
-  opacity: 1;
-  color: white;
+.marketplace-main {
+  min-width: 0;
+  padding: 0;
 }
 
 .module-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }
 
-@media (max-width: 1400px) {
-  .module-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-@media (max-width: 1000px) {
-  .module-grid {
-    grid-template-columns: 1fr;
-  }
+.module-item {
+  min-width: 0;
 }
 
 .module-card {
-  border-radius: 16px !important;
+  height: 100%;
+  min-height: 198px;
+  border: 1px solid var(--common-border-color);
+  border-radius: 16px;
+  box-shadow: none;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.module-card:hover {
+  border-color: var(--common-primary-color);
+  box-shadow: var(--common-shadow-md);
+  transform: translateY(-2px);
+}
+
+.module-card :deep(.el-card__body) {
   height: 100%;
   display: flex;
   flex-direction: column;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: none;
-  overflow: hidden;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-  position: relative;
-}
-
-.module-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: linear-gradient(90deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border-radius: 16px 16px 0 0;
+  padding: 16px;
 }
 
 .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
   margin-bottom: 12px;
-  padding-top: 8px;
+}
+
+.card-title-wrap {
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 
 .card-title {
   margin: 0;
-  font-size: 18px;
+  color: var(--common-text-color-heavy);
+  font-size: 16px;
   font-weight: 600;
-  color: #1a202c;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.module-avatar {
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: var(--common-primary-background-color);
+  color: var(--common-primary-color);
 }
 
 .card-desc {
-  color: #4a5568;
-  flex: 1;
+  min-height: 44px;
+  margin: 0 0 14px;
+  color: var(--common-text-color-light);
+  font-size: 13px;
+  line-height: 1.65;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
-  margin-bottom: 16px;
-  line-height: 1.6;
-  min-height: 48px;
-  font-size: 14px;
 }
 
 .card-footer {
   display: flex;
-  justify-content: space-between;
   align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
   margin-top: auto;
   padding-top: 12px;
-  border-top: 1px solid #e2e8f0;
-  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
-  margin: 0 -20px -20px -20px;
-  padding: 12px 20px;
+  border-top: 1px solid var(--common-border-color);
 }
 
 .tag-container {
+  min-width: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  max-width: 65%;
 }
 
-.el-tag {
-  border-radius: 12px;
-  padding: 0 10px;
-  font-weight: 500;
-  border: none;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.el-tag--warning {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: #ffffff;
-}
-
-.el-tag--info {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
-  color: #ffffff;
-}
-
-.el-tag--success {
-  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
-  color: #ffffff;
-}
-
-.el-tag--danger {
-  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
-  color: #ffffff;
-}
-
-.el-button {
-  border-radius: 12px;
-  font-weight: 500;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.el-button:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.el-button--primary {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border: none;
-}
-
-.el-avatar {
-  border-radius: 12px;
-  background: linear-gradient(135deg, #e0f2ff 0%, #bfdbfe 100%);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 2px solid #ffffff;
-}
-
-.el-main {
-  padding: 24px;
-}
-
-.el-dialog {
-  border-radius: 16px;
-  overflow: hidden;
-}
-
-.loading-container {
-  padding: 20px 0;
-}
-
-:deep(.el-menu) {
-  border-right: none;
-  background: transparent;
-}
-
-:deep(.el-menu-item) {
-  height: auto;
-  line-height: 1.5;
-  padding: 12px 16px;
-}
-
-/* 自定义滚动条样式 */
-.category-menu::-webkit-scrollbar {
-  width: 6px;
-}
-
-.category-menu::-webkit-scrollbar-track {
-  background: rgba(0, 0, 0, 0.05);
-  border-radius: 3px;
-}
-
-.category-menu::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border-radius: 3px;
-}
-
-.category-menu::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%);
+.module-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .time-display {
-  color: #718096 !important;
+  max-width: 150px;
+  color: var(--common-text-color-lighter) !important;
   font-size: 12px;
-  font-weight: 400;
-  opacity: 0.8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.el-pagination {
-  --el-pagination-bg-color: #fff;
-  --el-pagination-text-color: #606266;
-  --el-pagination-border-radius: 8px;
+.icon-button {
+  width: 28px;
+  padding: 0;
 }
 
-.el-pagination .btn-prev,
-.el-pagination .btn-next {
-  border-radius: 8px;
+.loading-container {
+  padding-top: 16px;
 }
 
-.el-pagination .el-pager li {
-  border-radius: 8px;
-  margin: 0 2px;
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
 }
 
-/* 只保留右侧卡片悬浮效果 */
-.module-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-}
-
-/* 输入框和下拉菜单样式 */
+:deep(.el-input__wrapper),
+:deep(.el-select .el-input__wrapper),
 :deep(.el-textarea__inner) {
-  border-radius: 12px;
+  border-radius: 6px;
 }
 
-:deep(.el-input__wrapper) {
-  border-radius: 12px;
+:deep(.el-tag) {
+  border-radius: 4px;
+  box-shadow: none;
 }
 
-:deep(.el-select .el-input__wrapper) {
-  border-radius: 12px;
-}
+@media (max-width: 960px) {
+  .marketplace-container {
+    display: block;
+  }
 
-/* 下拉菜单样式 */
-.el-dropdown-menu {
-  border-radius: 8px;
-}
+  .marketplace-aside {
+    width: 100% !important;
+    margin-bottom: 16px;
+  }
 
-.el-select-dropdown__item {
-  display: flex;
-  align-items: center;
-}
-
-.mcp-template-morefill {
-  background: linear-gradient(135deg, #a5c4fa 0%, #3575ff 100%);
-  color: #ffffff;
-}
-
-/* 用户下拉选择器样式 */
-:deep(.el-select-dropdown__item) {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 16px;
-}
-
-:deep(.el-select-dropdown__item .option-text) {
-  flex: 1;
-  font-weight: 500;
-}
-
-:deep(.el-select-dropdown__item .el-tag) {
-  margin-left: 8px;
-  font-size: 11px;
-  padding: 2px 6px;
+  .category-menu {
+    max-height: 240px;
+  }
 }
 </style>

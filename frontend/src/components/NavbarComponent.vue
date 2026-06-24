@@ -1,52 +1,61 @@
 <template>
-  <div class="navbar-container">
-    <el-menu mode="horizontal" router :ellipsis="false" class="nav-menu">
-      <div class="flex-grow logo-container">
-        <div class="brand-logo" @click="goToHome">
-          <div class="brand-icon">
-            <el-icon>
-              <Connection />
-            </el-icon>
-          </div>
-          <div class="brand-text">
-            <span class="brand-name">MCP</span>
-            <span class="brand-subtitle">管理平台</span>
-          </div>
-        </div>
+  <aside class="sidebar-container">
+    <div class="brand-logo" @click="goToHome">
+      <div class="brand-icon">
+        <el-icon>
+          <Connection />
+        </el-icon>
       </div>
-
-      <!-- <el-menu-item index="/" @mouseup="handleMouseUp($event, '/')">首页</el-menu-item> -->
-      <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">MCP模板广场</el-menu-item>
-      <el-menu-item index="/server" @mouseup="handleMouseUp($event, '/server')">MCP服务管理</el-menu-item>
-      <el-menu-item v-if="isAdmin" index="/statistics"
-        @mouseup="handleMouseUp($event, '/statistics')">统计分析</el-menu-item>
-        <el-menu-item v-if="isAdmin" index="/users" @mouseup="handleMouseUp($event, '/users')">用户管理</el-menu-item>
-        <el-menu-item v-if="isAdmin" index="/tenants" @mouseup="handleMouseUp($event, '/tenants')">租户管理</el-menu-item>
-        <el-menu-item v-if="isAdmin" index="/system" @mouseup="handleMouseUp($event, '/system')">系统管理</el-menu-item>
-
-      <div class="user-controls">
-        <el-dropdown v-if="isLoggedIn" @command="handleCommand">
-          <span class="user-dropdown-link">
-            {{ userInfo.username }} <el-icon>
-              <ArrowDown />
-            </el-icon>
-          </span>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="change-password">修改密码</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
-        <el-button v-else type="primary" size="small" @click="handleLogin">登录</el-button>
+      <div class="brand-text">
+        <span class="brand-name">MCP</span>
+        <span class="brand-subtitle">管理平台</span>
       </div>
+    </div>
 
-      <!-- <div class="version-info">
-        <span class="text-sm">版本: v1.0.0</span>
-      </div> -->
+    <el-menu router :default-active="$route.path" class="nav-menu">
+      <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">
+        <el-icon><Collection /></el-icon>
+        <span>MCP模板广场</span>
+      </el-menu-item>
+      <el-menu-item index="/server" @mouseup="handleMouseUp($event, '/server')">
+        <el-icon><Monitor /></el-icon>
+        <span>MCP服务管理</span>
+      </el-menu-item>
+      <el-menu-item v-if="isAdmin" index="/statistics" @mouseup="handleMouseUp($event, '/statistics')">
+        <el-icon><DataAnalysis /></el-icon>
+        <span>统计分析</span>
+      </el-menu-item>
+      <el-menu-item v-if="isAdmin" index="/users" @mouseup="handleMouseUp($event, '/users')">
+        <el-icon><User /></el-icon>
+        <span>用户管理</span>
+      </el-menu-item>
+      <el-menu-item v-if="isAdmin" index="/tenants" @mouseup="handleMouseUp($event, '/tenants')">
+        <el-icon><OfficeBuilding /></el-icon>
+        <span>租户管理</span>
+      </el-menu-item>
+      <el-menu-item v-if="isAdmin" index="/system" @mouseup="handleMouseUp($event, '/system')">
+        <el-icon><Setting /></el-icon>
+        <span>系统管理</span>
+      </el-menu-item>
     </el-menu>
 
-    <!-- 修改密码对话框 -->
+    <div class="sidebar-footer">
+      <el-dropdown v-if="isLoggedIn" trigger="click" @command="handleCommand">
+        <button class="user-dropdown-link" type="button">
+          <span class="user-avatar">{{ userInitial }}</span>
+          <span class="user-name">{{ userInfo.username }}</span>
+          <el-icon><ArrowDown /></el-icon>
+        </button>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="change-password">修改密码</el-dropdown-item>
+            <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <el-button v-else type="primary" class="login-button" @click="handleLogin">登录</el-button>
+    </div>
+
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
       <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
         <el-form-item label="旧密码" prop="oldPassword">
@@ -66,14 +75,23 @@
         </el-button>
       </template>
     </el-dialog>
-  </div>
+  </aside>
 </template>
-
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { ElMessage, FormInstance } from 'element-plus';
-import { ArrowDown, Connection } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import type { FormInstance } from 'element-plus';
+import {
+  ArrowDown,
+  Collection,
+  Connection,
+  DataAnalysis,
+  Monitor,
+  OfficeBuilding,
+  Setting,
+  User
+} from '@element-plus/icons-vue';
 import { logout, changePassword as apiChangePassword } from '@/api/auth';
 
 defineOptions({
@@ -95,6 +113,7 @@ const userInfo = reactive<any>({
 // 计算属性
 const isLoggedIn = computed(() => !!userInfo.user_id);
 const isAdmin = computed(() => userInfo.is_admin);
+const userInitial = computed(() => (userInfo.username || 'U').slice(0, 1).toUpperCase());
 
 // 初始化用户信息
 try {
@@ -215,271 +234,164 @@ const goToHome = () => {
 </script>
 
 <style scoped>
-.navbar-container {
-  border-bottom: none;
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  box-shadow: 0 4px 20px rgba(79, 142, 247, 0.15);
-  position: relative;
-}
-
-.navbar-container::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
-}
-
-.nav-menu {
+.sidebar-container {
+  width: 232px;
+  height: 100vh;
   display: flex;
-  align-items: center;
-  height: 70px;
-  padding: 0 30px;
-  background: transparent;
-}
-
-.flex-grow {
-  flex-grow: 1;
-}
-
-.logo-container {
-  display: flex;
-  align-items: center;
-  padding-right: 30px;
+  flex-direction: column;
+  color: var(--common-text-color-positive);
+  background-image: var(--menu-background-image);
+  box-shadow: 4px 4px 40px 0 var(--header-shadow-color);
 }
 
 .brand-logo {
   display: flex;
   align-items: center;
+  gap: 12px;
+  height: 60px;
+  padding: 0 16px;
   cursor: pointer;
-  padding: 8px 16px;
-  border-radius: 12px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  overflow: hidden;
-}
-
-.brand-logo::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-  transition: left 0.6s ease;
-}
-
-.brand-logo:hover::before {
-  left: 100%;
-}
-
-.brand-logo:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-bottom: 1px solid var(--menu-border-color);
 }
 
 .brand-icon {
   width: 36px;
   height: 36px;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 12px;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: var(--common-primary-color);
+  color: var(--common-text-color-positive);
+  flex: 0 0 auto;
 }
 
 .brand-icon .el-icon {
   font-size: 18px;
-  color: white;
-}
-
-.brand-logo:hover .brand-icon {
-  background: rgba(255, 255, 255, 0.25);
-  transform: rotate(10deg) scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .brand-text {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   line-height: 1.2;
 }
 
 .brand-name {
-  font-size: 22px;
-  font-weight: 800;
-  color: white;
-  letter-spacing: 2px;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  background: linear-gradient(135deg, #ffffff 0%, #e0f2fe 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  transition: all 0.3s ease;
+  color: var(--common-text-color-positive);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .brand-subtitle {
+  margin-top: 3px;
+  color: var(--menu-text-color-light);
   font-size: 12px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.8);
-  letter-spacing: 1px;
-  margin-top: 2px;
-  transition: all 0.3s ease;
 }
 
-.brand-logo:hover .brand-name {
-  letter-spacing: 3px;
-  text-shadow: 0 2px 8px rgba(255, 255, 255, 0.3);
+.nav-menu {
+  flex: 1;
+  padding: 12px 8px;
+  border-right: 0;
+  background: transparent;
 }
 
-.brand-logo:hover .brand-subtitle {
-  color: rgba(255, 255, 255, 1);
-  letter-spacing: 1.5px;
+.nav-menu :deep(.el-menu-item) {
+  height: 40px;
+  margin: 4px 0;
+  padding: 0 14px !important;
+  border-radius: 8px;
+  color: var(--menu-text-color);
+  line-height: 40px;
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
-.logo-container h1 {
-  color: white !important;
-  font-size: 24px;
-  font-weight: 700;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.nav-menu :deep(.el-menu-item .el-icon) {
+  color: inherit;
+  font-size: 16px;
 }
 
-.text-primary {
-  color: white !important;
+.nav-menu :deep(.el-menu-item:hover) {
+  background: var(--menu-hover-background-color);
+  color: var(--common-text-color-positive);
 }
 
-.version-info {
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  color: rgba(255, 255, 255, 0.8);
+.nav-menu :deep(.el-menu-item.is-active) {
+  background: var(--common-primary-color);
+  color: var(--common-text-color-positive);
+  font-weight: 600;
+  box-shadow: var(--common-shadow-md);
 }
 
-.user-controls {
-  display: flex;
-  align-items: center;
-  margin-left: 30px;
+.sidebar-footer {
+  padding: 12px;
+  border-top: 1px solid var(--menu-border-color);
 }
 
 .user-dropdown-link {
+  width: 100%;
+  height: 40px;
   display: flex;
   align-items: center;
+  gap: 10px;
+  padding: 0 10px;
+  color: var(--common-text-color-positive);
+  background: var(--menu-panel-background-color);
+  border: 1px solid var(--menu-border-color);
+  border-radius: 8px;
   cursor: pointer;
-  color: white;
-  font-size: 14px;
-  font-weight: 500;
-  padding: 8px 16px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  font: inherit;
+  text-align: left;
 }
 
 .user-dropdown-link:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  background: var(--menu-panel-background-color-hover);
 }
 
-.user-controls .el-button {
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
-  font-weight: 500;
-  border-radius: 20px;
-  padding: 8px 20px;
-  backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--common-text-color-positive);
+  color: var(--common-primary-color);
+  font-size: 12px;
+  font-weight: 700;
 }
 
-.user-controls .el-button:hover {
-  background: rgba(255, 255, 255, 0.25);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+.user-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-:deep(.el-menu-item) {
-  font-size: 14px;
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
-  margin: 0 4px;
-  padding: 0 16px;
-  height: 40px;
-  line-height: 40px;
-  transition: all 0.3s ease;
-  background: transparent;
-  border-bottom: none;
+.login-button {
+  width: 100%;
 }
 
-:deep(.el-menu-item:hover) {
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-:deep(.el-menu-item.is-active) {
-  background: rgba(255, 255, 255, 0.95) !important;
-  color: #2563eb !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.8);
-}
-
-:deep(.el-menu-item.is-active:hover) {
-  background: rgba(255, 255, 255, 1) !important;
-  color: #1d4ed8 !important;
-  transform: translateY(-1px);
-}
-
-:deep(.el-menu--horizontal) {
-  border-bottom: none;
-  background: transparent;
-}
-
-:deep(.el-menu--horizontal .el-menu-item:not(.is-disabled):focus) {
-  background: rgba(255, 255, 255, 0.15);
-  color: white;
-}
-
-/* 对话框样式优化 */
 :deep(.el-dialog) {
   border-radius: 16px;
   overflow: hidden;
 }
 
 :deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  color: white;
-  padding: 20px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--common-border-color);
+  margin-right: 0;
 }
 
 :deep(.el-dialog__title) {
-  color: white;
+  color: var(--common-text-color-heavy);
   font-weight: 600;
 }
 
-:deep(.el-dialog__headerbtn .el-dialog__close) {
-  color: white;
-}
-
 :deep(.el-form-item__label) {
-  color: #374151;
+  color: var(--common-text-color);
   font-weight: 500;
 }
 
@@ -490,10 +402,5 @@ const goToHome = () => {
 :deep(.el-button) {
   border-radius: 8px;
   font-weight: 500;
-}
-
-:deep(.el-button--primary) {
-  background: linear-gradient(135deg, #4f8ef7 0%, #3b82f6 50%, #2563eb 100%);
-  border: none;
 }
 </style>
