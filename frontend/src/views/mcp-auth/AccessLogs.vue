@@ -1,9 +1,9 @@
 <template>
     <div class="access-logs-page">
-        <!-- <div class="page-header">
+        <div class="page-header">
             <h1>访问日志</h1>
             <p class="page-description">查看MCP服务的访问记录和统计信息</p>
-        </div> -->
+        </div>
 
         <div class="content-container">
             <!-- 服务选择和过滤器 -->
@@ -362,38 +362,69 @@ onMounted(() => {
 
 <style scoped>
 .access-logs-page {
-    padding: 20px;
-    max-width: 1400px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0;
+    max-width: none;
+    margin: 0;
+    background: var(--common-background-color);
 }
 
 .page-header {
-    margin-bottom: 30px;
+    margin: 0;
+    padding: 16px 20px;
+    background: var(--common-panel-background-color);
+    border: 1px solid var(--common-border-color);
+    border-radius: var(--common-radius-lg);
+    box-shadow: var(--common-shadow-xs);
 }
 
 .page-header h1 {
-    font-size: 28px;
-    color: #303133;
-    margin: 0 0 10px 0;
+    margin: 0;
+    color: var(--common-text-color-heavy);
+    font-size: var(--common-font-size-title-md);
     font-weight: 600;
+    line-height: 28px;
 }
 
 .page-description {
-    color: #606266;
-    font-size: 14px;
-    margin: 0;
+    margin: 4px 0 0;
+    color: var(--common-text-color-light);
+    font-size: var(--common-font-size-secondary);
+    line-height: 20px;
 }
 
 .content-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
 .filter-card,
 .stats-card,
 .logs-card {
-    margin-bottom: 20px;
+    margin-bottom: 0;
+    border: 1px solid var(--common-border-color);
+    border-radius: var(--common-radius-lg);
+    box-shadow: var(--common-shadow-xs);
+}
+
+.logs-card :deep(.el-card__body) {
+    padding: 16px;
+}
+
+.access-logs-page :deep(.action-search-card),
+.access-logs-page :deep(.el-card) {
+    border-radius: var(--common-radius-lg);
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--common-border-color);
 }
 
 .text-red-500 {

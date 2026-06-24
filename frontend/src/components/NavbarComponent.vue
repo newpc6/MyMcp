@@ -21,6 +21,18 @@
           </span>
           <span class="text">服务管理</span>
         </el-menu-item>
+        <el-menu-item index="/mcp-auth/secret-management" @mouseup="handleMouseUp($event, '/mcp-auth/secret-management')">
+          <span class="menu-icon-box is-soft">
+            <el-icon><Key /></el-icon>
+          </span>
+          <span class="text">密钥管理</span>
+        </el-menu-item>
+        <el-menu-item index="/mcp-auth/access-logs" @mouseup="handleMouseUp($event, '/mcp-auth/access-logs')">
+          <span class="menu-icon-box is-soft">
+            <el-icon><Document /></el-icon>
+          </span>
+          <span class="text">访问日志</span>
+        </el-menu-item>
       </el-sub-menu>
 
       <el-sub-menu v-if="isAdmin" index="ops-manage">
@@ -56,12 +68,6 @@
             <el-icon><User /></el-icon>
           </span>
           <span class="text">用户管理</span>
-        </el-menu-item>
-        <el-menu-item index="/tenants" @mouseup="handleMouseUp($event, '/tenants')">
-          <span class="menu-icon-box is-soft">
-            <el-icon><OfficeBuilding /></el-icon>
-          </span>
-          <span class="text">租户管理</span>
         </el-menu-item>
       </el-sub-menu>
     </el-menu>
@@ -99,11 +105,12 @@ import type { FormInstance } from 'element-plus';
 import {
   Collection,
   DataAnalysis,
+  Document,
   Fold,
   Grid,
+  Key,
   Lock,
   Monitor,
-  OfficeBuilding,
   Setting,
   User
 } from '@element-plus/icons-vue';

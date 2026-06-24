@@ -1,5 +1,28 @@
 <template>
   <div class="mcp-services-container">
+    <section class="service-overview">
+      <div class="overview-card">
+        <span class="overview-label">服务总数</span>
+        <strong class="overview-value">{{ total }}</strong>
+        <span class="overview-desc">当前筛选结果</span>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">运行中</span>
+        <strong class="overview-value">{{ runningCount }}</strong>
+        <span class="overview-desc">可立即访问</span>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">异常服务</span>
+        <strong class="overview-value">{{ errorCount }}</strong>
+        <span class="overview-desc">需要排查</span>
+      </div>
+      <div class="overview-card">
+        <span class="overview-label">公开服务</span>
+        <strong class="overview-value">{{ publicCount }}</strong>
+        <span class="overview-desc">团队可见</span>
+      </div>
+    </section>
+
     <!-- 页面头部 -->
     <div class="page-header">
       <div class="header-content">
@@ -66,11 +89,20 @@
       </div>
     </div>
 
-    <!-- 服务卡片网格 -->
-    <div class="services-grid" v-loading="loading">
-      <!-- 服务卡片 -->
-      <div v-for="service in services" :key="service.id" class="service-card"
-        :class="{ 'service-running': service.status === 'running' }">
+    <section class="services-list-panel">
+      <div class="list-panel-header">
+        <div>
+          <h2 class="list-panel-title">MCP服务列表</h2>
+          <p class="list-panel-subtitle">统一查看服务状态、访问地址和运行操作</p>
+        </div>
+        <el-tag size="small" effect="plain">{{ services.length }} 个当前结果</el-tag>
+      </div>
+
+      <!-- 服务卡片网格 -->
+      <div class="services-grid" v-loading="loading">
+        <!-- 服务卡片 -->
+        <div v-for="service in services" :key="service.id" class="service-card"
+          :class="{ 'service-running': service.status === 'running' }">
         <div class="card-header">
           <div class="status-section">
             <div class="status-indicator" :class="getStatusClass(service.status)">
@@ -153,8 +185,15 @@
 
         <div class="card-content">
           <div class="service-info">
-            <h3 class="service-name">{{ service.name || '默认服务' }}</h3>
-            <p class="service-module">{{ service.module_name || '未命名模块' }}</p>
+            <div class="service-title-row">
+              <span class="service-icon">
+                <el-icon><Grid /></el-icon>
+              </span>
+              <div class="service-title-text">
+                <h3 class="service-name">{{ service.name || '默认服务' }}</h3>
+                <p class="service-module">{{ service.module_name || '未命名模块' }}</p>
+              </div>
+            </div>
             <p class="service-description">{{ service.description || '暂无描述' }}</p>
           </div>
 
@@ -205,52 +244,42 @@
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- 添加新服务卡片 -->
-      <!-- <div class="add-service-card" @click="goToCreateService">
-        <div class="add-content">
-          <el-icon class="add-icon">
-            <Plus />
-          </el-icon>
-          <span class="add-text">创建新服务</span>
-          <span class="add-subtitle">点击开始创建MCP服务</span>
         </div>
-      </div> -->
 
-      <!-- 空状态 -->
-      <div v-if="services.length === 0 && !loading" class="empty-state">
-        <el-empty description="暂无MCP服务" :image-size="120">
-          <template #description>
-            <p class="empty-description">还没有创建任何MCP服务</p>
-            <p class="empty-hint">点击下方按钮开始创建您的第一个服务</p>
-          </template>
-          <div class="empty-actions">
-            <el-button type="primary" @click="goToCreateService" size="large">
-              <el-icon>
-                <Plus />
-              </el-icon>
-              创建服务
-            </el-button>
-            <el-button @click="loadServices" size="large">
-              <el-icon>
-                <Refresh />
-              </el-icon>
-              刷新
-            </el-button>
-          </div>
-        </el-empty>
+        <!-- 空状态 -->
+        <div v-if="services.length === 0 && !loading" class="empty-state">
+          <el-empty description="暂无MCP服务" :image-size="120">
+            <template #description>
+              <p class="empty-description">还没有创建任何MCP服务</p>
+              <p class="empty-hint">点击下方按钮开始创建您的第一个服务</p>
+            </template>
+            <div class="empty-actions">
+              <el-button type="primary" @click="goToCreateService" size="large">
+                <el-icon>
+                  <Plus />
+                </el-icon>
+                创建服务
+              </el-button>
+              <el-button @click="loadServices" size="large">
+                <el-icon>
+                  <Refresh />
+                </el-icon>
+                刷新
+              </el-button>
+            </div>
+          </el-empty>
+        </div>
       </div>
-    </div>
 
-    <!-- 分页组件 -->
-    <div v-if="!loading && total > 0" class="pagination-container">
-      <el-config-provider :locale="zhCn">
-        <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 15]"
-          :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
-          @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination" />
-      </el-config-provider>
-    </div>
+      <!-- 分页组件 -->
+      <div v-if="!loading && total > 0" class="pagination-container">
+        <el-config-provider :locale="zhCn">
+          <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 15]"
+            :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
+            @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination" />
+        </el-config-provider>
+      </div>
+    </section>
 
     <!-- 服务参数管理对话框 -->
     <el-dialog v-model="serviceParamsDialogVisible" title="服务参数管理" width="50%" :destroy-on-close="true"
@@ -331,7 +360,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive } from 'vue';
+import { ref, onMounted, reactive, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, ElNotification, ElMessageBox } from 'element-plus';
 import zhCn from 'element-plus/es/locale/lang/zh-cn';
@@ -346,11 +375,9 @@ import {
   Lock,
   Setting,
   Search,
-  Promotion,
   UserFilled
 } from '@element-plus/icons-vue';
 import {
-  listServices,
   startService,
   stopService,
   uninstallService,
@@ -374,6 +401,10 @@ const router = useRouter();
 const loading = ref(false);
 // 服务列表
 const services = ref<McpServiceInfo[]>([]);
+
+const runningCount = computed(() => services.value.filter((service) => service.status === 'running').length);
+const errorCount = computed(() => services.value.filter((service) => service.status === 'error').length);
+const publicCount = computed(() => services.value.filter((service) => service.is_public).length);
 
 // 分页相关状态
 const currentPage = ref(1);
@@ -2040,5 +2071,413 @@ onMounted(() => {
 .third-party-form {
   background: var(--common-panel-background-color);
   box-shadow: none;
+}
+
+/* 平台版服务管理：与 MCP 模板广场保持同一套白色后台风格 */
+.mcp-services-container {
+  min-height: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0;
+  margin: 0;
+  background: var(--common-background-color);
+}
+
+.service-overview {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.overview-card,
+.page-header,
+.services-list-panel {
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+}
+
+.overview-card {
+  min-height: 86px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 14px 16px;
+}
+
+.overview-label,
+.overview-desc {
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-secondary);
+  line-height: 18px;
+}
+
+.overview-value {
+  margin: 4px 0;
+  color: var(--common-text-color-heavy);
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 30px;
+}
+
+.page-header {
+  margin: 0;
+  padding: 14px 16px;
+}
+
+.header-content,
+.header-actions {
+  width: 100%;
+}
+
+.header-actions {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.search-section {
+  flex: 1;
+  gap: 10px;
+}
+
+.search-input,
+.filter-select {
+  width: 200px;
+}
+
+.search-input :deep(.el-input__wrapper),
+.filter-select :deep(.el-select__wrapper) {
+  border-radius: var(--common-radius-md);
+  border: 1px solid var(--common-input-border-color);
+  box-shadow: none;
+}
+
+.search-input :deep(.el-input__wrapper:hover),
+.filter-select :deep(.el-select__wrapper:hover) {
+  border-color: var(--common-primary-color);
+  box-shadow: none;
+}
+
+.action-buttons {
+  flex-shrink: 0;
+  gap: 8px;
+}
+
+.search-btn,
+.refresh-btn,
+.create-btn {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--common-radius-md);
+  box-shadow: none;
+}
+
+.create-btn {
+  background: var(--common-primary-color);
+  border-color: var(--common-primary-color);
+}
+
+.search-btn:hover,
+.refresh-btn:hover,
+.create-btn:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.services-list-panel {
+  min-height: 520px;
+  padding: 16px;
+  background: var(--common-list-background-color);
+}
+
+.list-panel-header {
+  min-height: 48px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+.list-panel-title {
+  margin: 0;
+  color: var(--common-text-color-heavy);
+  font-size: var(--common-font-size-title-md);
+  font-weight: 600;
+  line-height: 24px;
+}
+
+.list-panel-subtitle {
+  margin: 4px 0 0;
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-secondary);
+  line-height: 18px;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-items: start;
+  gap: 16px;
+  margin: 0;
+}
+
+.service-card {
+  min-height: 360px;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow: hidden;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+  box-shadow: var(--common-shadow-xs);
+}
+
+.service-card:hover {
+  transform: none;
+  border-color: var(--common-primary-color);
+  box-shadow: var(--common-shadow-sm);
+}
+
+.service-card.service-running {
+  border-color: var(--common-border-color);
+}
+
+.card-header {
+  min-height: 32px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+.status-section {
+  gap: 6px;
+  align-items: center;
+}
+
+.action-section .action-buttons {
+  gap: 6px;
+}
+
+.action-btn {
+  width: 28px;
+  height: 28px;
+  color: var(--common-primary-color);
+  background: var(--common-hover-background-color);
+  border: 1px solid var(--zartd-primary-2);
+  box-shadow: none;
+}
+
+.action-btn:hover {
+  color: var(--common-on-primary-color);
+  background: var(--common-primary-color);
+  border-color: var(--common-primary-color);
+  transform: none;
+}
+
+.status-indicator,
+.service-type-badge :deep(.el-tag),
+.visibility-badge :deep(.el-tag),
+.protocol-badge :deep(.el-tag) {
+  height: 22px;
+  border-radius: var(--common-radius-sm);
+  box-shadow: none;
+}
+
+.card-content {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 14px 0 0;
+}
+
+.service-info {
+  flex: 1;
+  min-height: 70px;
+}
+
+.service-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.service-icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 38px;
+  color: var(--common-primary-color);
+  background: var(--common-primary-background-color);
+  border: 1px solid var(--zartd-primary-2);
+  border-radius: var(--common-radius-md);
+}
+
+.service-title-text {
+  min-width: 0;
+  flex: 1;
+}
+
+.service-name {
+  margin: 0 0 4px;
+  color: var(--common-text-color-heavy);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.service-module,
+.service-description {
+  margin: 0;
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-secondary);
+  line-height: 20px;
+}
+
+.service-module {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-description {
+  display: -webkit-box;
+  margin-top: 10px;
+  overflow: hidden;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+}
+
+.service-meta {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--common-border-color);
+  background: transparent;
+}
+
+.meta-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 10px;
+}
+
+.meta-item {
+  min-width: 0;
+}
+
+.meta-label {
+  display: block;
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-secondary);
+  line-height: 18px;
+}
+
+.meta-value {
+  display: block;
+  overflow: hidden;
+  color: var(--common-text-color);
+  font-size: var(--common-font-size-secondary);
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.url-section {
+  padding: 8px 10px;
+  background: var(--common-list-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+}
+
+.url-label {
+  margin-bottom: 6px;
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-secondary);
+}
+
+.url-container {
+  display: flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 6px 0 10px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-sm);
+  box-shadow: none;
+}
+
+.url-text {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  color: var(--common-primary-color);
+  font-size: var(--common-font-size-secondary);
+  line-height: 18px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.url-actions {
+  margin-left: 8px;
+  gap: 4px;
+}
+
+.url-actions .el-button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+}
+
+.url-btn:hover {
+  transform: none;
+  background: var(--common-hover-background-color);
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  min-height: 360px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background: var(--common-panel-background-color);
+  border: 1px dashed var(--common-border-color);
+  border-radius: var(--common-radius-md);
+}
+
+.empty-description {
+  color: var(--common-text-color-heavy);
+  font-size: 16px;
+}
+
+.empty-hint {
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-base);
+}
+
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--common-border-color);
 }
 </style>

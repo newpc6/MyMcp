@@ -382,9 +382,7 @@ onMounted(async () => {
   flex: 1;
   overflow: auto;
   background-color: var(--common-background-color);
-  background-image: var(--common-workspace-grid), var(--common-workspace-background);
-  background-size: 24px 24px, auto;
-  background-position: -1px -1px, 0 0;
+  background-image: none;
 }
 
 .login-main {

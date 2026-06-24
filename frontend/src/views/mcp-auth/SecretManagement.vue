@@ -1,9 +1,9 @@
 <template>
     <div class="secret-management-page">
-        <!-- <div class="page-header">
+        <div class="page-header">
             <h1>密钥管理</h1>
             <p class="page-description">管理MCP服务的访问密钥，监控使用情况</p>
-        </div> -->
+        </div>
 
         <div class="content-container">
             <!-- 服务选择器 -->
@@ -247,40 +247,104 @@ onMounted(() => {
 
 <style scoped>
 .secret-management-page {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 0;
+    max-width: none;
+    margin: 0;
+    background: var(--common-background-color);
 }
 
 .page-header {
-    margin-bottom: 30px;
+    margin: 0;
+    padding: 16px 20px;
+    background: var(--common-panel-background-color);
+    border: 1px solid var(--common-border-color);
+    border-radius: var(--common-radius-lg);
+    box-shadow: var(--common-shadow-xs);
 }
 
 .page-header h1 {
-    font-size: 28px;
-    color: #1a202c;
-    margin: 0 0 10px 0;
+    margin: 0;
+    color: var(--common-text-color-heavy);
+    font-size: var(--common-font-size-title-md);
     font-weight: 600;
+    line-height: 28px;
 }
 
 .page-description {
-    color: #4a5568;
-    font-size: 14px;
-    margin: 0;
+    margin: 4px 0 0;
+    color: var(--common-text-color-light);
+    font-size: var(--common-font-size-secondary);
+    line-height: 20px;
 }
 
 .content-container {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 16px;
 }
 
 .service-selector {
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .management-content {
     flex: 1;
+}
+
+.secret-management-page :deep(.el-card) {
+    border: 1px solid var(--common-border-color);
+    border-radius: var(--common-radius-lg);
+    box-shadow: var(--common-shadow-xs);
+}
+
+.secret-management-page :deep(.el-card__header) {
+    min-height: 54px;
+    padding: 14px 16px;
+    background: var(--common-panel-background-color);
+    border-bottom: 1px solid var(--common-border-color);
+}
+
+.secret-management-page :deep(.el-card__body) {
+    padding: 16px;
+}
+
+.secret-management-page :deep(.card-header h3) {
+    margin: 0;
+    color: var(--common-text-color-heavy);
+    font-size: var(--common-font-size-base);
+    font-weight: 600;
+}
+
+.info-content {
+    padding: 0;
+}
+
+.data-item {
+    min-height: 74px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-bottom: 12px;
+    padding: 12px;
+    background: var(--common-list-background-color);
+    border: 1px solid var(--common-border-color);
+    border-radius: var(--common-radius-md);
+}
+
+.data-value {
+    color: var(--common-text-color-heavy);
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 28px;
+}
+
+.data-label {
+    margin-top: 4px;
+    color: var(--common-text-color-light);
+    font-size: var(--common-font-size-secondary);
 }
 
 .empty-state {

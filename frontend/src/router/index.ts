@@ -30,7 +30,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/server',
     name: 'server',
-    component: () => import('../views/mcp/McpLayout.vue'),
+    component: () => import('../views/mcp/index.vue'),
     meta: { title: 'MCP 服务管理' }
   },
   {
@@ -145,8 +145,8 @@ router.beforeEach((
       return;
     }
   }
-  
+
   next();
 });
 
-export default router 
+export default router
