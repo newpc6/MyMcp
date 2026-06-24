@@ -329,29 +329,17 @@ onMounted(() => {
 
 <style scoped>
 .statistics-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #e0efff 0%, #d1d1d1 100%);
-  padding: 32px;
+  min-height: 100%;
+  background: var(--common-background-color);
+  padding: 0;
   position: relative;
-  overflow: hidden;
-}
-
-.statistics-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
-  pointer-events: none;
 }
 
 .ranking-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-  gap: 24px;
-  margin-bottom: 32px;
+  gap: 16px;
+  margin-bottom: 16px;
   position: relative;
   z-index: 1;
 }
@@ -359,7 +347,7 @@ onMounted(() => {
 /* 响应式设计 */
 @media (max-width: 768px) {
   .statistics-container {
-    padding: 16px;
+    padding: 0;
   }
 
   .ranking-grid {

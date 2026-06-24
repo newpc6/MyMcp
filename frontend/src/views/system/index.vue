@@ -412,9 +412,10 @@ onMounted(() => {
 
 <style scoped>
 .system-management {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0;
+  max-width: none;
+  margin: 0;
+  color: var(--common-text-color);
 }
 
 .header {
@@ -422,15 +423,15 @@ onMounted(() => {
 }
 
 .header h1 {
-  font-size: 28px;
+  font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
-  margin-bottom: 8px;
+  color: var(--common-text-color-heavy);
+  margin-bottom: 4px;
 }
 
 .header p {
-  color: #666;
-  font-size: 16px;
+  color: var(--common-text-color-light);
+  font-size: 12px;
 }
 
 .management-grid {
@@ -441,10 +442,10 @@ onMounted(() => {
 }
 
 .management-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 24px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  padding: 20px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -453,21 +454,21 @@ onMounted(() => {
 }
 
 .management-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
-  transform: translateY(-2px);
+  border-color: var(--common-primary-color);
+  box-shadow: var(--common-shadow-md);
+  transform: none;
 }
 
 .card-icon {
   width: 48px;
   height: 48px;
-  background: #f3f4f6;
-  border-radius: 8px;
+  background: var(--common-primary-background-color);
+  border-radius: var(--common-radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 24px;
-  color: #3b82f6;
+  color: var(--common-primary-color);
 }
 
 .card-content {
@@ -477,31 +478,32 @@ onMounted(() => {
 .card-content h3 {
   font-size: 18px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--common-text-color-heavy);
   margin-bottom: 4px;
 }
 
 .card-content p {
-  color: #666;
+  color: var(--common-text-color-light);
   font-size: 14px;
 }
 
 .card-arrow {
-  color: #9ca3af;
+  color: var(--common-text-color-lighter);
   font-size: 18px;
 }
 
 .system-status {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
   padding: 24px;
+  box-shadow: var(--common-shadow-sm);
 }
 
 .system-status h2 {
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--common-text-color-heavy);
   margin-bottom: 24px;
 }
 
@@ -516,10 +518,10 @@ onMounted(() => {
 .status-section h3 {
   font-size: 16px;
   font-weight: 600;
-  color: #374151;
+  color: var(--common-text-color-heavy);
   margin-bottom: 16px;
   padding-bottom: 8px;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--common-border-color);
 }
 
 .status-grid {
@@ -533,8 +535,8 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
   padding: 12px 16px;
-  background: #f9fafb;
-  border-radius: 8px;
+  background: var(--common-hover-background-color);
+  border-radius: var(--common-radius-md);
 }
 
 .status-item.full-width {
@@ -542,24 +544,24 @@ onMounted(() => {
 }
 
 .status-label {
-  color: #666;
+  color: var(--common-text-color-light);
   font-weight: 500;
 }
 
 .status-value {
-  color: #1a1a1a;
+  color: var(--common-text-color-heavy);
   font-weight: 600;
   text-align: right;
   word-break: break-all;
 }
 
 .status-online {
-  color: #10b981 !important;
+  color: var(--common-success-color) !important;
 }
 
 .resource-info {
-  background: #f9fafb;
-  border-radius: 8px;
+  background: var(--common-hover-background-color);
+  border-radius: var(--common-radius-md);
   padding: 20px;
 }
 
@@ -569,18 +571,18 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 12px;
   font-weight: 600;
-  color: #374151;
+  color: var(--common-text-color);
 }
 
 .percentage {
-  color: #6b7280;
+  color: var(--common-text-color-light);
   font-size: 14px;
 }
 
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: #e5e7eb;
+  background: var(--common-border-color);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 16px;
@@ -588,13 +590,13 @@ onMounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: #3b82f6;
+  background: var(--common-primary-color);
   border-radius: 4px;
   transition: width 0.3s ease;
 }
 
 .progress-fill.disk {
-  background: #10b981;
+  background: var(--common-success-color);
 }
 
 .resource-details {
@@ -605,11 +607,11 @@ onMounted(() => {
 
 .detail-item {
   padding: 8px 12px;
-  background: white;
-  border-radius: 6px;
+  background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-sm);
   text-align: center;
   font-size: 14px;
-  color: #374151;
+  color: var(--common-text-color);
 }
 
 /* 图标样式 */
@@ -676,4 +678,4 @@ onMounted(() => {
     padding: 16px;
   }
 }
-</style> 
+</style>

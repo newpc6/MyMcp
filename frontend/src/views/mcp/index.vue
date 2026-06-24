@@ -1861,48 +1861,184 @@ onMounted(() => {
   }
 }
 
-/* 深色主题适配 */
-@media (prefers-color-scheme: dark) {
-  .mcp-services-container {
-    background: linear-gradient(135deg, #0d1421 0%, #1a237e 50%, #283593 100%);
-  }
+.mcp-services-container {
+  min-height: auto;
+  padding: 0;
+  background: var(--common-background-color);
+}
 
-  .page-header,
-  .service-card,
-  /* .pagination {
-    background: rgba(13, 20, 33, 0.95);
-    border-color: rgba(25, 118, 210, 0.3);
-  } */
+.page-header {
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-sm);
+}
 
-  .page-title {
-    color: #64b5f6;
-  }
+.page-header::before,
+.service-card::before,
+.url-container::before,
+.add-service-card::before {
+  display: none;
+}
 
-  .page-subtitle {
-    color: #90caf9;
-  }
+.header-content,
+.header-actions {
+  gap: 12px;
+}
 
-  .service-name {
-    color: #64b5f6;
-  }
+.search-section {
+  gap: 10px;
+}
 
-  .service-description,
-  .meta-value {
-    color: #b3e5fc;
-  }
+.search-input,
+.filter-select {
+  width: 180px;
+}
 
-  .url-container {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.2) 0%, rgba(13, 20, 33, 0.8) 100%);
-    border-color: rgba(25, 118, 210, 0.4);
-  }
+.search-btn,
+.refresh-btn,
+.create-btn,
+.empty-actions .el-button,
+.dialog-footer .el-button {
+  border-radius: var(--common-radius-md);
+  box-shadow: none;
+  transform: none;
+}
 
-  .url-text {
-    color: #81d4fa;
-  }
+.search-btn:hover,
+.refresh-btn:hover,
+.create-btn:hover,
+.empty-actions .el-button:hover,
+.dialog-footer .el-button:hover {
+  transform: none;
+  box-shadow: var(--common-shadow-sm);
+}
 
-  .add-service-card {
-    background: linear-gradient(135deg, rgba(25, 118, 210, 0.15) 0%, rgba(13, 20, 33, 0.95) 100%);
-    border-color: #42a5f5;
-  }
+.services-grid {
+  gap: 16px;
+}
+
+.service-card {
+  min-height: 280px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-sm);
+}
+
+.service-card .action-buttons .action-btn {
+  box-shadow: none;
+}
+
+.service-card:hover {
+  transform: none;
+  border-color: var(--common-primary-color);
+  box-shadow: var(--common-shadow-md);
+}
+
+.service-card.service-running {
+  border-color: var(--common-success-color);
+}
+
+.card-header {
+  min-height: auto;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+.status-section {
+  gap: 6px;
+}
+
+.status-indicator {
+  border-radius: var(--common-radius-sm);
+  box-shadow: none;
+}
+
+.status-running {
+  background: var(--common-success-background-color);
+  border-color: var(--common-success-color);
+  color: var(--common-success-color);
+}
+
+.status-stopped {
+  background: var(--common-warning-background-color);
+  border-color: var(--common-warning-color);
+  color: var(--common-warning-color);
+}
+
+.status-error {
+  background: var(--common-error-background-color);
+  border-color: var(--common-error-color);
+  color: var(--common-error-color);
+}
+
+.service-name {
+  color: var(--common-text-color-heavy);
+  font-size: 16px;
+}
+
+.service-module,
+.service-description,
+.meta-label {
+  color: var(--common-text-color-light);
+}
+
+.meta-value {
+  color: var(--common-text-color);
+}
+
+.url-container {
+  background: var(--common-hover-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+  box-shadow: none;
+}
+
+.url-container:hover {
+  transform: none;
+  border-color: var(--common-primary-color);
+  box-shadow: none;
+}
+
+.url-text {
+  color: var(--common-primary-color);
+}
+
+.form-tip {
+  color: var(--common-text-color-light);
+}
+
+.empty-description {
+  color: var(--common-text-color-heavy);
+}
+
+.empty-hint {
+  color: var(--common-text-color-light);
+}
+
+.params-dialog,
+.create-dialog {
+  border-radius: var(--common-radius-lg);
+}
+
+.params-dialog :deep(.el-dialog__header),
+.create-dialog :deep(.el-dialog__header) {
+  background: var(--common-panel-background-color);
+  color: var(--common-text-color-heavy);
+}
+
+.params-dialog :deep(.el-dialog__title),
+.create-dialog :deep(.el-dialog__title) {
+  color: var(--common-text-color-heavy);
+}
+
+.params-dialog :deep(.el-dialog__body),
+.create-dialog :deep(.el-dialog__body),
+.third-party-form {
+  background: var(--common-panel-background-color);
+  box-shadow: none;
 }
 </style>

@@ -15,10 +15,7 @@
         <el-menu
           :default-active="activeMenu"
           class="mcp-menu"
-          @select="handleMenuSelect"
-          background-color="#f8f9fa"
-          text-color="#333"
-          active-text-color="#409eff">
+          @select="handleMenuSelect">
           
           <el-menu-item index="services">
             <el-icon>
@@ -100,38 +97,40 @@ onMounted(() => {
 <style scoped>
 .mcp-layout {
   display: flex;
-  height: calc(100vh - 110px);
-  background-color: #f5f7fa;
+  min-height: calc(100vh - 32px);
+  background: var(--common-background-color);
+  gap: 12px;
 }
 
 .mcp-sidebar {
-  width: 240px;
-  background-color: #f8f9fa;
-  border-right: 1px solid #e4e7ed;
+  width: 216px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
   display: flex;
   flex-direction: column;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--common-shadow-sm);
 }
 
 .sidebar-header {
-  padding: 20px;
-  border-bottom: 1px solid #e4e7ed;
-  background-color: #fff;
+  padding: 16px;
+  border-bottom: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
 }
 
 .sidebar-title {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  color: #303133;
+  color: var(--common-text-color-heavy);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .title-icon {
-  font-size: 20px;
-  color: #409eff;
+  font-size: 18px;
+  color: var(--common-primary-color);
 }
 
 .sidebar-menu {
@@ -141,27 +140,28 @@ onMounted(() => {
 
 .mcp-menu {
   border: none;
-  background-color: transparent;
+  background: transparent;
 }
 
 .mcp-menu .el-menu-item {
-  height: 50px;
-  line-height: 50px;
-  margin: 4px 16px;
-  border-radius: 8px;
+  height: 40px;
+  line-height: 40px;
+  margin: 4px 10px;
+  border-radius: var(--common-radius-md);
   font-size: 14px;
   font-weight: 500;
-  transition: all 0.3s ease;
+  color: var(--common-text-color);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .mcp-menu .el-menu-item:hover {
-  background-color: #ecf5ff;
-  color: #409eff;
+  background: var(--common-primary-background-color);
+  color: var(--common-primary-color);
 }
 
 .mcp-menu .el-menu-item.is-active {
-  background-color: #409eff;
-  color: #fff;
+  background: var(--common-primary-color);
+  color: var(--common-text-color-positive);
 }
 
 .mcp-menu .el-menu-item .el-icon {
@@ -172,11 +172,9 @@ onMounted(() => {
 .mcp-content {
   flex: 1;
   overflow: auto;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 8px;
-  margin: 0 20px 0 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  min-width: 0;
+  padding: 0;
+  background: transparent;
 }
 
 /* 响应式设计 */
@@ -195,4 +193,4 @@ onMounted(() => {
     padding: 15px;
   }
 }
-</style> 
+</style>

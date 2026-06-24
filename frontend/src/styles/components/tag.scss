@@ -1,32 +1,35 @@
 .el-tag {
-  border-radius: 16px;
-  padding: 0 10px;
+  border-radius: var(--common-radius-sm);
   font-weight: 500;
-  border: 1px solid transparent;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: none;
+  transition: border-color 0.2s ease, color 0.2s ease, background-color 0.2s ease;
 }
 
 .el-tag:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transform: none;
+  box-shadow: none;
 }
 
 .el-tag--success {
-  background: $success-gradient-color;
-  color: white;
+  background: var(--common-success-background-color);
+  border-color: var(--common-success-color);
+  color: var(--common-success-color);
 }
 
 .el-tag--warning {
-  background: $warning-gradient-color;
-  color: white;
+  background: var(--common-warning-background-color);
+  border-color: var(--common-warning-color);
+  color: var(--common-warning-color);
 }
 
 .el-tag--danger {
-  background: $danger-gradient-color;
-  color: white;
+  background: var(--common-error-background-color);
+  border-color: var(--common-error-color);
+  color: var(--common-error-color);
 }
 
 .el-tag--info {
-  background: $info-gradient-color;
-  color: white;
+  background: var(--common-info-background-color);
+  border-color: var(--common-border-color);
+  color: var(--common-text-color-light);
 }

@@ -45,8 +45,17 @@
   --menu-panel-background-color-hover: rgb(255 255 255 / 14%);
   --common-panel-background-color: #ffffff;
   --common-primary-background-color: #ecf5ff;
+  --common-success-background-color: #ecfdf5;
+  --common-warning-background-color: #fffbeb;
+  --common-error-background-color: #fef2f2;
+  --common-info-background-color: #f3f4f6;
+  --common-hover-background-color: #f6faff;
   --common-shadow-sm: 0 2px 8px 0 #124ab41f;
   --common-shadow-md: 0 4px 16px 0 #124ab429;
+  --common-shadow-lg: 0 8px 24px 0 #124ab429;
+  --common-radius-sm: 4px;
+  --common-radius-md: 8px;
+  --common-radius-lg: 16px;
 }
 
 // 重置默认样式
@@ -62,9 +71,242 @@ body {
   font-family: $font-family;
   font-size: $font-size-base;
   color: $text-color;
-  background-color: $bg-color;
+  background-color: var(--common-background-color);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.app-page {
+  min-height: 100%;
+  color: var(--common-text-color);
+  background: var(--common-background-color);
+}
+
+.app-page-header {
+  margin-bottom: 16px;
+}
+
+.app-page-title {
+  margin: 0;
+  color: var(--common-text-color-heavy);
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.app-page-description {
+  margin: 4px 0 0;
+  color: var(--common-text-color-light);
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.app-panel {
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-sm);
+}
+
+.app-section-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.users-container,
+.tenants-container,
+.secret-management-page,
+.access-logs-page,
+.python-packages,
+.scheduled-tasks-page {
+  min-height: 100%;
+  padding: 0 !important;
+  color: var(--common-text-color);
+  background: var(--common-background-color) !important;
+}
+
+.page-header,
+.header-card,
+.stats-card,
+.ranking-card,
+.trend-card,
+.overview-card,
+.service-ranking-card,
+.module-ranking-card,
+.tool-ranking-card,
+.execution-details-card,
+.logs-card {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-sm) !important;
+}
+
+.page-header::before,
+.header-card::before,
+.stats-card::before,
+.ranking-card::before,
+.trend-card::before,
+.overview-card::before,
+.service-ranking-card::before,
+.module-ranking-card::before,
+.tool-ranking-card::before,
+.execution-details-card::before,
+.logs-card::before {
+  display: none !important;
+}
+
+.page-title,
+.section-title,
+.card-title,
+.stat-title,
+.ranking-title,
+.trend-title {
+  color: var(--common-text-color-heavy) !important;
+}
+
+.page-subtitle,
+.section-subtitle,
+.card-desc,
+.stat-desc,
+.ranking-subtitle,
+.trend-subtitle {
+  color: var(--common-text-color-light) !important;
+}
+
+.el-input__wrapper,
+.el-select .el-input__wrapper,
+.el-textarea__inner {
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: 0 0 0 1px var(--common-input-border-color) inset !important;
+}
+
+.el-input__wrapper:hover,
+.el-select .el-input__wrapper:hover,
+.el-textarea__inner:hover {
+  box-shadow: 0 0 0 1px var(--common-border-color) inset !important;
+}
+
+.el-input__wrapper.is-focus,
+.el-select .el-input__wrapper.is-focus,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset !important;
+}
+
+.statistics-overview,
+.statistics-trend,
+.ranking-dashboard,
+.module-ranking,
+.tool-ranking,
+.service-ranking,
+.tool-execution-details {
+  margin-bottom: 16px !important;
+}
+
+.statistics-overview .overview-card,
+.statistics-trend .trend-card,
+.ranking-dashboard .dashboard-card,
+.ranking-dashboard .ranking-card,
+.module-ranking .ranking-card,
+.tool-ranking .ranking-card,
+.service-ranking .ranking-card,
+.tool-execution-details .details-card {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-sm) !important;
+  backdrop-filter: none !important;
+  transform: none !important;
+}
+
+.statistics-overview .card-header,
+.statistics-trend .card-header,
+.ranking-dashboard .card-header,
+.module-ranking .card-header,
+.tool-ranking .card-header,
+.service-ranking .card-header,
+.tool-execution-details .card-header {
+  background: var(--common-panel-background-color) !important;
+  border-bottom: 1px solid var(--common-border-color) !important;
+  padding: 14px 16px !important;
+}
+
+.statistics-overview .header-title,
+.statistics-trend .header-title,
+.ranking-dashboard .header-title,
+.module-ranking .header-title,
+.tool-ranking .header-title,
+.service-ranking .header-title,
+.tool-execution-details .header-title,
+.statistics-overview .section-title,
+.statistics-trend .section-title {
+  color: var(--common-text-color-heavy) !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+}
+
+.statistics-overview .header-icon,
+.statistics-trend .header-icon,
+.ranking-dashboard .header-icon,
+.module-ranking .header-icon,
+.tool-ranking .header-icon,
+.service-ranking .header-icon,
+.tool-execution-details .header-icon,
+.statistics-overview .section-title .el-icon,
+.statistics-trend .section-title .el-icon {
+  color: var(--common-primary-color) !important;
+}
+
+.statistics-overview .stats-grid,
+.statistics-trend .trend-content {
+  padding: 16px !important;
+  gap: 16px !important;
+}
+
+.statistics-overview .stats-section,
+.statistics-trend .trend-section,
+.statistics-trend .trend-summary,
+.statistics-trend .summary-card {
+  background: var(--common-hover-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: none !important;
+}
+
+.statistics-overview .stats-card {
+  background: var(--common-panel-background-color) !important;
+  border: 1px solid var(--common-border-color) !important;
+  border-radius: var(--common-radius-md) !important;
+  box-shadow: none !important;
+  color: var(--common-text-color) !important;
+  transform: none !important;
+}
+
+.statistics-overview .stats-card:hover {
+  box-shadow: var(--common-shadow-sm) !important;
+  transform: none !important;
+}
+
+.statistics-overview .card-icon,
+.statistics-trend .card-icon {
+  background: var(--common-primary-background-color) !important;
+  color: var(--common-primary-color) !important;
+}
+
+.statistics-overview .card-value,
+.statistics-trend .card-value {
+  color: var(--common-text-color-heavy) !important;
+  -webkit-text-fill-color: var(--common-text-color-heavy) !important;
+}
+
+.statistics-overview .card-label,
+.statistics-overview .card-today,
+.statistics-trend .card-label,
+.statistics-trend .card-change,
+.statistics-trend .card-success,
+.statistics-trend .card-error {
+  color: var(--common-text-color-light) !important;
+  opacity: 1 !important;
 }
 
 // 全局滚动条样式
