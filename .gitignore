@@ -108,3 +108,5 @@ cmd.md
 .clinerules
 .continue
 backend/app/models/engine/mcp-script
+.git-
+.git--
