@@ -99,90 +99,92 @@
         </template>
       </ActionSearchCard>
 
-      <!-- 一行三列的卡片网格 -->
-      <div class="module-grid">
-        <div v-for="module in modules" :key="module.id" class="module-item">
-          <el-card class="module-card" shadow="hover" @click="goToModuleDetail(module.id)">
-            <div class="card-header flex-between items-center">
-              <div class="card-title-wrap">
-                <el-avatar :icon="getModuleIcon(module)" :size="40" class="module-avatar mr-2"></el-avatar>
-                <h3 class="card-title">{{ module.name }}</h3>
-              </div>
-              <div>
-                <el-tag v-if="!module.is_public" size="small" type="danger" class="ml-1">
-                  私有
-                </el-tag>
-                <el-tag v-else size="small" type="success" class="ml-1">
-                  公开
-                </el-tag>
-              </div>
-            </div>
-            <p class="card-desc">{{ module.description }}</p>
-            <div class="card-footer">
-              <div class="tag-container">
-                <el-tag v-if="module.category_name" size="small" type="warning" class="ml-1">
-                  {{ module.category_name }}
-                </el-tag>
-                <el-tag v-if="module.username" size="small" type="info" class="ml-1">
-                  创建者: {{ module.username }}
-                </el-tag>
-              </div>
-              <div class="module-actions">
-                <div class="text-gray-500 text-xs mb-1 time-display">更新时间: {{ formatDate(module.updated_at) }}</div>
-                <el-dropdown trigger="click" @click.stop>
-                  <el-button size="small" class="icon-button" @click.stop>
-                    <el-icon>
-                      <MoreFilled />
-                    </el-icon>
-                  </el-button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item @click.stop="goToModuleDetail(module.id)">
-                        <el-icon>
-                          <View />
-                        </el-icon> 查看详情
-                      </el-dropdown-item>
-                      <el-dropdown-item @click.stop="handleCloneModule(module)">
-                        <el-icon>
-                          <CopyDocument />
-                        </el-icon> 复制
-                      </el-dropdown-item>
-                      <el-dropdown-item v-if="hasEditPermission(module)" @click.stop="handleDeleteModule(module)"
-                        divided>
-                        <el-icon>
-                          <Delete />
-                        </el-icon> 删除
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
-              </div>
-            </div>
-          </el-card>
-        </div>
-      </div>
-
-      <div v-if="modules.length === 0 && !loading" class="text-center py-10">
-        <el-empty description="暂无MCP模块" />
-        <el-button type="primary" @click="loadModules" class="mt-4">刷新</el-button>
-      </div>
-
-      <div v-if="loading" class="loading-container">
+      <section class="marketplace-list-panel">
+        <!-- 一行三列的卡片网格 -->
         <div class="module-grid">
-          <div v-for="i in 6" :key="i" class="module-item">
-            <el-skeleton class="p-4" :rows="3" animated />
+          <div v-for="module in modules" :key="module.id" class="module-item">
+            <el-card class="module-card" shadow="never" @click="goToModuleDetail(module.id)">
+              <div class="card-header flex-between items-center">
+                <div class="card-title-wrap">
+                  <el-avatar :icon="getModuleIcon(module)" :size="40" class="module-avatar mr-2"></el-avatar>
+                  <h3 class="card-title">{{ module.name }}</h3>
+                </div>
+                <div>
+                  <el-tag v-if="!module.is_public" size="small" type="danger" class="ml-1">
+                    私有
+                  </el-tag>
+                  <el-tag v-else size="small" type="success" class="ml-1">
+                    公开
+                  </el-tag>
+                </div>
+              </div>
+              <p class="card-desc">{{ module.description }}</p>
+              <div class="card-footer">
+                <div class="tag-container">
+                  <el-tag v-if="module.category_name" size="small" type="warning" class="ml-1">
+                    {{ module.category_name }}
+                  </el-tag>
+                  <el-tag v-if="module.username" size="small" type="info" class="ml-1">
+                    创建者: {{ module.username }}
+                  </el-tag>
+                </div>
+                <div class="module-actions">
+                  <div class="text-gray-500 text-xs mb-1 time-display">更新时间: {{ formatDate(module.updated_at) }}</div>
+                  <el-dropdown trigger="click" @click.stop>
+                    <el-button size="small" class="icon-button" @click.stop>
+                      <el-icon>
+                        <MoreFilled />
+                      </el-icon>
+                    </el-button>
+                    <template #dropdown>
+                      <el-dropdown-menu>
+                        <el-dropdown-item @click.stop="goToModuleDetail(module.id)">
+                          <el-icon>
+                            <View />
+                          </el-icon> 查看详情
+                        </el-dropdown-item>
+                        <el-dropdown-item @click.stop="handleCloneModule(module)">
+                          <el-icon>
+                            <CopyDocument />
+                          </el-icon> 复制
+                        </el-dropdown-item>
+                        <el-dropdown-item v-if="hasEditPermission(module)" @click.stop="handleDeleteModule(module)"
+                          divided>
+                          <el-icon>
+                            <Delete />
+                          </el-icon> 删除
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
+              </div>
+            </el-card>
           </div>
         </div>
-      </div>
 
-      <!-- 分页组件 -->
-      <div v-if="!loading && modules.length > 0" class="pagination-container">
-        <el-config-provider :locale="zhCn">
-          <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
-            :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
-            @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination" />
-        </el-config-provider>
-      </div>
+        <div v-if="modules.length === 0 && !loading" class="empty-state">
+          <el-empty description="暂无MCP模块" />
+          <el-button type="primary" @click="loadModules" class="mt-4">刷新</el-button>
+        </div>
+
+        <div v-if="loading" class="loading-container">
+          <div class="module-grid">
+            <div v-for="i in 6" :key="i" class="module-item">
+              <el-skeleton class="p-4" :rows="3" animated />
+            </div>
+          </div>
+        </div>
+
+        <!-- 分页组件 -->
+        <div v-if="!loading && modules.length > 0" class="pagination-container">
+          <el-config-provider :locale="zhCn">
+            <el-pagination :current-page="currentPage" :page-size="pageSize" :page-sizes="[6, 9, 12, 18, 24, 36, 48, 60]"
+              :background="true" layout="total, sizes, prev, pager, next, jumper" :total="total"
+              @size-change="handleSizeChange" @current-change="handleCurrentChange" class="pagination" />
+          </el-config-provider>
+        </div>
+      </section>
     </el-main>
 
     <!-- 创建MCP服务对话框 -->
@@ -1032,25 +1034,40 @@ function handleResetSearch() {
 
 <style scoped>
 .marketplace-container {
-  min-height: calc(100vh - 32px);
-  background: var(--common-background-color);
+  min-height: 100%;
   gap: 16px;
+  padding: 0;
+  background-color: var(--common-background-color);
+  background-image: var(--common-workspace-grid), var(--common-workspace-background);
+  background-size: 24px 24px, auto;
+  background-position: -1px -1px, 0 0;
 }
 
 .marketplace-aside {
   padding: 0;
+  border-radius: var(--common-radius-lg);
+  overflow: hidden;
 }
 
 .category-panel {
   height: 100%;
+  background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
-  border-radius: 16px;
-  box-shadow: var(--common-shadow-sm);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
 }
 
 .category-panel :deep(.el-card__header) {
-  padding: 14px 16px;
+  min-height: 52px;
+  padding: 12px 16px;
+  background: var(--common-panel-background-color);
   border-bottom: 1px solid var(--common-border-color);
+}
+
+.category-panel :deep(.el-card__body) {
+  height: calc(100% - 53px);
+  padding: 12px;
+  background: var(--common-list-background-color);
 }
 
 .panel-title {
@@ -1063,20 +1080,35 @@ function handleResetSearch() {
   max-height: calc(100vh - 205px);
   overflow-y: auto;
   border-right: 0;
-  padding: 8px;
+  padding: 0;
+  background: transparent;
 }
 
 .category-menu :deep(.el-menu-item) {
   height: 40px;
+  display: flex;
+  align-items: center;
   line-height: 40px;
-  margin-bottom: 4px;
-  border-radius: 6px;
+  margin-bottom: 6px;
+  padding: 0 14px !important;
+  border: 1px solid transparent;
+  border-radius: var(--common-radius-md);
   color: var(--common-text-color);
+  background: transparent;
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+}
+
+.category-menu :deep(.el-menu-item:hover) {
+  background: var(--common-panel-background-color);
+  border-color: var(--common-border-color);
+  color: var(--common-primary-color);
 }
 
 .category-menu :deep(.el-menu-item.is-active) {
-  background: var(--common-primary-background-color);
+  background: var(--common-panel-background-color);
+  border-color: var(--zartd-primary-2);
   color: var(--common-primary-color);
+  box-shadow: var(--common-shadow-xs);
   font-weight: 600;
 }
 
@@ -1091,13 +1123,27 @@ function handleResetSearch() {
 .marketplace-main {
   min-width: 0;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.marketplace-list-panel {
+  min-height: calc(100vh - 208px);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background: var(--common-list-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
 }
 
 .module-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 16px;
-  margin-top: 16px;
+  align-content: start;
 }
 
 .module-item {
@@ -1106,18 +1152,19 @@ function handleResetSearch() {
 
 .module-card {
   height: 100%;
-  min-height: 198px;
+  min-height: 184px;
+  background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
-  border-radius: 16px;
-  box-shadow: none;
+  border-radius: var(--common-radius-md);
+  box-shadow: var(--common-shadow-xs);
   cursor: pointer;
-  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 
 .module-card:hover {
-  border-color: var(--common-primary-color);
-  box-shadow: var(--common-shadow-md);
-  transform: translateY(-2px);
+  border-color: var(--zartd-primary-2);
+  box-shadow: var(--common-shadow-sm);
+  transform: none;
 }
 
 .module-card :deep(.el-card__body) {
@@ -1125,6 +1172,7 @@ function handleResetSearch() {
   display: flex;
   flex-direction: column;
   padding: 16px;
+  background: var(--common-panel-background-color);
 }
 
 .card-header {
@@ -1156,10 +1204,11 @@ function handleResetSearch() {
   border-radius: 8px;
   background: var(--common-primary-background-color);
   color: var(--common-primary-color);
+  box-shadow: none;
 }
 
 .card-desc {
-  min-height: 44px;
+  min-height: 42px;
   margin: 0 0 14px;
   color: var(--common-text-color-light);
   font-size: 13px;
@@ -1205,17 +1254,28 @@ function handleResetSearch() {
 
 .icon-button {
   width: 28px;
+  height: 28px;
   padding: 0;
+  border-radius: var(--common-radius-md);
 }
 
 .loading-container {
-  padding-top: 16px;
+  padding: 0;
 }
 
 .pagination-container {
   display: flex;
   justify-content: flex-end;
-  margin-top: 18px;
+  margin-top: auto;
+  padding-top: 16px;
+}
+
+.empty-state {
+  min-height: 360px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 :deep(.el-input__wrapper),

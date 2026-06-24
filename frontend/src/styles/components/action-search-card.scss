@@ -1,18 +1,22 @@
 /* ActionSearchCard 全局样式 */
 .action-search-card {
   background: var(--common-panel-background-color);
-  border-radius: 8px !important;
-  box-shadow: none;
+  border-radius: var(--common-radius-lg) !important;
+  box-shadow: var(--common-shadow-xs);
   border: 1px solid var(--common-border-color);
   position: relative;
   overflow: hidden;
+}
+
+.action-search-card .el-card__body {
+  padding: 12px 16px;
 }
 
 .action-search-container {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 32px;
+  min-height: 40px;
   gap: 16px;
   .el-form {
     height: 32px !important;

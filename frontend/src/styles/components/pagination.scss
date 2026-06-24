@@ -9,10 +9,10 @@
 .pagination {
   background: var(--common-panel-background-color);
   margin-right: 0;
-  border-radius: $border-radius-lg;
+  border-radius: var(--common-radius-md);
   padding: 10px 16px;
-  box-shadow: none;
-  border: 1px solid $border-color;
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
 }
 
 .pagination :deep(.el-pagination__total),
