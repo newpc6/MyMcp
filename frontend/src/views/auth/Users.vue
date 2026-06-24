@@ -1082,4 +1082,141 @@ const importUser = async () => {
 :deep(.el-table__body-wrapper)::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+.users-container {
+  min-height: 100%;
+  padding: 0;
+  background: var(--common-background-color);
+}
+
+.page-header {
+  margin-bottom: 16px;
+  background: var(--common-surface-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+}
+
+.page-header::before {
+  display: none;
+}
+
+.header-content {
+  padding: 18px 20px;
+}
+
+.title-icon {
+  background: var(--common-primary-background-color);
+  border: 1px solid var(--common-border-color);
+  backdrop-filter: none;
+}
+
+.title-icon .el-icon {
+  color: var(--common-primary-color);
+}
+
+.title-text h2 {
+  color: var(--common-text-color-heavy);
+  font-size: 18px;
+  text-shadow: none;
+}
+
+.subtitle {
+  color: var(--common-text-color-light);
+}
+
+.action-btn,
+.cancel-btn,
+.save-btn {
+  border-radius: var(--common-radius-md);
+  box-shadow: none;
+  transform: none;
+}
+
+.primary-btn,
+.success-btn {
+  color: var(--common-text-color-positive);
+  background: var(--common-primary-color);
+  border: 1px solid var(--common-primary-color);
+}
+
+.success-btn {
+  background: var(--common-success-color);
+  border-color: var(--common-success-color);
+}
+
+.primary-btn:hover,
+.success-btn:hover,
+.cancel-btn:hover,
+.save-btn:hover {
+  transform: none;
+  box-shadow: var(--common-shadow-xs);
+}
+
+.table-card {
+  background: var(--common-surface-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+}
+
+.card-header {
+  background: var(--common-table-header-background-color);
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+.card-title span {
+  color: var(--common-text-color-heavy);
+}
+
+.user-count {
+  color: var(--common-text-color-light);
+  background: var(--common-hover-background-color);
+  border-radius: var(--common-radius-md);
+}
+
+:deep(.el-table th) {
+  background: var(--common-table-header-background-color) !important;
+  color: var(--common-text-color) !important;
+}
+
+:deep(.el-table td) {
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+:deep(.el-table__row:hover) {
+  transform: none;
+  box-shadow: none;
+}
+
+.id-cell,
+.edit-btn,
+.password-btn,
+.delete-btn {
+  border-radius: var(--common-radius-sm);
+}
+
+.username {
+  color: var(--common-text-color-heavy);
+}
+
+.fullname,
+.email {
+  color: var(--common-text-color-light);
+}
+
+:deep(.el-dialog__header) {
+  background: var(--common-surface-color);
+  border-bottom: 1px solid var(--common-border-color);
+}
+
+:deep(.el-dialog__title),
+:deep(.el-dialog__close) {
+  color: var(--common-text-color-heavy);
+}
+
+:deep(.el-dialog__footer) {
+  background: var(--common-surface-light-color);
+  border-top: 1px solid var(--common-border-color);
+}
 </style>

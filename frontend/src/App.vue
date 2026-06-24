@@ -1,34 +1,92 @@
 <template>
-  <el-container class="app-container" :class="{ 'is-login': !showNavbar }">
-    <el-aside v-if="showNavbar" width="232px" class="app-sidebar">
-      <NavbarComponent />
-    </el-aside>
-
-    <el-container class="app-workspace">
-      <el-header v-if="showNavbar" height="52px" class="app-header">
-        <div class="app-header-title">
-          <span class="app-header-label">当前位置</span>
-          <span>{{ currentTitle }}</span>
+  <div class="app-container" :class="{ 'is-login': !showNavbar }">
+    <template v-if="showNavbar">
+      <header class="app-header">
+        <div class="app-brand" @click="goHome">
+          <div class="app-brand-mark">MCP</div>
+          <div class="app-brand-text">
+            <div class="app-brand-title">MCP 管理平台</div>
+            <div class="app-brand-subtitle">Admin Console</div>
+          </div>
         </div>
-        <div class="app-header-actions">
-          <span class="app-header-meta">MCP 管理平台</span>
-          <span class="app-header-user">{{ username }}</span>
-        </div>
-      </el-header>
 
-      <el-main class="app-main" :class="{ 'login-main': !showNavbar }">
-        <router-view></router-view>
-      </el-main>
-    </el-container>
-  </el-container>
+        <div class="app-header-right">
+          <div class="app-user-meta">
+            <div class="app-user-name">{{ username }}</div>
+            <div class="app-user-role">{{ userRole }}</div>
+          </div>
+          <el-avatar class="app-avatar">{{ userInitial }}</el-avatar>
+          <el-dropdown @command="handleHeaderCommand">
+            <span class="app-dropdown-link">
+              <el-icon><Operation /></el-icon>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
+      </header>
+
+      <div class="app-body">
+        <el-aside width="220px" class="app-sidebar">
+          <NavbarComponent />
+        </el-aside>
+
+        <section class="app-workspace">
+          <div class="app-tabs">
+            <el-tabs
+              v-model="activeTab"
+              type="card"
+              closable
+              class="app-tabs-bar"
+              :class="{ 'hide-close-btn': openedTabs.length === 1 }"
+              @tab-click="handleTabClick"
+              @tab-remove="handleTabRemove"
+            >
+              <el-tab-pane
+                v-for="tab in openedTabs"
+                :key="tab.path"
+                :label="tab.title"
+                :name="tab.path"
+                :closable="tab.path !== '/marketplace'"
+              />
+            </el-tabs>
+          </div>
+
+          <main class="app-main">
+            <router-view></router-view>
+          </main>
+        </section>
+      </div>
+    </template>
+
+    <main v-else class="login-main">
+      <router-view></router-view>
+    </main>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, onMounted, ref, watch } from 'vue'
+import type { TabsPaneContext, TabPaneName } from 'element-plus'
+import { ElMessage } from 'element-plus'
+import { Operation } from '@element-plus/icons-vue'
+import { useRoute, useRouter } from 'vue-router'
 import NavbarComponent from './components/NavbarComponent.vue'
+import { logout } from '@/api/auth'
 
 const route = useRoute()
+const router = useRouter()
+
+interface OpenedTab {
+  path: string
+  title: string
+}
+
+const openedTabs = ref<OpenedTab[]>([])
+const activeTab = ref('')
 
 // 根据路由判断是否显示导航栏
 const showNavbar = computed(() => {
@@ -38,14 +96,70 @@ const showNavbar = computed(() => {
 
 const currentTitle = computed(() => String(route.meta?.title || 'MCP 管理平台'))
 
-const username = computed(() => {
+const currentUser = computed(() => {
   try {
     const userInfo = localStorage.getItem('userInfo')
-    return userInfo ? JSON.parse(userInfo).username || 'admin' : '未登录'
+    return userInfo ? JSON.parse(userInfo) : null
   } catch (error) {
-    return '未登录'
+    return null
   }
 })
+
+const username = computed(() => currentUser.value?.username || 'admin')
+const userRole = computed(() => currentUser.value?.is_admin ? '系统管理员' : '系统用户')
+const userInitial = computed(() => username.value.slice(0, 1).toUpperCase())
+
+const syncOpenedTabs = () => {
+  if (!showNavbar.value) return
+
+  const path = route.path
+  const title = currentTitle.value
+  activeTab.value = path
+
+  if (!openedTabs.value.some((tab) => tab.path === path)) {
+    openedTabs.value.push({ path, title })
+  }
+}
+
+const handleTabClick = (pane: TabsPaneContext) => {
+  const nextPath = String(pane.paneName || '')
+  if (nextPath && nextPath !== route.path) {
+    router.push(nextPath)
+  }
+}
+
+const handleTabRemove = (name: TabPaneName) => {
+  const path = String(name)
+  const index = openedTabs.value.findIndex((tab) => tab.path === path)
+  if (index < 0 || openedTabs.value.length === 1) return
+
+  openedTabs.value.splice(index, 1)
+
+  if (path === route.path) {
+    const nextTab = openedTabs.value[index] || openedTabs.value[index - 1]
+    router.push(nextTab?.path || '/marketplace')
+  }
+}
+
+const handleHeaderCommand = async (command: string) => {
+  if (command !== 'logout') return
+
+  try {
+    await logout()
+    ElMessage.success('退出登录成功')
+  } catch (error) {
+    console.error('登出API调用失败', error)
+  } finally {
+    localStorage.removeItem('userInfo')
+    router.push('/login')
+  }
+}
+
+const goHome = () => {
+  router.push('/')
+}
+
+watch(() => route.fullPath, syncOpenedTabs, { immediate: true })
 
 onMounted(async () => {
   // 页面初始化时可以加载一些全局数据
@@ -55,93 +169,176 @@ onMounted(async () => {
 
 <style>
 .app-container {
+  width: 100vw;
   height: 100vh;
   display: flex;
+  flex-direction: column;
   background: var(--common-background-color);
+  overflow: hidden;
 }
 
 .app-container.is-login {
   display: block;
 }
 
+.app-header {
+  height: 60px;
+  flex: 0 0 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  background: var(--header-background-color);
+  box-shadow: var(--common-shadow-sm);
+}
+
+.app-brand,
+.app-header-right {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.app-brand {
+  gap: 8px;
+  cursor: pointer;
+}
+
+.app-brand-mark {
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--common-on-primary-color);
+  background: var(--common-on-primary-surface-color);
+  border-radius: var(--common-radius-md);
+  box-shadow: var(--common-shadow-xs);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.app-brand-text {
+  min-width: 0;
+  color: var(--common-on-primary-color);
+  line-height: 1.2;
+}
+
+.app-brand-title {
+  font-size: var(--common-font-size-title-md);
+  font-weight: 700;
+}
+
+.app-brand-subtitle {
+  margin-top: 3px;
+  color: var(--common-on-primary-muted-color);
+  font-size: var(--common-font-size-secondary);
+}
+
+.app-header-right {
+  gap: 12px;
+  color: var(--common-on-primary-color);
+}
+
+.app-user-meta {
+  text-align: right;
+  line-height: 1.2;
+}
+
+.app-user-name {
+  font-size: var(--common-font-size-base);
+  font-weight: 600;
+}
+
+.app-user-role {
+  margin-top: 3px;
+  color: var(--common-on-primary-muted-color);
+  font-size: var(--common-font-size-secondary);
+}
+
+.app-avatar {
+  background: var(--zartd-primary-6) !important;
+  border: 2px solid var(--common-on-primary-border-strong-color);
+}
+
+.app-dropdown-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--common-on-primary-color);
+  cursor: pointer;
+}
+
+.app-body {
+  height: calc(100vh - 60px);
+  display: flex;
+  min-height: 0;
+}
+
 .app-sidebar {
+  flex: 0 0 220px;
   padding: 0;
   overflow: hidden;
-  background-image: var(--menu-background-image);
+  background: var(--menu-background-color) !important;
+  border-right: 1px solid var(--common-border-color);
+  box-shadow: var(--common-shadow-xs);
 }
 
 .app-workspace {
   min-width: 0;
-  height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
   background: var(--common-background-color);
 }
 
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex: 0 0 52px;
+.app-tabs {
+  height: 50px;
+  flex: 0 0 50px;
   padding: 0 16px;
-  background: var(--header-background-color);
-  border-bottom: 1px solid var(--header-border-color);
-  box-shadow: 0 1px 0 0 var(--header-border-color);
+  background: var(--common-surface-gradient);
+  box-shadow: var(--common-shadow-xs);
 }
 
-.app-header-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  color: var(--common-text-color-heavy);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 24px;
+.app-tabs-bar .el-tabs__header {
+  margin: 0;
 }
 
-.app-header-title::before {
-  width: 3px;
-  height: 16px;
-  margin-right: 8px;
-  border-radius: var(--common-radius-sm);
-  background: var(--common-primary-color);
-  content: '';
-}
-
-.app-header-label {
+.app-tabs-bar .el-tabs__item {
+  height: 34px;
+  line-height: 34px;
+  margin-right: 2px;
+  padding: 0 12px !important;
   color: var(--common-text-color-light);
-  font-size: 12px;
-  font-weight: 400;
-}
-
-.app-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: var(--common-text-color-light);
-  font-size: 12px;
-  line-height: 20px;
-}
-
-.app-header-user {
-  height: 28px;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 12px;
-  color: var(--common-text-color);
-  background: var(--common-hover-background-color);
+  background: var(--zartd-g-20);
   border: 1px solid var(--common-border-color);
-  border-radius: var(--common-radius-md);
+  border-bottom: 0;
+  border-radius: var(--common-radius-md) var(--common-radius-md) 0 0;
+  font-size: var(--common-font-size-base);
+}
+
+.app-tabs-bar .el-tabs__item.is-active {
+  position: relative;
+  z-index: 1;
+  color: var(--common-primary-color);
+  background: var(--common-surface-gradient);
+  box-shadow: var(--common-shadow-xs);
+  font-weight: 500;
+}
+
+.app-tabs-bar .el-tabs__content {
+  display: none;
+}
+
+.app-tabs-bar.hide-close-btn .el-icon.is-icon-close {
+  display: none;
 }
 
 .app-main {
-  height: 0;
-  padding: 8px;
+  min-height: 0;
+  padding: 20px;
   flex: 1;
-  overflow-y: auto;
+  overflow: auto;
   background: var(--common-background-color);
-  min-width: 0;
 }
 
 .login-main {

@@ -952,4 +952,155 @@ const saveTenant = async () => {
     font-weight: 500;
   }
 }
+
+.tenants-container {
+  min-height: 100%;
+  padding: 0;
+  background: var(--common-background-color);
+}
+
+.page-header {
+  margin-bottom: 16px;
+  padding: 18px 20px;
+  background: var(--common-surface-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+  backdrop-filter: none;
+
+  .header-content {
+    max-width: none;
+  }
+
+  .header-title {
+    .title-icon {
+      background: var(--common-primary-background-color);
+      color: var(--common-primary-color);
+      border: 1px solid var(--common-border-color);
+    }
+
+    .title-text {
+      h1 {
+        color: var(--common-text-color-heavy);
+        font-size: 18px;
+      }
+
+      p {
+        color: var(--common-text-color-light);
+      }
+    }
+  }
+
+  .header-actions {
+    .add-btn {
+      height: 36px;
+      padding: 0 16px;
+      background: var(--common-primary-color);
+      border: 1px solid var(--common-primary-color);
+      border-radius: var(--common-radius-md);
+      box-shadow: none;
+      font-size: 14px;
+
+      &:hover {
+        transform: none;
+        box-shadow: var(--common-shadow-xs);
+      }
+    }
+  }
+}
+
+.tenants-content {
+  max-width: none;
+  padding: 0;
+}
+
+.tree-container {
+  background: var(--common-surface-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+  backdrop-filter: none;
+}
+
+.tree-header {
+  background: var(--common-table-header-background-color);
+  border-bottom: 1px solid var(--common-border-color);
+
+  .tree-title {
+    color: var(--common-text-color-heavy);
+  }
+
+  .tree-stats {
+    .stat-item {
+      color: var(--common-text-color-light);
+    }
+  }
+}
+
+.tenant-card {
+  background: var(--common-surface-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+  box-shadow: var(--common-shadow-xs);
+
+  &::before {
+    display: none;
+  }
+
+  &:hover {
+    transform: none;
+    box-shadow: var(--common-shadow-sm);
+    border-color: var(--common-primary-color);
+  }
+}
+
+.tenant-avatar {
+  .avatar-icon {
+    color: var(--common-primary-color);
+    background: var(--common-primary-background-color);
+
+    &.avatar-default,
+    &.avatar-active,
+    &.avatar-inactive {
+      background: var(--common-primary-background-color);
+    }
+  }
+}
+
+.tenant-header {
+  .tenant-name {
+    color: var(--common-text-color-heavy);
+  }
+}
+
+.tenant-description,
+.tenant-meta {
+  color: var(--common-text-color-light);
+}
+
+.tenant-dialog {
+  :deep(.el-dialog__header) {
+    background: var(--common-surface-color);
+    border-bottom: 1px solid var(--common-border-color);
+
+    .el-dialog__title,
+    .el-dialog__close {
+      color: var(--common-text-color-heavy);
+    }
+  }
+}
+
+.dialog-footer {
+  background: var(--common-surface-light-color);
+  border-top: 1px solid var(--common-border-color);
+
+  .el-button {
+    border-radius: var(--common-radius-md);
+
+    &--primary {
+      background: var(--common-primary-color);
+      border: 1px solid var(--common-primary-color);
+    }
+  }
+}
 </style>
