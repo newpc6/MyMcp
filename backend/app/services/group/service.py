@@ -6,7 +6,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.engine import get_db
-from backend.app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_modules import McpModule
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger

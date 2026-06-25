@@ -1,55 +1,72 @@
 <template>
   <div class="login-container">
-    <div class="background-decoration">
-      <div class="shape shape-1"></div>
-      <div class="shape shape-2"></div>
-      <div class="shape shape-3"></div>
-    </div>
-
-    <div class="login-box">
-      <div class="login-header">
-        <div class="logo-icon">
-          <el-icon :size="48" color="#4f9cf9">
+    <section class="login-shell">
+      <div class="login-brand-panel">
+        <div class="brand-mark">
+          <el-icon>
             <Platform />
           </el-icon>
         </div>
-        <h2>MCP管理平台</h2>
-        <p>欢迎回来，请登录您的账号</p>
+        <div>
+          <h1>MCP 管理平台</h1>
+          <p>统一管理 MCP 模板、服务发布、密钥和调用审计。</p>
+        </div>
+        <div class="brand-meta">
+          <div>
+            <span>服务治理</span>
+            <strong>运行监控 / 访问控制</strong>
+          </div>
+          <div>
+            <span>模板管理</span>
+            <strong>分类维护 / 快速复用</strong>
+          </div>
+          <div>
+            <span>安全审计</span>
+            <strong>密钥管理 / 调用日志</strong>
+          </div>
+        </div>
       </div>
 
-      <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" label-position="top" class="login-form"
-        size="large">
-        <el-form-item prop="username" label="用户名">
-          <el-input v-model="loginForm.username" prefix-icon="User" placeholder="请输入用户名" class="form-input" />
-        </el-form-item>
+      <div class="login-box">
+        <div class="login-header">
+          <h2>账号登录</h2>
+          <p>请输入账号信息进入管理控制台</p>
+        </div>
 
-        <el-form-item prop="password" label="密码">
-          <el-input v-model="loginForm.password" prefix-icon="Lock" :type="passwordVisible ? 'text' : 'password'"
-            placeholder="请输入密码" class="form-input" @keyup.enter="handleLogin">
-            <template #suffix>
-              <el-icon class="password-icon" @click="passwordVisible = !passwordVisible">
-                <component :is="passwordVisible ? 'View' : 'Hide'" />
-              </el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
+        <el-form ref="loginFormRef" :model="loginForm" :rules="loginRules" label-position="top" class="login-form"
+          size="large">
+          <el-form-item prop="username" label="用户名">
+            <el-input v-model="loginForm.username" :prefix-icon="User" placeholder="请输入用户名" class="form-input" />
+          </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" :loading="loading" class="login-button" size="large" @click="handleLogin">
-            <span v-if="!loading">登录</span>
-            <span v-else>登录中...</span>
-          </el-button>
-        </el-form-item>
-      </el-form>
+          <el-form-item prop="password" label="密码">
+            <el-input v-model="loginForm.password" :prefix-icon="Lock" :type="passwordVisible ? 'text' : 'password'"
+              placeholder="请输入密码" class="form-input" @keyup.enter="handleLogin">
+              <template #suffix>
+                <el-icon class="password-icon" @click="passwordVisible = !passwordVisible">
+                  <View v-if="passwordVisible" />
+                  <Hide v-else />
+                </el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
 
-      <div class="login-tips" v-if="errorMessage">
-        <el-alert :title="errorMessage" type="error" show-icon :closable="false" />
+          <el-form-item>
+            <el-button type="primary" :loading="loading" class="login-button" size="large" @click="handleLogin">
+              {{ loading ? '登录中...' : '登录' }}
+            </el-button>
+          </el-form-item>
+        </el-form>
+
+        <div class="login-tips" v-if="errorMessage">
+          <el-alert :title="errorMessage" type="error" show-icon :closable="false" />
+        </div>
+
+        <div class="login-footer">
+          MCP Admin Console
+        </div>
       </div>
-
-      <div class="login-footer">
-        <p>© 2025 MCP管理平台 - 现代化微服务管理系统</p>
-      </div>
-    </div>
+    </section>
   </div>
 </template>
 
@@ -58,7 +75,7 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, FormInstance } from 'element-plus';
 import { login } from '@/api/auth';
-import { View, Hide, Platform } from '@element-plus/icons-vue';
+import { View, Hide, Platform, User, Lock } from '@element-plus/icons-vue';
 
 // 路由
 const router = useRouter();
@@ -143,276 +160,199 @@ const handleLogin = async () => {
 
 <style scoped>
 .login-container {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
   min-height: 100vh;
-  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
-  overflow: hidden;
-}
-
-.background-decoration {
-  position: absolute;
-  top: 0;
-  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 1;
+  padding: 40px;
+  background: var(--common-background-color);
 }
 
-.shape {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  animation: float 6s ease-in-out infinite;
+.login-shell {
+  width: min(980px, 100%);
+  min-height: 560px;
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) 420px;
+  overflow: hidden;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-sm);
 }
 
-.shape-1 {
-  width: 200px;
-  height: 200px;
-  top: 10%;
-  left: 10%;
-  animation-delay: 0s;
+.login-brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 40px;
+  color: var(--common-on-primary-color);
+  background: var(--common-primary-gradient);
 }
 
-.shape-2 {
-  width: 150px;
-  height: 150px;
-  top: 60%;
-  right: 15%;
-  animation-delay: 2s;
+.brand-mark {
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  border-radius: var(--common-radius-md);
+  background: var(--common-on-primary-surface-color);
+  border: 1px solid var(--common-on-primary-border-strong-color);
+  font-size: 24px;
 }
 
-.shape-3 {
-  width: 100px;
-  height: 100px;
-  bottom: 20%;
-  left: 20%;
-  animation-delay: 4s;
+.login-brand-panel h1 {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 40px;
 }
 
-@keyframes float {
+.login-brand-panel p {
+  max-width: 390px;
+  margin: 12px 0 0;
+  color: var(--common-on-primary-muted-color);
+  font-size: var(--common-font-size-base);
+  line-height: 24px;
+}
 
-  0%,
-  100% {
-    transform: translateY(0px) rotate(0deg);
-  }
+.brand-meta {
+  display: grid;
+  gap: 12px;
+}
 
-  50% {
-    transform: translateY(-20px) rotate(180deg);
-  }
+.brand-meta div {
+  padding: 14px 16px;
+  background: rgb(255 255 255 / 10%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: var(--common-radius-md);
+}
+
+.brand-meta span,
+.brand-meta strong {
+  display: block;
+}
+
+.brand-meta span {
+  color: var(--common-on-primary-muted-color);
+  font-size: var(--common-font-size-secondary);
+}
+
+.brand-meta strong {
+  margin-top: 4px;
+  font-size: var(--common-font-size-base);
+  font-weight: 600;
 }
 
 .login-box {
-  position: relative;
-  z-index: 2;
-  width: 420px;
-  padding: 50px 40px;
-  border-radius: 20px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  animation: slideIn 0.8s ease-out;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 40px;
+  background: var(--common-panel-background-color);
 }
 
 .login-header {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.logo-icon {
-  margin-bottom: 20px;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.05);
-  }
-
-  100% {
-    transform: scale(1);
-  }
+  margin-bottom: 28px;
 }
 
 .login-header h2 {
-  font-size: 28px;
-  font-weight: 600;
-  color: #2c3e50;
-  margin-bottom: 10px;
-  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  margin: 0;
+  color: var(--common-text-color-heavy);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 32px;
 }
 
 .login-header p {
-  color: #7f8c8d;
-  font-size: 16px;
-  font-weight: 400;
+  margin: 6px 0 0;
+  color: var(--common-text-color-light);
+  font-size: var(--common-font-size-base);
 }
 
 .login-form {
-  margin-bottom: 30px;
+  margin-bottom: 16px;
 }
 
 .login-form :deep(.el-form-item__label) {
-  color: #2c3e50;
-  font-weight: 500;
-  font-size: 14px;
+  color: var(--common-text-color);
+  font-size: var(--common-font-size-base);
+  font-weight: 600;
 }
 
 .form-input :deep(.el-input__wrapper) {
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e1e8f0;
-  transition: all 0.3s ease;
-  padding: 12px 16px;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: var(--common-radius-md);
+  box-shadow: 0 0 0 1px var(--common-input-border-color) inset;
+  transition: box-shadow 0.2s ease;
 }
 
 .form-input :deep(.el-input__wrapper:hover) {
-  border-color: #4f9cf9;
-  box-shadow: 0 4px 12px rgba(79, 156, 249, 0.15);
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset;
 }
 
 .form-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #4f9cf9;
-  box-shadow: 0 4px 12px rgba(79, 156, 249, 0.2);
+  box-shadow: 0 0 0 1px var(--common-primary-color) inset, 0 0 0 3px var(--zartd-primary-fade-10);
 }
 
 .login-button {
   width: 100%;
-  height: 50px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 500;
-  background: linear-gradient(135deg, #4f9cf9 0%, #1e40af 100%);
+  height: 44px;
+  border-radius: var(--common-radius-md);
+  font-size: var(--common-font-size-base);
+  font-weight: 600;
+  background: var(--common-primary-color);
   border: none;
-  box-shadow: 0 4px 15px rgba(79, 156, 249, 0.3);
-  transition: all 0.3s ease;
+  box-shadow: none;
+  transition: background-color 0.2s ease;
 }
 
 .login-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(79, 156, 249, 0.4);
-}
-
-.login-button:active {
-  transform: translateY(0);
+  background: var(--zartd-primary-7);
 }
 
 .login-tips {
-  margin-top: 20px;
-  animation: shake 0.5s ease-in-out;
-}
-
-@keyframes shake {
-
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  25% {
-    transform: translateX(-5px);
-  }
-
-  75% {
-    transform: translateX(5px);
-  }
+  margin-top: 16px;
 }
 
 .login-tips :deep(.el-alert) {
-  border-radius: 8px;
-  border: none;
-  background: rgba(245, 108, 108, 0.1);
+  border-radius: var(--common-radius-md);
 }
 
 .password-icon {
   cursor: pointer;
-  color: #909399;
-  transition: color 0.3s ease;
+  color: var(--common-text-color-lighter);
+  transition: color 0.2s ease;
 }
 
 .password-icon:hover {
-  color: #4f9cf9;
+  color: var(--common-primary-color);
 }
 
 .login-footer {
   text-align: center;
-  margin-top: 30px;
-  padding-top: 20px;
-  border-top: 1px solid #e1e8f0;
+  margin-top: 16px;
+  padding-top: 16px;
+  color: var(--common-text-color-lighter);
+  font-size: var(--common-font-size-secondary);
+  border-top: 1px solid var(--common-border-color);
 }
 
-.login-footer p {
-  color: #95a5a6;
-  font-size: 12px;
-  margin: 0;
-}
-
-/* 响应式设计 */
-@media (max-width: 480px) {
-  .login-box {
-    width: 90%;
-    margin: 20px;
-    padding: 30px 20px;
+@media (max-width: 860px) {
+  .login-shell {
+    grid-template-columns: 1fr;
   }
 
-  .login-header h2 {
-    font-size: 24px;
-  }
-
-  .shape {
+  .login-brand-panel {
     display: none;
   }
-}
 
-/* 暗色主题支持 */
-@media (prefers-color-scheme: dark) {
-  .login-box {
-    background: rgba(45, 55, 72, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-  }
-
-  .login-header h2 {
-    color: #ffffff;
-  }
-
-  .login-header p {
-    color: #a0aec0;
-  }
-
-  .login-form :deep(.el-form-item__label) {
-    color: #e2e8f0;
-  }
-
-  .form-input :deep(.el-input__wrapper) {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .login-footer p {
-    color: #718096;
+  .login-container {
+    padding: 20px;
   }
 }
 </style>

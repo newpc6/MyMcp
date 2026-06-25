@@ -12,6 +12,8 @@ from pytz import timezone
 
 from app.models.engine import get_db
 from app.models.modules.users import User, Tenant, UserTenant
+from app.repositories.user_repository import UserRepository
+from app.repositories.tenant_repository import TenantRepository
 from app.utils.logging import mcp_logger
 from app.core.config import settings
 from app.utils.cache import memory_cache
@@ -90,9 +92,7 @@ class UserService:
     def get_user_by_id(user_id: int) -> Optional[User]:
         """根据ID获取用户"""
         try:
-            with get_db() as db:
-                query = select(User).where(User.id == user_id)
-                return db.execute(query).scalar_one_or_none()
+            return UserRepository.get_by_id(user_id)
         except Exception as e:
             mcp_logger.error(f"获取用户失败: {str(e)}")
             return None
@@ -101,9 +101,7 @@ class UserService:
     def get_user_by_username(username: str) -> Optional[User]:
         """根据用户名获取用户"""
         try:
-            with get_db() as db:
-                query = select(User).where(User.username == username)
-                return db.execute(query).scalar_one_or_none()
+            return UserRepository.get_by_username(username)
         except Exception as e:
             mcp_logger.error(f"获取用户失败: {str(e)}")
             return None
@@ -112,12 +110,10 @@ class UserService:
     def get_user_by_external_id(external_id: str, platform_type: str) -> Optional[User]:
         """根据外部ID和平台类型获取用户"""
         try:
-            with get_db() as db:
-                query = select(User).where(
-                    User.external_id == external_id,
-                    User.platform_type == platform_type
-                )
-                return db.execute(query).scalar_one_or_none()
+            return UserRepository.get_by_external_id(
+                external_id,
+                platform_type
+            )
         except Exception as e:
             mcp_logger.error(f"获取用户失败: {str(e)}")
             return None
@@ -224,9 +220,7 @@ class UserService:
     def get_all_users() -> List[User]:
         """获取所有用户"""
         try:
-            with get_db() as db:
-                query = select(User)
-                return db.execute(query).scalars().all()
+            return UserRepository.list_all()
         except Exception as e:
             mcp_logger.error(f"获取所有用户失败: {str(e)}")
             return []
@@ -279,14 +273,10 @@ class UserService:
     def validate_login(username: str, password: str) -> Optional[User]:
         """验证用户登录"""
         try:
-            with get_db() as db:
-                query = select(User).where(User.username == username)
-                user = db.execute(query).scalar_one_or_none()
-                
-                if user and user.check_password(password) and user.status == 'active':
-                    return user
-                
-                return None
+            user = UserRepository.get_by_username(username)
+            if user and user.check_password(password) and user.status == 'active':
+                return user
+            return None
         except Exception as e:
             mcp_logger.error(f"用户登录验证失败: {str(e)}")
             return None
@@ -515,9 +505,7 @@ class TenantService:
     def get_tenant_by_id(tenant_id: int) -> Optional[Tenant]:
         """根据ID获取租户"""
         try:
-            with get_db() as db:
-                query = select(Tenant).where(Tenant.id == tenant_id)
-                return db.execute(query).scalar_one_or_none()
+            return TenantRepository.get_by_id(tenant_id)
         except Exception as e:
             mcp_logger.error(f"获取租户失败: {str(e)}")
             return None
@@ -526,9 +514,7 @@ class TenantService:
     def get_tenant_by_code(code: str) -> Optional[Tenant]:
         """根据代码获取租户"""
         try:
-            with get_db() as db:
-                query = select(Tenant).where(Tenant.code == code)
-                return db.execute(query).scalar_one_or_none()
+            return TenantRepository.get_by_code(code)
         except Exception as e:
             mcp_logger.error(f"获取租户失败: {str(e)}")
             return None
@@ -639,9 +625,7 @@ class TenantService:
     def get_all_tenants() -> List[Tenant]:
         """获取所有租户"""
         try:
-            with get_db() as db:
-                query = select(Tenant)
-                return db.execute(query).scalars().all()
+            return TenantRepository.list_all()
         except Exception as e:
             mcp_logger.error(f"获取所有租户失败: {str(e)}")
             return []
@@ -687,24 +671,10 @@ class TenantService:
     def get_user_tenants(user_id: int) -> List[Tenant]:
         """获取用户关联的所有租户"""
         try:
-            with get_db() as db:
-                # 检查用户是否存在
-                user = db.execute(
-                    select(User).where(User.id == user_id)
-                ).scalar_one_or_none()
-                
-                if not user:
-                    mcp_logger.warning(f"用户ID {user_id} 不存在")
-                    return []
-                
-                # 获取用户关联的租户
-                query = (
-                    select(Tenant)
-                    .join(UserTenant)
-                    .where(UserTenant.user_id == user_id)
-                )
-                return db.execute(query).scalars().all()
-                
+            tenants = TenantRepository.list_by_user_id(user_id)
+            if not tenants and not UserRepository.get_by_id(user_id):
+                mcp_logger.warning(f"用户ID {user_id} 不存在")
+            return tenants
         except Exception as e:
             mcp_logger.error(f"获取用户租户失败: {str(e)}")
             return []
@@ -720,28 +690,7 @@ class TenantService:
             Dict[int, List[Tenant]]: 用户ID到租户列表的映射
         """
         try:
-            if not user_ids:
-                return {}
-                
-            with get_db() as db:
-                # 批量查询用户租户关联信息
-                query = (
-                    select(UserTenant.user_id, Tenant)
-                    .join(Tenant, UserTenant.tenant_id == Tenant.id)
-                    .where(UserTenant.user_id.in_(user_ids))
-                )
-                results = db.execute(query).all()
-                
-                # 组织结果
-                user_tenants = {}
-                for user_id in user_ids:
-                    user_tenants[user_id] = []
-                
-                for user_id, tenant in results:
-                    user_tenants[user_id].append(tenant)
-                
-                return user_tenants
-                
+            return TenantRepository.list_by_user_ids(user_ids)
         except Exception as e:
             mcp_logger.error(f"批量获取用户租户失败: {str(e)}")
-            return {} 
+            return {}

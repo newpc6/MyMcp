@@ -7,7 +7,7 @@ from fastapi import Request
 import requests
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.types import ASGIApp
-from app.services.users import UserService
+from app.services.user import UserService
 from app.utils.response import error_response
 from app.utils.logging import mcp_logger
 from app.core.config import settings

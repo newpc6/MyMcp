@@ -8,7 +8,8 @@ import json
 from datetime import datetime, timedelta
 import jwt as pyjwt  # 重命名以确保使用正确的PyJWT库
 
-from app.services.users import UserService, TenantService
+from app.services.user import UserService
+from app.services.tenant import TenantService
 from app.core.config import settings
 from app.utils.logging import mcp_logger
 from app.utils.response import success_response, error_response
@@ -644,4 +645,4 @@ def get_router():
         Route("/import-platform-user", import_platform_user, methods=["POST"]),
     ]
     
-    return routes 
+    return routes

@@ -6,12 +6,13 @@
 from sqlalchemy import select
 from datetime import datetime
 from app.models.engine import get_db
-from backend.app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_modules import McpModule
 from app.models.group.group import McpGroup
 from app.utils.logging import mcp_logger
 from pytz import timezone
 from app.models.modules.users import Tenant, User
-from app.services.users import UserService, TenantService
+from app.services.user import UserService
+from app.services.tenant import TenantService
 
 
 def migrate_database():

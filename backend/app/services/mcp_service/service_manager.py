@@ -17,7 +17,7 @@ from contextlib import AsyncExitStack
 from app.core.config import settings
 from app.utils.logging import mcp_logger
 from app.models.engine import get_db
-from backend.app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_modules import McpModule
 from app.models.modules.mcp_services import McpService, ServiceType
 from app.models.modules.users import User
 from mcp.server.fastmcp import FastMCP
