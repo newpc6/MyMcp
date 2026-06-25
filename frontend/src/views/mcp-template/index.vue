@@ -280,9 +280,9 @@ import {
 import {
   pageModules, listGroup, createModule, deleteModule, cloneModule,
   createGroup, updateGroup, deleteGroup
-} from '../../api/mcp_template';
+} from '../../api/mcp-template';
 import { getAllUsers } from '../../api/auth';
-import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/mcp_template';
+import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/mcp-template';
 import { defineAsyncComponent } from 'vue';
 import { Page } from '@/types/page';
 

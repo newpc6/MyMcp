@@ -39,7 +39,7 @@
             '--app-sidebar-width': sidebarCollapsed ? '64px' : '220px'
           }"
         >
-          <NavbarComponent :collapsed="sidebarCollapsed" @toggle-collapse="toggleSidebar" />
+          <AppSidebar :collapsed="sidebarCollapsed" @toggle-collapse="toggleSidebar" />
         </el-aside>
 
         <section class="app-workspace">
@@ -82,7 +82,7 @@ import type { TabsPaneContext, TabPaneName } from 'element-plus'
 import { ElMessage } from 'element-plus'
 import { Operation } from '@element-plus/icons-vue'
 import { useRoute, useRouter } from 'vue-router'
-import NavbarComponent from './components/NavbarComponent.vue'
+import AppSidebar from './components/AppSidebar.vue'
 import { logout } from '@/api/auth'
 
 const route = useRoute()

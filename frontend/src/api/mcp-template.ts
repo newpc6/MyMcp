@@ -3,7 +3,7 @@
  */
 import api from './index'
 import { apiPrefix } from './index'
-import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo, McpServiceInfo, ApiResponse } from '../types/mcp_template'
+import type { McpModuleInfo, McpToolInfo, ScanResult, McpCategoryInfo, McpServiceInfo, ApiResponse } from '../types/mcp-template'
 import { Page } from '@/types/page';
 
 const templateApiPrefix = `${apiPrefix}/mcp-template`

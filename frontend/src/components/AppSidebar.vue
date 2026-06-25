@@ -121,7 +121,7 @@ import {
 import { changePassword as apiChangePassword } from '@/api/auth';
 
 defineOptions({
-  name: 'NavbarComponent'
+  name: 'AppSidebar'
 });
 
 defineProps<{

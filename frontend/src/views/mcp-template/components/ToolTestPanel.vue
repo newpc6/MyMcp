@@ -191,7 +191,7 @@ import { lineNumbers, highlightActiveLineGutter } from '@codemirror/view';
 import { searchKeymap, search } from '@codemirror/search';
 import { history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching, indentOnInput, foldGutter } from '@codemirror/language';
-import type { McpToolInfo, McpToolParameter } from '../../../types/mcp_template';
+import type { McpToolInfo, McpToolParameter } from '../../../types/mcp-template';
 
 const props = defineProps<{
     tools: McpToolInfo[];

@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue';
 import VueMarkdownRender from 'vue-markdown-render';
-import type { McpModuleInfo } from '../../../types/mcp_template';
+import type { McpModuleInfo } from '../../../types/mcp-template';
 
 defineProps<{
   moduleInfo: McpModuleInfo;

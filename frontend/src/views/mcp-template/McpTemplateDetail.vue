@@ -252,11 +252,11 @@ import {
   listGroup,
   deleteModule,
   getService
-} from '../../api/mcp_template';
-import { listServices } from '../../api/mcp';
-import { updateServiceParams } from '../../api/mcpServer';
+} from '../../api/mcp-template';
+import { listServices } from '../../api/published-service';
+import { updateServiceParams } from '../../api/published-service';
 import api from '../../api/index';
-import type { McpModuleInfo, McpToolInfo, McpServiceInfo, McpCategoryInfo } from '../../types/mcp_template';
+import type { McpModuleInfo, McpToolInfo, McpServiceInfo, McpCategoryInfo } from '../../types/mcp-template';
 import { Delete, Plus, Connection } from '@element-plus/icons-vue';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 

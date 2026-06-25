@@ -17,20 +17,20 @@ const routes: Array<RouteRecordRaw> = [
   },
   {
     path: '/mcp-templates',
-    name: 'mcp_templates',
-    component: () => import('../views/mcp_template/index.vue'),
+    name: 'mcp-templates',
+    component: () => import('../views/mcp-template/index.vue'),
     meta: { title: 'MCP 模板广场' }
   },
   {
     path: '/mcp-templates/:id',
     name: 'mcp-template-detail',
-    component: () => import('../views/mcp_template/McpTemplateDetail.vue'),
+    component: () => import('../views/mcp-template/McpTemplateDetail.vue'),
     meta: { title: 'MCP 模板详情' }
   },
   {
     path: '/server',
     name: 'server',
-    component: () => import('../views/mcp/index.vue'),
+    component: () => import('../views/published-service/index.vue'),
     meta: { title: 'MCP 服务管理' }
   },
   {
@@ -48,7 +48,7 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/statistics',
     name: 'Statistics',
-    component: () => import('../views/statictics/index.vue'),
+    component: () => import('../views/statistics/index.vue'),
     meta: { requiresAdmin: true, title: 'MCP统计' }
   },
   {

@@ -3,7 +3,7 @@
  */
 import api from './index';
 import { apiPrefix } from './index';
-import type { ApiResponse } from '../types/mcp_template';
+import type { ApiResponse } from '../types/mcp-template';
 
 /**
  * 服务统计数据接口

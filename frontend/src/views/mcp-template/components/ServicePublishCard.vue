@@ -138,7 +138,7 @@
 <script setup lang="ts">
 import { DocumentCopy, Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import type { McpServiceInfo } from '../../../types/mcp_template';
+import type { McpServiceInfo } from '../../../types/mcp-template';
 import { ref, onMounted } from 'vue';
 import { copyTextToClipboard } from '../../../utils/copy';
 

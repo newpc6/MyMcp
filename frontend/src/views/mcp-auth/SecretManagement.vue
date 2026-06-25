@@ -128,7 +128,7 @@ import AuthConfigForm from '@/components/mcp-auth/AuthConfigForm.vue'
 import SecretManageDialog from '@/components/mcp-auth/SecretManageDialog.vue'
 import AccessLogDialog from '@/components/mcp-auth/AccessLogDialog.vue'
 import { mcpAuthApi } from '@/api/mcp-auth'
-import { listServices } from '@/api/mcp'
+import { listServices } from '@/api/published-service'
 
 const route = useRoute()
 const router = useRouter()

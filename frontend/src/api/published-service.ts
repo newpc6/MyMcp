@@ -1,7 +1,7 @@
 import api from './index';
 import { apiPrefix } from './index';
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { ApiResponse, McpServiceInfo } from '@/types/mcp_template';
+import { ApiResponse, McpServiceInfo } from '@/types/mcp-template';
 
 const runtimeServiceApiPrefix = `${apiPrefix}/published-service`
 
@@ -157,4 +157,37 @@ export async function testMcpSseConnection(sseUrl: string) {
       message: error.message || '连接测试失败'
     };
   }
+}
+
+/**
+ * 更新服务参数
+ * @param id - 服务ID
+ * @param configParams - 配置参数
+ */
+export async function updateServiceParams(
+  id: number,
+  configParams: Record<string, any>
+): Promise<
+  ApiResponse<{
+    message: string
+  }>
+> {
+  const response = await api.put(`${runtimeServiceApiPrefix}/${id}/params`, configParams)
+  return response.data
+}
+
+/**
+ * 更新服务可见性状态
+ * @param id - 服务ID
+ * @param isPublic - 是否公开
+ */
+export async function updateServiceVisibility(id: number, isPublic: boolean): Promise<
+  ApiResponse<{
+    is_public: boolean
+  }>
+> {
+  const response = await api.put(`${runtimeServiceApiPrefix}/${id}/visibility`, {
+    is_public: isPublic
+  });
+  return response.data;
 }

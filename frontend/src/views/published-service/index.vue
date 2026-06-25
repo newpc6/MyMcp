@@ -359,10 +359,10 @@ import {
   getModule,
   pageServices,
   listModules
-} from '../../api/mcp_template';
-import { updateServiceParams as updateServiceParamsAPI, updateServiceVisibility } from '../../api/mcpServer';
+} from '../../api/mcp-template';
+import { updateServiceParams as updateServiceParamsAPI, updateServiceVisibility } from '../../api/published-service';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
-import type { McpServiceInfo } from '../../types/mcp_template';
+import type { McpServiceInfo } from '../../types/mcp-template';
 // @ts-ignore
 import ServiceParamsManager from '../../components/ServiceParamsManager.vue';
 import { Page } from '../../types/page';
@@ -892,7 +892,7 @@ const createThirdPartyService = async () => {
     await thirdPartyFormRef.value.validate();
     creatingThirdParty.value = true;
 
-    const { createThirdPartyService: createThirdPartyServiceAPI } = await import('../../api/mcp_template');
+    const { createThirdPartyService: createThirdPartyServiceAPI } = await import('../../api/mcp-template');
     const response = await createThirdPartyServiceAPI(thirdPartyForm.value);
 
     if (response && response.data) {

@@ -173,7 +173,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { mcpAuthApi } from '@/api/mcp-auth'
-import { listServices } from '@/api/mcp'
+import { listServices } from '@/api/published-service'
 import ActionSearchCard from '@/components/ActionSearchCard.vue';
 
 // 响应式数据
