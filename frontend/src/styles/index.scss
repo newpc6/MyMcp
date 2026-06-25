@@ -36,8 +36,8 @@
   --common-text-color-negative: var(--zartd-text-color-negative);
   --common-border-color: var(--zartd-border-color);
   --common-input-border-color: var(--zartd-input-border-color);
-  --common-background-color: #ffffff;
-  --common-workspace-background: #ffffff;
+  --common-background-color: #f3f6fb;
+  --common-workspace-background: #f3f6fb;
   --common-workspace-grid: none;
   --common-surface-color: #ffffff;
   --common-surface-light-color: #fbfdff;
@@ -51,7 +51,7 @@
   --common-info-background-color: #f7faff;
   --common-hover-background-color: #f4f8ff;
   --common-table-header-background-color: #f8fafc;
-  --common-page-gradient: #ffffff;
+  --common-page-gradient: #f3f6fb;
   --common-surface-gradient: #ffffff;
   --common-primary-gradient: linear-gradient(90deg, #2167d9 0%, #3388ff 100%);
   --common-on-primary-color: #ffffff;
@@ -270,7 +270,6 @@ body {
   border-bottom: 1px solid var(--common-border-color) !important;
 }
 
-.marketplace-container,
 .mcp-layout,
 .statistics-page,
 .system-management {
@@ -939,7 +938,6 @@ body {
 .tenants-container,
 .system-management,
 .statistics-container,
-.marketplace-container,
 .secret-management-page,
 .access-logs-page,
 .python-packages,

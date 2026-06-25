@@ -1048,11 +1048,11 @@ function handleResetSearch() {
 .marketplace-container {
   min-height: 100%;
   gap: 16px;
-  padding: 0;
-  background-color: var(--common-background-color);
-  background-image: var(--common-workspace-grid), var(--common-workspace-background);
-  background-size: 24px 24px, auto;
-  background-position: -1px -1px, 0 0;
+  padding: 16px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
 }
 
 .marketplace-aside {
@@ -1079,7 +1079,7 @@ function handleResetSearch() {
 .category-panel :deep(.el-card__body) {
   height: calc(100% - 53px);
   padding: 12px;
-  background: var(--common-list-background-color);
+  background: var(--common-panel-background-color);
 }
 
 .panel-title {
@@ -1111,13 +1111,13 @@ function handleResetSearch() {
 }
 
 .category-menu :deep(.el-menu-item:hover) {
-  background: var(--common-panel-background-color);
+  background: var(--common-hover-background-color);
   border-color: var(--common-border-color);
   color: var(--common-primary-color);
 }
 
 .category-menu :deep(.el-menu-item.is-active) {
-  background: var(--common-panel-background-color);
+  background: var(--common-primary-background-color);
   border-color: var(--zartd-primary-2);
   color: var(--common-primary-color);
   box-shadow: var(--common-shadow-xs);
@@ -1145,10 +1145,10 @@ function handleResetSearch() {
   display: flex;
   flex-direction: column;
   padding: 16px;
-  background: var(--common-list-background-color);
+  background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
   border-radius: var(--common-radius-lg);
-  box-shadow: inset 0 1px 0 rgb(255 255 255 / 80%);
+  box-shadow: var(--common-shadow-xs);
 }
 
 .list-panel-header {
