@@ -1,6 +1,6 @@
 <template>
-  <aside class="sidebar-container">
-    <el-menu router :default-active="$route.path" class="nav-menu">
+  <aside class="sidebar-container" :class="{ 'is-collapsed': collapsed }">
+    <el-menu router :default-active="$route.path" class="nav-menu" :collapse="collapsed" :collapse-transition="false">
       <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">
         <span class="menu-icon-box is-soft">
           <el-icon><Collection /></el-icon>
@@ -72,9 +72,12 @@
       </el-sub-menu>
     </el-menu>
 
-    <div class="collapse-trigger">
-      <el-icon><Fold /></el-icon>
-    </div>
+    <button class="collapse-trigger" type="button" @click="emit('toggle-collapse')" :title="collapsed ? '展开菜单' : '收起菜单'">
+      <el-icon>
+        <Expand v-if="collapsed" />
+        <Fold v-else />
+      </el-icon>
+    </button>
 
     <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
       <el-form ref="passwordFormRef" :model="passwordForm" :rules="passwordRules" label-width="100px">
@@ -106,6 +109,7 @@ import {
   Collection,
   DataAnalysis,
   Document,
+  Expand,
   Fold,
   Grid,
   Key,
@@ -119,6 +123,14 @@ import { changePassword as apiChangePassword } from '@/api/auth';
 defineOptions({
   name: 'NavbarComponent'
 });
+
+defineProps<{
+  collapsed: boolean
+}>();
+
+const emit = defineEmits<{
+  (event: 'toggle-collapse'): void
+}>();
 
 const passwordDialogVisible = ref(false);
 const changing = ref(false);
@@ -214,7 +226,7 @@ const changePassword = async () => {
 
 <style scoped>
 .sidebar-container {
-  width: 220px;
+  width: 100%;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -233,6 +245,14 @@ const changePassword = async () => {
   overflow-y: auto;
   border-right: 0;
   background: var(--menu-background-color);
+}
+
+.nav-menu:not(.el-menu--collapse) {
+  width: 220px;
+}
+
+.nav-menu.el-menu--collapse {
+  width: 64px;
 }
 
 .nav-menu :deep(.el-menu),
@@ -295,6 +315,26 @@ const changePassword = async () => {
   border-radius: var(--common-radius-md);
 }
 
+.is-collapsed .nav-menu :deep(.el-menu-item),
+.is-collapsed .nav-menu :deep(.el-sub-menu__title) {
+  justify-content: center;
+  margin: 4px 8px;
+  padding: 0 !important;
+}
+
+.is-collapsed .menu-icon-box {
+  margin-right: 0;
+}
+
+.is-collapsed :deep(.text),
+.is-collapsed .text {
+  display: none !important;
+}
+
+.is-collapsed .nav-menu :deep(.el-sub-menu__icon-arrow) {
+  display: none;
+}
+
 .menu-icon-box.is-soft {
   background: var(--zartd-primary-1);
   box-shadow: var(--common-shadow-xs);
@@ -312,15 +352,18 @@ const changePassword = async () => {
 }
 
 .collapse-trigger {
+  width: 100%;
   height: 40px;
   flex: 0 0 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: var(--common-text-color);
-  text-align: center;
+  border: 0;
   border-top: 1px solid var(--common-border-color);
   background: var(--common-surface-color);
   cursor: pointer;
   font-size: 18px;
-  line-height: 40px;
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 

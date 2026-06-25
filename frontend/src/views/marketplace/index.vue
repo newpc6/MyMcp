@@ -133,15 +133,15 @@
               <p class="card-desc">{{ module.description }}</p>
               <div class="card-footer">
                 <div class="tag-container">
-                  <el-tag v-if="module.category_name" size="small" type="warning" class="ml-1">
+                  <el-tag v-if="module.category_name" size="small" class="module-tag category-tag">
                     {{ module.category_name }}
                   </el-tag>
-                  <el-tag v-if="module.username" size="small" type="info" class="ml-1">
-                    创建者: {{ module.username }}
+                  <el-tag v-if="module.username" size="small" class="module-tag user-tag">
+                    {{ module.username }}
                   </el-tag>
+                  <span class="time-display">更新：{{ formatDate(module.updated_at) }}</span>
                 </div>
                 <div class="module-actions">
-                  <div class="text-gray-500 text-xs mb-1 time-display">更新时间: {{ formatDate(module.updated_at) }}</div>
                   <el-dropdown trigger="click" @click.stop>
                     <el-button size="small" class="icon-button" @click.stop>
                       <el-icon>
@@ -1193,8 +1193,7 @@ function handleResetSearch() {
 }
 
 .module-card {
-  height: 100%;
-  min-height: 184px;
+  height: 176px;
   background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
   border-radius: var(--common-radius-md);
@@ -1250,7 +1249,7 @@ function handleResetSearch() {
 }
 
 .card-desc {
-  min-height: 42px;
+  min-height: 40px;
   margin: 0 0 14px;
   color: var(--common-text-color-light);
   font-size: 13px;
@@ -1262,19 +1261,21 @@ function handleResetSearch() {
 }
 
 .card-footer {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 30px;
+  align-items: end;
   gap: 12px;
   margin-top: auto;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--common-border-color);
 }
 
 .tag-container {
   min-width: 0;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  align-items: center;
   gap: 6px;
 }
 
@@ -1282,11 +1283,11 @@ function handleResetSearch() {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: 8px;
+  justify-content: flex-end;
 }
 
 .time-display {
-  max-width: 150px;
+  min-width: 0;
   color: var(--common-text-color-lighter) !important;
   font-size: 12px;
   white-space: nowrap;
@@ -1299,6 +1300,40 @@ function handleResetSearch() {
   height: 28px;
   padding: 0;
   border-radius: var(--common-radius-md);
+  color: var(--common-text-color-light);
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+}
+
+.icon-button:hover {
+  color: var(--common-primary-color);
+  background: var(--common-hover-background-color);
+  border-color: var(--zartd-primary-2);
+}
+
+.module-tag {
+  max-width: 96px;
+  margin-left: 0 !important;
+  color: var(--common-text-color);
+  background: var(--common-surface-muted-color);
+  border-color: var(--common-border-color);
+}
+
+.category-tag {
+  color: var(--common-primary-color);
+  background: var(--common-primary-background-color);
+  border-color: var(--zartd-primary-2);
+}
+
+.user-tag {
+  color: var(--common-text-color-light);
+  background: var(--common-surface-muted-color);
+}
+
+.module-tag :deep(.el-tag__content) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .loading-container {

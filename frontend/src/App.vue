@@ -30,8 +30,16 @@
       </header>
 
       <div class="app-body">
-        <el-aside width="220px" class="app-sidebar">
-          <NavbarComponent />
+        <el-aside
+          :width="sidebarCollapsed ? '64px' : '220px'"
+          class="app-sidebar"
+          :class="{ 'is-collapsed': sidebarCollapsed }"
+          :style="{
+            '--el-aside-width': sidebarCollapsed ? '64px' : '220px',
+            '--app-sidebar-width': sidebarCollapsed ? '64px' : '220px'
+          }"
+        >
+          <NavbarComponent :collapsed="sidebarCollapsed" @toggle-collapse="toggleSidebar" />
         </el-aside>
 
         <section class="app-workspace">
@@ -87,6 +95,7 @@ interface OpenedTab {
 
 const openedTabs = ref<OpenedTab[]>([])
 const activeTab = ref('')
+const sidebarCollapsed = ref(false)
 
 // 根据路由判断是否显示导航栏
 const showNavbar = computed(() => {
@@ -157,6 +166,10 @@ const handleHeaderCommand = async (command: string) => {
 
 const goHome = () => {
   router.push('/')
+}
+
+const toggleSidebar = () => {
+  sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
 watch(() => route.fullPath, syncOpenedTabs, { immediate: true })
@@ -275,12 +288,23 @@ onMounted(async () => {
 }
 
 .app-sidebar {
-  flex: 0 0 220px;
+  width: var(--app-sidebar-width, 220px) !important;
+  min-width: var(--app-sidebar-width, 220px) !important;
+  max-width: var(--app-sidebar-width, 220px) !important;
+  flex: 0 0 var(--app-sidebar-width, 220px) !important;
   padding: 0;
   overflow: hidden;
   background: var(--menu-background-color) !important;
   border-right: 1px solid var(--common-border-color);
   box-shadow: var(--common-shadow-xs);
+  transition: width 0.2s ease, flex-basis 0.2s ease;
+}
+
+.app-sidebar.is-collapsed {
+  width: var(--app-sidebar-width, 64px) !important;
+  min-width: var(--app-sidebar-width, 64px) !important;
+  max-width: var(--app-sidebar-width, 64px) !important;
+  flex: 0 0 var(--app-sidebar-width, 64px) !important;
 }
 
 .app-workspace {

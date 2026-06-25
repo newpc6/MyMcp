@@ -105,10 +105,9 @@
           :class="{ 'service-running': service.status === 'running' }">
         <div class="card-header">
           <div class="status-section">
-            <div class="status-indicator" :class="getStatusClass(service.status)">
-              <span class="status-dot"></span>
-              <span class="status-text">{{ getStatusText(service.status) }}</span>
-            </div>
+            <el-tooltip :content="getStatusText(service.status)" placement="top">
+              <span class="status-indicator" :class="getStatusClass(service.status)" aria-label="服务状态"></span>
+            </el-tooltip>
 
             <div class="service-type-badge">
               <el-tag :type="service.service_type === 2 ? 'warning' : 'primary'" size="small" effect="light">
@@ -198,49 +197,24 @@
           </div>
 
           <div class="service-meta">
-            <div class="meta-row">
-              <div class="meta-item">
-                <span class="meta-label">创建者</span>
-                <span class="meta-value">{{ service.user_name || '未知' }}</span>
-              </div>
-              <div class="meta-item">
-                <span class="meta-label">创建时间</span>
-                <span class="meta-value">{{ formatDate(service.created_at) }}</span>
-              </div>
-            </div>
-
-            <div class="url-section">
-              <div class="url-label">{{ getProtocolUrlLabel(service.protocol_type) }}</div>
-              <div class="url-container">
-                <el-tooltip content="点击复制URL" placement="top">
-                  <div class="url-text" @click.stop="copyToClipboard(service.sse_url)">
-                    {{ service.sse_url }}
-                  </div>
-                </el-tooltip>
-                <div class="url-actions">
-                  <el-tooltip content="复制URL" placement="top">
-                    <el-button link type="primary" @click.stop="copyToClipboard(service.sse_url)" class="url-btn">
-                      <el-icon>
-                        <CopyDocument />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-                  <el-tooltip content="复制为egovakb格式" placement="top">
-                    <el-button link type="success"
-                      @click.stop="copyAsEgovakbUrl(service.sse_url, service.protocol_type)" class="url-btn">
-                      <el-icon>
-                        <Connection />
-                      </el-icon>
-                    </el-button>
-                  </el-tooltip>
-                </div>
-              </div>
-
-              <div v-if="service.status === 'error'" class="error-message">
-                <el-text type="danger" size="small">
-                  {{ service.error_message }}
-                </el-text>
-              </div>
+            <el-tag size="small" class="service-footer-tag">{{ service.user_name || '未知' }}</el-tag>
+            <span class="service-footer-time">{{ formatDate(service.created_at) }}</span>
+            <div class="service-footer-actions">
+              <el-tooltip content="复制URL" placement="top">
+                <el-button link type="primary" @click.stop="copyToClipboard(service.sse_url)" class="url-btn">
+                  <el-icon>
+                    <CopyDocument />
+                  </el-icon>
+                </el-button>
+              </el-tooltip>
+              <el-tooltip content="复制为egovakb格式" placement="top">
+                <el-button link type="success"
+                  @click.stop="copyAsEgovakbUrl(service.sse_url, service.protocol_type)" class="url-btn">
+                  <el-icon>
+                    <Connection />
+                  </el-icon>
+                </el-button>
+              </el-tooltip>
             </div>
           </div>
         </div>
@@ -1252,64 +1226,35 @@ onMounted(() => {
 }
 
 .status-indicator {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  border-radius: 24px;
-  font-size: 12px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.status-dot {
   width: 10px;
   height: 10px;
+  display: inline-flex;
+  flex: 0 0 10px;
   border-radius: 50%;
+  border: 1px solid transparent;
 }
 
 .status-running {
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15) 0%, rgba(76, 175, 80, 0.05) 100%);
-  color: #2e7d32;
-  border: 1px solid rgba(76, 175, 80, 0.3);
-}
-
-.status-running .status-dot {
   background: #4caf50;
+  border-color: rgba(76, 175, 80, 0.45);
   box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3);
   animation: pulse-green 2s infinite;
 }
 
 .status-stopped {
-  background: linear-gradient(135deg, rgba(96, 125, 139, 0.15) 0%, rgba(96, 125, 139, 0.05) 100%);
-  color: #455a64;
-  border: 1px solid rgba(96, 125, 139, 0.3);
-}
-
-.status-stopped .status-dot {
   background: #607d8b;
+  border-color: rgba(96, 125, 139, 0.45);
 }
 
 .status-error {
-  background: linear-gradient(135deg, rgba(244, 67, 54, 0.15) 0%, rgba(244, 67, 54, 0.05) 100%);
-  color: #c62828;
-  border: 1px solid rgba(244, 67, 54, 0.3);
-}
-
-.status-error .status-dot {
   background: #f44336;
+  border-color: rgba(244, 67, 54, 0.45);
   animation: pulse-red 2s infinite;
 }
 
 .status-unknown {
-  background: linear-gradient(135deg, rgba(255, 152, 0, 0.15) 0%, rgba(255, 152, 0, 0.05) 100%);
-  color: #ef6c00;
-  border: 1px solid rgba(255, 152, 0, 0.3);
-}
-
-.status-unknown .status-dot {
   background: #ff9800;
+  border-color: rgba(255, 152, 0, 0.45);
 }
 
 @keyframes pulse-green {
@@ -1984,26 +1929,28 @@ onMounted(() => {
 }
 
 .status-indicator {
-  border-radius: var(--common-radius-sm);
+  border-radius: 50%;
   box-shadow: none;
 }
 
 .status-running {
-  background: var(--common-success-background-color);
+  background: var(--common-success-color);
   border-color: var(--common-success-color);
-  color: var(--common-success-color);
 }
 
 .status-stopped {
-  background: var(--common-warning-background-color);
-  border-color: var(--common-warning-color);
-  color: var(--common-warning-color);
+  background: var(--common-text-color-lighter);
+  border-color: var(--common-text-color-lighter);
 }
 
 .status-error {
-  background: var(--common-error-background-color);
+  background: var(--common-error-color);
   border-color: var(--common-error-color);
-  color: var(--common-error-color);
+}
+
+.status-unknown {
+  background: var(--common-warning-color);
+  border-color: var(--common-warning-color);
 }
 
 .service-name {
@@ -2224,15 +2171,15 @@ onMounted(() => {
 
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   align-items: start;
   gap: 16px;
   margin: 0;
 }
 
 .service-card {
-  min-height: 360px;
-  height: auto;
+  height: 188px;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   padding: 16px;
@@ -2254,13 +2201,13 @@ onMounted(() => {
 }
 
 .card-header {
-  min-height: 32px;
+  min-height: 28px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
   margin: 0;
-  padding: 0 0 12px;
+  padding: 0 0 10px;
   border-bottom: 1px solid var(--common-border-color);
 }
 
@@ -2274,8 +2221,8 @@ onMounted(() => {
 }
 
 .action-btn {
-  width: 28px;
-  height: 28px;
+  width: 26px;
+  height: 26px;
   color: var(--common-primary-color);
   background: var(--common-hover-background-color);
   border: 1px solid var(--zartd-primary-2);
@@ -2289,7 +2236,6 @@ onMounted(() => {
   transform: none;
 }
 
-.status-indicator,
 .service-type-badge :deep(.el-tag),
 .visibility-badge :deep(.el-tag),
 .protocol-badge :deep(.el-tag) {
@@ -2298,17 +2244,27 @@ onMounted(() => {
   box-shadow: none;
 }
 
+.status-indicator {
+  width: 10px;
+  height: 10px;
+  display: inline-flex;
+  flex: 0 0 10px;
+  border-radius: 50%;
+  border: 1px solid transparent;
+  box-shadow: none;
+}
+
 .card-content {
   min-height: 0;
   flex: 1;
   display: flex;
   flex-direction: column;
-  padding: 14px 0 0;
+  padding: 12px 0 0;
 }
 
 .service-info {
   flex: 1;
-  min-height: 70px;
+  min-height: 78px;
 }
 
 .service-title-row {
@@ -2318,12 +2274,12 @@ onMounted(() => {
 }
 
 .service-icon {
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 0 0 38px;
+  flex: 0 0 36px;
   color: var(--common-primary-color);
   background: var(--common-primary-background-color);
   border: 1px solid var(--zartd-primary-2);
@@ -2359,17 +2315,55 @@ onMounted(() => {
 
 .service-description {
   display: -webkit-box;
-  margin-top: 10px;
+  margin-top: 8px;
   overflow: hidden;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
 }
 
 .service-meta {
+  min-height: 32px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px solid var(--common-border-color);
   background: transparent;
+}
+
+.service-footer-tag {
+  max-width: 84px;
+  color: var(--common-text-color-light);
+  background: var(--common-surface-muted-color);
+  border-color: var(--common-border-color);
+}
+
+.service-footer-time {
+  min-width: 0;
+  color: var(--common-text-color-lighter);
+  font-size: var(--common-font-size-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.service-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.service-footer-actions .el-button,
+.url-btn {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--common-text-color-light);
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-sm);
 }
 
 .meta-row {
