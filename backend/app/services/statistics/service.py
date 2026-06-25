@@ -18,7 +18,7 @@ from app.models.statistics import (
     ServiceCallStatistics
 )
 from app.models.modules.published_service import McpService
-from app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_template import McpModule
 from app.models.tools.tool_execution import ToolExecution
 from app.models.group.group import McpGroup
 from app.utils.logging import mcp_logger

@@ -6,7 +6,7 @@
 from sqlalchemy import select
 from datetime import datetime
 from app.models.engine import get_db
-from app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_template import McpModule
 from app.models.group.group import McpGroup
 from app.utils.logging import mcp_logger
 from pytz import timezone
@@ -196,7 +196,7 @@ def init_demo_modules():
     """初始化演示模块数据"""
     import json
     from pathlib import Path
-    
+
     try:
         with get_db() as db:
             # 模板文件夹路径
@@ -204,55 +204,55 @@ def init_demo_modules():
                 Path(__file__).resolve().parents[2] /
                 "models" / "engine" / "mcp-template"
             )
-            
+
             if not template_dir.exists():
                 mcp_logger.warning(f"模板目录不存在: {template_dir}")
                 return
-            
+
             # 获取所有分类，建立名称到ID的映射
             categories = db.execute(select(McpGroup)).scalars().all()
             category_map = {cat.name: cat.id for cat in categories}
-            
+
             # 需要检查的模板名称列表
             template_names = [
                 "http_client",
-                "数据库助手", 
+                "数据库助手",
                 "file_manager",
                 "text_processor",
                 "file_operator"
             ]
-            
+
             # 检查数据库中是否已存在这些模块
             existing_modules = db.execute(
                 select(McpModule).where(McpModule.name.in_(template_names))
             ).scalars().all()
             existing_names = {module.name for module in existing_modules}
-            
+
             # 遍历模板文件
             imported_count = 0
             for template_file in template_dir.glob("*.json"):
                 try:
                     with open(template_file, 'r', encoding='utf-8') as f:
                         template_data = json.load(f)
-                    
+
                     # 检查模块名称是否在需要检查的列表中
                     module_name = template_data["name"]
                     if module_name not in template_names:
                         continue
-                        
+
                     # 如果模块已存在，跳过
                     if module_name in existing_names:
                         mcp_logger.info(f"模块 {module_name} 已存在，跳过导入")
                         continue
-                    
+
                     # 获取分类ID
                     category_name = template_data.get("category", "开发者工具")
                     category_id = category_map.get(category_name)
-                    
+
                     if not category_id:
                         # 如果分类不存在，使用默认分类
                         category_id = category_map.get("开发者工具")
-                    
+
                     # 创建模块对象
                     module = McpModule(
                         name=template_data["name"],
@@ -269,11 +269,11 @@ def init_demo_modules():
                         markdown_docs=template_data["markdown_docs"],
                         is_public=True  # 发布为公开服务
                     )
-                    
+
                     db.add(module)
                     mcp_logger.info(f"导入模板模块: {template_data['name']}")
                     imported_count += 1
-                    
+
                 except Exception as e:
                     mcp_logger.error(f"加载模板文件 {template_file} 失败: "
                                      f"{str(e)}")

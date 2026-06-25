@@ -13,8 +13,8 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.models.engine import get_db
-from app.models.modules.mcp_modules import McpModule
-from app.models.modules.mcp_tool import McpTool
+from app.models.modules.mcp_template import McpModule
+from app.models.modules.mcp_template_tool import McpTool
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
@@ -93,14 +93,14 @@ class McpTemplateService:
             ).scalars().all()
 
             # 获取分组信息
-            mcp_groups_ids = [
+            mcp_template_groups_ids = [
                 m.category_id for m in modules if m.category_id
             ]
             groups = {}
-            if mcp_groups_ids:
+            if mcp_template_groups_ids:
                 group_list = db.execute(
                     select(McpGroup).where(
-                        McpGroup.id.in_(mcp_groups_ids)
+                        McpGroup.id.in_(mcp_template_groups_ids)
                     )
                 ).scalars().all()
                 groups = {g.id: g for g in group_list}
@@ -147,14 +147,14 @@ class McpTemplateService:
                 )
 
             modules = db.execute(query).scalars().all()
-            mcp_groups_ids = [m.category_id for m in modules]
+            mcp_template_groups_ids = [m.category_id for m in modules]
             groups = db.execute(
                 select(McpGroup).where(
-                    McpGroup.id.in_(mcp_groups_ids)
+                    McpGroup.id.in_(mcp_template_groups_ids)
                 )
             ).scalars().all()
-            mcp_groups = {g.id: g for g in groups}
-            result = [m.to_dict(mcp_groups) for m in modules]
+            mcp_template_groups = {g.id: g for g in groups}
+            result = [m.to_dict(mcp_template_groups) for m in modules]
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
 
@@ -462,7 +462,7 @@ class McpTemplateService:
                 mcp_logger.info(f"在数据库中找到{len(modules)}个MCP模块")
 
                 # 创建临时目录存放模块代码
-                temp_dir = tempfile.mkdtemp(prefix="mcp_modules_")
+                temp_dir = tempfile.mkdtemp(prefix="mcp_templates_")
 
                 # 添加临时目录到Python路径
                 if temp_dir not in sys.path:

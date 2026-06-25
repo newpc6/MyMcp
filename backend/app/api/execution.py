@@ -10,8 +10,8 @@ from starlette.requests import Request
 
 from app.utils.response import success_response, error_response
 from app.models.engine import get_db
-from app.models.modules.mcp_modules import McpModule
-from app.models.modules.mcp_tool import McpTool
+from app.models.modules.mcp_template import McpModule
+from app.models.modules.mcp_template_tool import McpTool
 from app.services.execution.executor import execute_tool_by_name
 from app.services.published_service import service_manager
 from app.utils.logging import mcp_logger

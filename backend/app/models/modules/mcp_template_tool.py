@@ -8,7 +8,7 @@ from app.core.utils import now_beijing
 
 class McpTool(Base):
     """MCP工具信息模型"""
-    __tablename__ = "mcp_tools"
+    __tablename__ = "mcp_template_tools"
     __table_args__ = {'extend_existing': True}
 
     id = Column(Integer, primary_key=True, index=True)
@@ -26,7 +26,7 @@ class McpTool(Base):
         """获取关联的模块名称"""
         with get_db() as db:
             # 使用原生SQL查询避免循环导入
-            query = "SELECT name FROM mcp_modules WHERE id = :id"
+            query = "SELECT name FROM mcp_templates WHERE id = :id"
             sql = text(query).bindparams(id=self.module_id)
             result = db.execute(sql).first()
             return result[0] if result else None

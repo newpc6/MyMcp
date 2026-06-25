@@ -6,7 +6,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.models.engine import get_db
-from app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_template import McpModule
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
@@ -27,7 +27,7 @@ class GroupService:
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
 
-    def stat_group(self, 
+    def stat_group(self,
                    page_params: PageParams,
                    order_by: str = "templates_count",
                    desc: bool = True,
@@ -40,13 +40,13 @@ class GroupService:
             limit=10000,  # 先获取所有数据
             desc=desc
         )
-        
+
         # 计算分页
         total_count = len(all_stats)
         start_index = page_params.offset
         end_index = start_index + page_params.size
         paged_stats = all_stats[start_index:end_index]
-        
+
         # 构建分页响应
         return build_page_response(
             paged_stats,

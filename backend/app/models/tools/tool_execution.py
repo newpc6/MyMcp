@@ -14,7 +14,7 @@ class ToolExecution(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     service_id = Column(String(100), index=True, nullable=True)  # 对应 McpService 的 id
-    module_id = Column(Integer, ForeignKey("mcp_modules.id"), nullable=True)  # 对应 McpModule 的 id
+    module_id = Column(Integer, ForeignKey("mcp_templates.id"), nullable=True)  # 对应 McpModule 的 id
     tool_name = Column(String(100), index=True)
     description = Column(String(500))
     parameters = Column(Text)  # JSON格式存储参数
@@ -36,4 +36,4 @@ class ToolExecution(Base):
             "status": self.status,
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "execution_time": self.execution_time
-        } 
+        }

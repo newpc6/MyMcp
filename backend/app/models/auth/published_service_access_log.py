@@ -14,12 +14,12 @@ import json
 class McpAccessLog(Base):
     """MCP访问日志表"""
     
-    __tablename__ = "mcp_access_logs"
+    __tablename__ = "published_service_access_logs"
     
     id = Column(Integer, primary_key=True, index=True)
-    service_id = Column(Integer, ForeignKey("mcp_services.id"),
+    service_id = Column(Integer, ForeignKey("published_services.id"),
                        nullable=False, index=True)
-    secret_id = Column(Integer, ForeignKey("mcp_service_secrets.id"),
+    secret_id = Column(Integer, ForeignKey("published_service_secrets.id"),
                       nullable=True, index=True)
     client_ip = Column(String(45), nullable=True)
     user_agent = Column(Text, nullable=True)

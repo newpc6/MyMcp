@@ -14,7 +14,7 @@ class ServiceType(Enum):
 class McpService(Base):
     """已发布的MCP服务表"""
 
-    __tablename__ = "mcp_services"
+    __tablename__ = "published_services"
 
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, nullable=True, index=True)  # 模块ID，第三方服务时为空
@@ -51,7 +51,7 @@ class McpService(Base):
 
         with get_db() as db:
             # 使用原生SQL查询避免循环导入
-            query = "SELECT name FROM mcp_modules WHERE id = :id"
+            query = "SELECT name FROM mcp_templates WHERE id = :id"
             sql = text(query).bindparams(id=self.module_id)
             result = db.execute(sql).first()
             return result[0] if result else None

@@ -12,10 +12,10 @@ from app.core.utils import now_beijing
 class McpServiceSecret(Base):
     """已发布 MCP 服务密钥表"""
 
-    __tablename__ = "mcp_service_secrets"
+    __tablename__ = "published_service_secrets"
 
     id = Column(Integer, primary_key=True, index=True)
-    service_id = Column(Integer, ForeignKey("mcp_services.id"),
+    service_id = Column(Integer, ForeignKey("published_services.id"),
                        nullable=False, index=True)
     secret_key = Column(String(255), unique=True, nullable=False, index=True)
     secret_name = Column(String(100), nullable=True)

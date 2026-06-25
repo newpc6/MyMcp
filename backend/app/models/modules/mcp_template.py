@@ -15,7 +15,7 @@ from app.models.group.group import McpGroup
 
 class McpModule(Base):
     """MCP模块信息模型"""
-    __tablename__ = "mcp_modules"
+    __tablename__ = "mcp_templates"
     __table_args__ = {'extend_existing': True}
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String(100), index=True, unique=True)  # 模块名称
@@ -37,7 +37,7 @@ class McpModule(Base):
     user_id = Column(Integer, nullable=True, index=True)  # 创建者ID
     is_public = Column(Boolean, default=True)  # 是否公开，True为公开，False为私有
 
-    def to_dict(self, mcp_groups: Dict[int, 'McpGroup'] = None):
+    def to_dict(self, mcp_template_groups: Dict[int, 'McpGroup'] = None):
         """转换为字典格式"""
 
         config_dict = {}
@@ -60,8 +60,8 @@ class McpModule(Base):
             "repository_url": self.repository_url,
             "category_id": self.category_id,
             "category_name": (
-                mcp_groups.get(self.category_id).name
-                if mcp_groups and self.category_id else None
+                mcp_template_groups.get(self.category_id).name
+                if mcp_template_groups and self.category_id else None
             ),
             "created_at": self.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "updated_at": self.updated_at.strftime("%Y-%m-%d %H:%M:%S"),
@@ -81,8 +81,8 @@ class McpModule(Base):
         with get_db() as db:
             # 1. 查询该模板发布的服务数量
             services_count_query = """
-                SELECT COUNT(*) 
-                FROM mcp_services 
+                SELECT COUNT(*)
+                FROM published_services
                 WHERE module_id = :module_id
             """
             services_count = db.execute(
@@ -91,8 +91,8 @@ class McpModule(Base):
 
             # 2. 查询该模板下服务的总调用次数
             call_count_query = """
-                SELECT COUNT(*) 
-                FROM tool_executions 
+                SELECT COUNT(*)
+                FROM tool_executions
                 WHERE module_id = :module_id
             """
             call_count = db.execute(
@@ -105,17 +105,17 @@ class McpModule(Base):
                 "services_count": services_count,
                 "call_count": call_count
             }
-            
+
     @classmethod
-    def get_module_stats_ranking(cls, order_by="services_count", 
+    def get_module_stats_ranking(cls, order_by="services_count",
                                  limit=10, desc=True):
         """获取模块统计信息排行榜
-        
+
         参数:
             order_by: 排序字段，可选值: services_count, call_count
             limit: 返回数量限制
             desc: 是否降序排列
-            
+
         返回:
             list: 排序后的模块统计列表
         """
@@ -124,11 +124,11 @@ class McpModule(Base):
             valid_fields = ["services_count", "call_count"]
             if order_by not in valid_fields:
                 order_by = "services_count"
-            
+
             if order_by == "services_count":
                 # 按服务数量排序
                 query = """
-                    SELECT 
+                    SELECT
                         m.id,
                         m.name,
                         m.description,
@@ -138,19 +138,19 @@ class McpModule(Base):
                         m.category_id,
                         COUNT(DISTINCT s.id) as services_count,
                         COUNT(t.id) as call_count
-                    FROM mcp_modules m
-                    LEFT JOIN mcp_services s ON m.id = s.module_id
+                    FROM mcp_templates m
+                    LEFT JOIN published_services s ON m.id = s.module_id
                     LEFT JOIN tool_executions t ON m.id = t.module_id
-                    GROUP BY m.id, m.name, m.description, m.author, 
+                    GROUP BY m.id, m.name, m.description, m.author,
                              m.version, m.icon, m.category_id
                     ORDER BY services_count {order}
                     LIMIT :limit
                 """.format(order="DESC" if desc else "ASC")
-                
+
             else:  # call_count
                 # 按调用次数排序
                 query = """
-                    SELECT 
+                    SELECT
                         m.id,
                         m.name,
                         m.description,
@@ -160,20 +160,20 @@ class McpModule(Base):
                         m.category_id,
                         COUNT(DISTINCT s.id) as services_count,
                         COUNT(t.id) as call_count
-                    FROM mcp_modules m
-                    LEFT JOIN mcp_services s ON m.id = s.module_id
+                    FROM mcp_templates m
+                    LEFT JOIN published_services s ON m.id = s.module_id
                     LEFT JOIN tool_executions t ON m.id = t.module_id
-                    GROUP BY m.id, m.name, m.description, m.author, 
+                    GROUP BY m.id, m.name, m.description, m.author,
                              m.version, m.icon, m.category_id
                     ORDER BY call_count {order}
                     LIMIT :limit
                 """.format(order="DESC" if desc else "ASC")
-            
+
             # 执行查询
             results = db.execute(
                 text(query).bindparams(limit=limit)
             ).fetchall()
-            
+
             # 获取分组信息
             category_ids = {row[6] for row in results if row[6] is not None}
             categories = {}
@@ -182,16 +182,16 @@ class McpModule(Base):
                     McpGroup.id.in_(category_ids)
                 ).all()
                 categories = {cat.id: cat.name for cat in category_records}
-            
+
             # 构建结果列表
             module_stats = []
             for i, row in enumerate(results, 1):
-                (module_id, name, description, author, version, 
+                (module_id, name, description, author, version,
                  icon, category_id, services_count, call_count) = row
-                
-                rank_value = (services_count if order_by == "services_count" 
+
+                rank_value = (services_count if order_by == "services_count"
                               else call_count)
-                
+
                 module_stats.append({
                     "rank": i,
                     "module_id": module_id,
@@ -207,20 +207,20 @@ class McpModule(Base):
                     "rank_field": order_by,
                     "rank_value": rank_value
                 })
-            
+
             return module_stats
 
 
 # 使用示例:
-# 
+#
 # # 获取服务数量前10的模板排名
 # top_by_services = McpModule.get_module_stats_ranking(
-#     order_by="services_count", 
-#     limit=10, 
+#     order_by="services_count",
+#     limit=10,
 #     desc=True
 # )
 #
-# # 获取调用次数前5的模板排名  
+# # 获取调用次数前5的模板排名
 # top_by_calls = McpModule.get_module_stats_ranking(
 #     order_by="call_count",
 #     limit=5,
@@ -233,7 +233,7 @@ class McpModule(Base):
 #         "rank": 1,
 #         "module_id": 1,
 #         "module_name": "模板名称",
-#         "description": "模板描述", 
+#         "description": "模板描述",
 #         "author": "作者",
 #         "version": "1.0.0",
 #         "icon": "图标",

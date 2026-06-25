@@ -40,8 +40,8 @@ def init_db():
     # 导入所有模型以确保它们被注册到Base中
     from app.models.tools.tool_execution import ToolExecution  # noqa: F401
     # 导入 MCP 模板与分组模型
-    from app.models.modules.mcp_modules import McpModule
-    from app.models.modules.mcp_tool import McpTool
+    from app.models.modules.mcp_template import McpModule
+    from app.models.modules.mcp_template_tool import McpTool
     from app.models.group.group import McpGroup  # noqa: F401
     from app.models.modules.published_service import McpService  # noqa: F401
     # 导入用户和租户模型

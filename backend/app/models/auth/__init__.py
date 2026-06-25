@@ -5,8 +5,8 @@
 """
 
 from .published_service_secret import McpServiceSecret
-from .mcp_secret_statistics import McpSecretStatistics
-from .mcp_access_log import McpAccessLog
+from .published_service_secret_statistics import McpSecretStatistics
+from .published_service_access_log import McpAccessLog
 
 __all__ = [
     "McpServiceSecret",

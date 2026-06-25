@@ -17,7 +17,7 @@ from contextlib import AsyncExitStack
 from app.core.config import settings
 from app.utils.logging import mcp_logger
 from app.models.engine import get_db
-from app.models.modules.mcp_modules import McpModule
+from app.models.modules.mcp_template import McpModule
 from app.models.modules.published_service import McpService, ServiceType
 from app.models.modules.users import User
 from mcp.server.fastmcp import FastMCP
@@ -582,8 +582,8 @@ class McpServiceManager:
             if service:
                 # 先删除关联的记录
                 from app.models.auth.published_service_secret import McpServiceSecret
-                from app.models.auth.mcp_access_log import McpAccessLog
-                from app.models.auth.mcp_secret_statistics import (
+                from app.models.auth.published_service_access_log import McpAccessLog
+                from app.models.auth.published_service_secret_statistics import (
                     McpSecretStatistics
                 )
 
