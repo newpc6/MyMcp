@@ -1,4 +1,32 @@
-# MyMcp
+# Egova AI MCP Server
+
+面向 MCP 模板管理、服务发布、密钥鉴权、调用审计和运行监控的一体化管理平台。项目包含 Python 后端服务和 Vue 前端控制台，支持内置 MCP 模板、第三方 SSE 服务接入、服务参数配置、访问密钥管理和统计分析。
+
+## 界面预览
+
+### 登录页
+
+![登录页](pic/readme-2026/login.jpg)
+
+### MCP 模板广场
+
+![MCP 模板广场](pic/readme-2026/mcp-template-market.jpg)
+
+### MCP 服务管理
+
+![MCP 服务管理](pic/readme-2026/published-service.jpg)
+
+### 统计分析
+
+![统计分析](pic/readme-2026/statistics.jpg)
+
+### 系统管理
+
+![系统管理](pic/readme-2026/system.jpg)
+
+### 用户管理
+
+![用户管理](pic/readme-2026/users.jpg)
 
 ## 交流群
 
@@ -19,11 +47,11 @@ qq 群：979958989
 
 ### 登录页面
 
-![login-v2.jpg](pic/login-v2.jpg)
+![login-v2.jpg](pic/readme-2026/login.jpg)
 
 ### MCP 模板广场
 
-![mcp-squera-v2.jpg](pic/mcp-squera-v2.jpg)
+![mcp-squera-v2.jpg](pic/readme-2026/mcp-template-market.jpg)
 
 #### MCP 模板-详情
 
@@ -55,7 +83,7 @@ qq 群：979958989
 ### MCP 服务
 
 支持管理内置服务
-![mcp-service-v2-1.jpg](pic/mcp-service-v2-1.jpg)
+![mcp-service-v2-1.jpg](pic/readme-2026/published-service.jpg)
 
 支持新增第三方 http sse 地址
 
@@ -63,20 +91,20 @@ qq 群：979958989
 
 ### MCP 统计
 
-![mcp-stat-v2-1.jpg](pic/mcp-stat-v2-1.jpg) 
+![mcp-stat-v2-1.jpg](pic/readme-2026/statistics.jpg)
 ![mcp-stat-v2-2.jpg](pic/mcp-stat-v2-2.jpg)
 ![mcp-stat-v2-3.jpg](pic/mcp-stat-v2-3.jpg)
 
 ### 用户管理
 
-![user-v2.jpg](pic/user-v2.jpg)
+![user-v2.jpg](pic/readme-2026/users.jpg)
 
 ### 租户管理
 
 
 ## 系统管理
 
-![system-v2.jpg](pic/system-v2.jpg)
+![system-v2.jpg](pic/readme-2026/system.jpg)
 
 ### 定时任务
 
