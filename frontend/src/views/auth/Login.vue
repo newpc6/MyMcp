@@ -3,9 +3,7 @@
     <section class="login-shell">
       <div class="login-brand-panel">
         <div class="brand-mark">
-          <el-icon>
-            <Platform />
-          </el-icon>
+          <img src="/app-icon.svg" alt="MCP 管理平台" />
         </div>
         <div>
           <h1>MCP 管理平台</h1>
@@ -75,7 +73,7 @@ import { ref, reactive } from 'vue';
 import { useRouter } from 'vue-router';
 import { ElMessage, FormInstance } from 'element-plus';
 import { login } from '@/api/auth';
-import { View, Hide, Platform, User, Lock } from '@element-plus/icons-vue';
+import { View, Hide, User, Lock } from '@element-plus/icons-vue';
 
 // 路由
 const router = useRouter();
@@ -193,14 +191,15 @@ const handleLogin = async () => {
 .brand-mark {
   width: 48px;
   height: 48px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   margin-bottom: 24px;
   border-radius: var(--common-radius-md);
-  background: var(--common-on-primary-surface-color);
-  border: 1px solid var(--common-on-primary-border-strong-color);
-  font-size: 24px;
+  box-shadow: 0 14px 30px rgb(5 46 111 / 28%);
+}
+
+.brand-mark img {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .login-brand-panel h1 {

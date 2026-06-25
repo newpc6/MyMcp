@@ -3,7 +3,7 @@
     <template v-if="showNavbar">
       <header class="app-header">
         <div class="app-brand" @click="goHome">
-          <div class="app-brand-mark">MCP</div>
+          <img class="app-brand-mark" src="/app-icon.svg" alt="MCP 管理平台" />
           <div class="app-brand-text">
             <div class="app-brand-title">MCP 管理平台</div>
             <div class="app-brand-subtitle">Admin Console</div>
@@ -220,15 +220,10 @@ onMounted(async () => {
 .app-brand-mark {
   width: 36px;
   height: 36px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--common-on-primary-color);
-  background: var(--common-on-primary-surface-color);
+  display: block;
+  object-fit: contain;
   border-radius: var(--common-radius-md);
-  box-shadow: var(--common-shadow-xs);
-  font-size: 14px;
-  font-weight: 700;
+  box-shadow: 0 8px 18px rgb(20 88 200 / 24%);
 }
 
 .app-brand-text {
