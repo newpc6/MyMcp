@@ -307,12 +307,12 @@ def start_mcp_server():
         lifespan="on"
     )
     uni_server = uvicorn.Server(config)
-    from app.services.mcp_service.service_manager import service_manager
+    from app.services.mcp_service import service_manager
     service_manager.init_app(app, lifespan_manager)
 
     # 启动统计数据定时任务
     try:
-        from app.services.schedule_service.statistics_task import (
+        from app.services.scheduler import (
             start_statistics_scheduler
         )
         start_statistics_scheduler()
@@ -322,7 +322,7 @@ def start_mcp_server():
 
     # 启动缓存清理定时任务
     try:
-        from app.services.schedule_service import start_cache_clean_scheduler
+        from app.services.scheduler import start_cache_clean_scheduler
         start_cache_clean_scheduler()
         mcp_logger.info("缓存清理定时任务已启动")
     except Exception as e:

@@ -20,7 +20,7 @@ from app.models.modules.mcp_tool import McpTool
 from app.models.group.group import McpGroup
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
-from app.services.mcp_service.service_manager import service_manager
+from app.services.mcp_service import service_manager
 from app.utils.permissions import add_edit_permission
 from app.utils.http import PageParams, build_page_response
 from app.models.tools.tool_execution import ToolExecution
@@ -833,4 +833,4 @@ class MarketplaceService:
 
 
 # 创建服务实例
-marketplace_service = MarketplaceService() 
+marketplace_service = MarketplaceService()

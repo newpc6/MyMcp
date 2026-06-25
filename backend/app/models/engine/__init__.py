@@ -52,29 +52,18 @@ def init_db():
         ToolStatistics, ServiceCallStatistics
     )
 
-    # 初始化基础数据
-    from app.models.engine.init_data import (
-        migrate_database, init_category_data,
-        auto_categorize_modules, init_demo_modules, init_admin_users
-    )
+    # Seed 初始化统一由服务层编排。
+    from app.services.seed_service import ensure_seed_data
 
-    # 先执行数据库迁移，确保表结构正确
+    # 先执行数据库迁移，确保表结构正确。
+    from app.services.seed_service import migrate_database
     migrate_database()
-    
+
     # 自动同步数据库模型和表结构
     sync_db_model()
-    
-    # 初始化分类数据
-    init_category_data()
 
-    # 自动对现有模块进行分类
-    auto_categorize_modules()
-
-    # 初始化演示模块
-    init_demo_modules()
-
-    # 初始化管理员用户
-    init_admin_users()
+    # 初始化分类、模板、管理员等基础数据
+    ensure_seed_data(run_migrations=False)
 
 
 def sync_db_model():

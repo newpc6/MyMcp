@@ -1,2 +1,8 @@
-"""Data access layer for MCP server modules."""
+"""数据访问层统一入口。"""
+from .tenant_repository import TenantRepository
+from .user_repository import UserRepository
 
+__all__ = [
+    "TenantRepository",
+    "UserRepository",
+]

@@ -1,6 +1,4 @@
-"""
-MCP服务管理器模块
-"""
-from .service_manager import service_manager
+"""MCP 服务管理模块。"""
+from .service import McpServiceManager, service_manager
 
-__all__ = ["service_manager"] 
+__all__ = ["McpServiceManager", "service_manager"]

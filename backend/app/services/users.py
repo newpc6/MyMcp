@@ -12,8 +12,7 @@ from pytz import timezone
 
 from app.models.engine import get_db
 from app.models.modules.users import User, Tenant, UserTenant
-from app.repositories.user_repository import UserRepository
-from app.repositories.tenant_repository import TenantRepository
+from app.repositories import TenantRepository, UserRepository
 from app.utils.logging import mcp_logger
 from app.core.config import settings
 from app.utils.cache import memory_cache

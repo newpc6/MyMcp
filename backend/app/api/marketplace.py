@@ -165,7 +165,7 @@ async def publish_module(request: Request):
         if not name:
             return error_response("服务名称不能为空", code=400, http_status_code=400)
 
-        from app.services.mcp_service.service_manager import service_manager
+        from app.services.mcp_service import service_manager
 
         # 发布服务
         service = service_manager.publish_service(

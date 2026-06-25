@@ -10,7 +10,7 @@ from app.server.mcp_server import (
 from app.utils.permissions import add_edit_permission, get_user_info
 from app.utils.logging import mcp_logger
 from app.utils.http.utils import body_page_params
-from app.services.mcp_service.service_manager import service_manager
+from app.services.mcp_service import service_manager
 
 
 class ToolLoadRequest(BaseModel):
@@ -217,7 +217,7 @@ async def create_third_party_service(request: Request):
             if not re.match(path_pattern, custom_proxy_path.lstrip('/')):
                 return error_response("自定义代理路径格式不正确，只允许字母、数字、连字符、下划线和斜杠", code=400, http_status_code=400)
 
-        from app.services.mcp_service.service_manager import service_manager
+        from app.services.mcp_service import service_manager
 
         # 创建第三方服务
         service = service_manager.publish_third_party_service(

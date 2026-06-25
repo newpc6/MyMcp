@@ -513,13 +513,11 @@ class SystemService:
                 raise ValueError("任务名称不能为空")
 
             # 导入定时任务函数
-            from app.services.schedule_service.statistics_task import (
+            from app.services.scheduler import (
+                clean_expired_cache,
+                clean_old_statistics,
                 update_statistics,
                 update_daily_statistics,
-                clean_old_statistics
-            )
-            from app.services.schedule_service.cache_clean_task import (
-                clean_expired_cache
             )
 
             # 根据任务名称执行对应任务

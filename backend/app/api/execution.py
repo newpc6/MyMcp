@@ -13,7 +13,7 @@ from app.models.engine import get_db
 from app.models.modules.mcp_modules import McpModule
 from app.models.modules.mcp_tool import McpTool
 from app.services.execution.executor import execute_tool_by_name
-from app.services.mcp_service.service_manager import service_manager
+from app.services.mcp_service import service_manager
 from app.utils.logging import mcp_logger
 
 
