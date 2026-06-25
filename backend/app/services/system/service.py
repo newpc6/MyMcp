@@ -335,7 +335,7 @@ class SystemService:
         try:
             # 这里可以检查各种服务的状态
             services = {
-                "mcp_service": {
+                "published_service": {
                     "name": "MCP服务",
                     "status": "running",
                     "uptime": "2天 5小时",
@@ -438,27 +438,27 @@ class SystemService:
             self.logger.error(f"清空系统日志失败: {e}")
             raise e
 
-    
+
     async def get_scheduled_tasks(self):
         """获取定时任务列表"""
-        try:            
+        try:
             import schedule
-            
+
             # 获取所有已注册的定时任务
             tasks = []
-            
+
             for job in schedule.jobs:
                 # 获取下次执行时间
                 next_run = (
-                    job.next_run.strftime('%Y-%m-%d %H:%M:%S') 
+                    job.next_run.strftime('%Y-%m-%d %H:%M:%S')
                     if job.next_run else '未安排'
                 )
-                
+
                 # 根据任务函数名判断任务类型
                 task_name = job.job_func.__name__
                 task_description = ""
                 task_category = "其他"
-                
+
                 if task_name == "update_statistics":
                     task_description = "更新系统统计数据"
                     task_category = "统计"
@@ -473,7 +473,7 @@ class SystemService:
                     task_category = "清理"
                 else:
                     task_description = f"执行 {task_name}"
-                
+
                 # 获取执行间隔信息
                 interval_desc = ""
                 if hasattr(job, 'interval') and job.interval:
@@ -487,7 +487,7 @@ class SystemService:
                         interval_desc = f"每 {job.interval} {job.unit}"
                 elif hasattr(job, 'at_time') and job.at_time:
                     interval_desc = f"每天 {job.at_time}"
-                
+
                 tasks.append({
                     "id": f"task_{len(tasks)}",
                     "name": task_name,
@@ -498,9 +498,9 @@ class SystemService:
                     "status": "运行中",
                     "enabled": True
                 })
-            
+
             return tasks
-            
+
         except Exception as e:
             mcp_logger.error(f"获取定时任务列表时出错: {str(e)}")
             raise e

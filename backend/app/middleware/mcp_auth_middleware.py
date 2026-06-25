@@ -11,8 +11,8 @@ from starlette.requests import Request
 from starlette.responses import Response
 
 from app.models.engine import get_db
-from app.models.modules.mcp_services import McpService
-from app.models.auth.mcp_service_secret import McpServiceSecret
+from app.models.modules.published_service import McpService
+from app.models.auth.published_service_secret import McpServiceSecret
 from app.models.auth.mcp_secret_statistics import McpSecretStatistics
 from app.services.auth.secret_manager import SecretManager
 from app.utils.logging import mcp_logger
@@ -63,9 +63,9 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
             SecretManager.log_access(
                 service_id=service_id,
                 secret_id=(
-                    secret_info.get('id') 
-                    if isinstance(secret_info, dict) 
-                    and secret_info.get('id') 
+                    secret_info.get('id')
+                    if isinstance(secret_info, dict)
+                    and secret_info.get('id')
                     else None
                 ),
                 client_ip=client_ip,
@@ -91,9 +91,9 @@ class McpAuthMiddleware(BaseHTTPMiddleware):
             # 返回鉴权失败响应
             return error_response(
                 message=(
-                    error_code.to_message(auth_result) 
-                    if secret_info is None 
-                    or isinstance(secret_info, str) is False 
+                    error_code.to_message(auth_result)
+                    if secret_info is None
+                    or isinstance(secret_info, str) is False
                     else secret_info
                 ),
                 code=auth_result,

@@ -17,8 +17,8 @@
 
             <!-- 服务发布卡片 -->
             <div class="service-publish-section">
-              <ServicePublishCard 
-                :services="services" 
+              <ServicePublishCard
+                :services="services"
                 :loading-services="loadingServices"
                 @publish="handlePublishService"
                 @stop-service="handleStopService"
@@ -90,7 +90,7 @@
           :rules="[{ required: true, message: '请输入服务名称', trigger: 'blur' }]">
           <el-input v-model="configForm.service_name" placeholder="请输入服务名称" class="form-input"></el-input>
         </el-form-item>
-        
+
         <el-form-item label="自定义路径" prop="sse_path">
           <el-input v-model="configForm.sse_path" placeholder="例如: /my-custom-service" class="form-input">
             <template #prepend v-if="!configForm.use_full_custom_path">/mcp</template>
@@ -107,7 +107,7 @@
             </el-text>
           </div>
         </el-form-item>
-        
+
         <el-form-item label="路径模式" prop="use_full_custom_path">
           <el-checkbox v-model="configForm.use_full_custom_path" class="custom-path-checkbox">
             完全自定义路径（不添加/mcp前缀和协议后缀）
@@ -118,7 +118,7 @@
             </el-text>
           </div>
         </el-form-item>
-        
+
         <el-form-item label="协议类型" prop="protocol_type">
           <el-radio-group v-model="configForm.protocol_type" class="protocol-radio-group">
             <el-radio :value="1" class="protocol-radio">
@@ -135,7 +135,7 @@
             </el-radio>
           </el-radio-group>
         </el-form-item>
-        
+
         <el-form-item label="是否公开" prop="is_public">
           <el-switch v-model="configForm.is_public" class="form-switch" />
         </el-form-item>
@@ -252,11 +252,11 @@ import {
   listGroup,
   deleteModule,
   getService
-} from '../../api/marketplace';
+} from '../../api/mcp_template';
 import { listServices } from '../../api/mcp';
 import { updateServiceParams } from '../../api/mcpServer';
 import api from '../../api/index';
-import type { McpModuleInfo, McpToolInfo, McpServiceInfo, McpCategoryInfo } from '../../types/marketplace';
+import type { McpModuleInfo, McpToolInfo, McpServiceInfo, McpCategoryInfo } from '../../types/mcp_template';
 import { Delete, Plus, Connection } from '@element-plus/icons-vue';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
 
@@ -486,7 +486,7 @@ async function saveModuleCode() {
     codeContent: codeContent.value?.length || 0,
     originalCode: originalCode.value?.length || 0
   });
-  
+
   saving.value = true;
   try {
     await updateModule(moduleId.value, { code: codeContent.value });
@@ -517,7 +517,7 @@ function formatPythonCode() {
 
 // 返回列表页
 function goBack() {
-  router.push('/marketplace');
+  router.push('/mcp-templates');
 }
 
 // 处理发布服务
@@ -794,7 +794,7 @@ async function handleDeleteModule() {
     if (response && response.code === 0) {
       ElMessage.success('服务已删除');
       // 删除成功后，返回到广场页面
-      router.push('/marketplace');
+      router.push('/mcp-templates');
     } else {
       ElMessage.error(`删除服务失败: ${response?.message || '未知错误'}`);
     }
@@ -1569,6 +1569,11 @@ onMounted(() => {
 .content-wrapper {
   gap: 16px;
   animation: none;
+  padding: 16px;
+  background: var(--common-panel-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
 }
 
 .top-cards-section {
@@ -1630,7 +1635,7 @@ onMounted(() => {
 .tab-content {
   min-height: 420px;
   padding: 16px;
-  background: var(--common-list-background-color);
+  background: var(--common-panel-background-color);
 }
 
 .edit-dialog :deep(.el-dialog),

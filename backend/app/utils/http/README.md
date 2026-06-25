@@ -22,10 +22,10 @@ async def list_items(
 ):
     # 创建查询
     query = db.query(Item)
-    
+
     # 应用分页并返回结果
     result = PageResult.from_query(query, page_params)
-    
+
     # 转换为字典并返回
     return result.to_dict()
 ```
@@ -45,13 +45,13 @@ router = APIRouter()
 async def list_items(request: Request, db: Session = Depends(get_db)):
     # 获取分页参数
     page_params = get_page_params(request, default_limit=20, max_limit=100)
-    
+
     # 创建查询
     query = db.query(Item)
-    
+
     # 应用分页并返回结果
     result = PageResult.from_query(query, page_params)
-    
+
     # 转换为字典并返回
     return result.to_dict()
 ```
@@ -66,11 +66,11 @@ from app.models.item import Item
 class ItemService:
     def __init__(self, db: Session):
         self.db = db
-    
+
     def list_items(self, page_params: PageParams):
         # 创建查询
         query = self.db.query(Item)
-        
+
         # 应用分页并返回结果
         return PageResult.from_query(query, page_params)
 ```
@@ -142,7 +142,7 @@ class MarketplaceService:
     async def list_items(self, page_params: PageParams):
         # 查询数据
         items, total = await self.query_items(page_params)
-        
+
         # 构建响应
         return build_page_response(items, total, page_params)
 ```
@@ -153,14 +153,14 @@ class MarketplaceService:
 from fastapi import Depends
 from app.utils.http import paginate_dependency, PageParams, build_page_response
 
-@router.get("/marketplace/items")
-async def list_marketplace_items(
+@router.get("/mcp-template/items")
+async def list_mcp_template_items(
     page_params: PageParams = Depends(paginate_dependency())
 ):
     # 查询逻辑
-    items = query_marketplace_items(page_params)
-    total = count_marketplace_items()
-    
+    items = query_mcp_template_items(page_params)
+    total = count_mcp_template_items()
+
     # 返回统一格式的分页响应
     return build_page_response(items, total, page_params)
 ```
@@ -189,4 +189,4 @@ from app.utils.http import build_page_response
 return build_page_response(result_items, total_count, page_params)
 ```
 
-这样可以确保分页响应格式的一致性，并简化代码维护。 
+这样可以确保分页响应格式的一致性，并简化代码维护。

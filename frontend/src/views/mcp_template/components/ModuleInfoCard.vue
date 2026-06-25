@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { McpModuleInfo } from '../../../types/marketplace';
+import type { McpModuleInfo } from '../../../types/mcp_template';
 
 const props = defineProps<{
   moduleInfo: McpModuleInfo;

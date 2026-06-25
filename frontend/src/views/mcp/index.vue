@@ -359,10 +359,10 @@ import {
   getModule,
   pageServices,
   listModules
-} from '../../api/marketplace';
+} from '../../api/mcp_template';
 import { updateServiceParams as updateServiceParamsAPI, updateServiceVisibility } from '../../api/mcpServer';
 import { fallbackCopyTextToClipboard, copyTextToClipboard } from '../../utils/copy';
-import type { McpServiceInfo } from '../../types/marketplace';
+import type { McpServiceInfo } from '../../types/mcp_template';
 // @ts-ignore
 import ServiceParamsManager from '../../components/ServiceParamsManager.vue';
 import { Page } from '../../types/page';
@@ -555,7 +555,7 @@ const loadServices = async () => {
 
 // 前往创建服务页面
 const goToCreateService = () => {
-  router.push('/marketplace');
+  router.push('/mcp-templates');
 };
 
 // 启动服务
@@ -892,7 +892,7 @@ const createThirdPartyService = async () => {
     await thirdPartyFormRef.value.validate();
     creatingThirdParty.value = true;
 
-    const { createThirdPartyService: createThirdPartyServiceAPI } = await import('../../api/marketplace');
+    const { createThirdPartyService: createThirdPartyServiceAPI } = await import('../../api/mcp_template');
     const response = await createThirdPartyServiceAPI(thirdPartyForm.value);
 
     if (response && response.data) {

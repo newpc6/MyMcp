@@ -1,13 +1,15 @@
 import api from './index';
 import { apiPrefix } from './index';
 import { SSEClientTransport } from "@modelcontextprotocol/sdk/client/sse.js";
-import { ApiResponse, McpServiceInfo } from '@/types/marketplace';
+import { ApiResponse, McpServiceInfo } from '@/types/mcp_template';
+
+const runtimeServiceApiPrefix = `${apiPrefix}/published-service`
 
 /**
  * 获取MCP服务状态
  */
 export async function getMcpStatus() {
-  const response = await api.get(`${apiPrefix}/service/status`);
+  const response = await api.get(`${runtimeServiceApiPrefix}/status`);
   return response.data;
 }
 
@@ -15,7 +17,7 @@ export async function getMcpStatus() {
  * 获取启用的工具列表
  */
 export async function getEnabledTools() {
-  const response = await api.get(`${apiPrefix}/service/enabled_tools`);
+  const response = await api.get(`${runtimeServiceApiPrefix}/enabled_tools`);
   return response.data;
 }
 
@@ -23,7 +25,7 @@ export async function getEnabledTools() {
  * 重启MCP服务
  */
 export async function restartMcpService() {
-  const response = await api.post(`${apiPrefix}/service/restart`);
+  const response = await api.post(`${runtimeServiceApiPrefix}/restart`);
   return response.data;
 }
 
@@ -40,7 +42,7 @@ export async function loadTool(
   toolName?: string,
   description?: string
 ) {
-  const response = await api.post(`${apiPrefix}/service/load_tool`, {
+  const response = await api.post(`${runtimeServiceApiPrefix}/load_tool`, {
     module_path: modulePath,
     function_name: functionName,
     tool_name: toolName,
@@ -54,7 +56,7 @@ export async function loadTool(
  * @param moduleId - 可选的模块ID
  */
 export async function listServices(moduleId?: number): Promise<ApiResponse<McpServiceInfo[]>> {
-  let url = `${apiPrefix}/service/list`
+  let url = `${runtimeServiceApiPrefix}/list`
   if (moduleId) {
     url += `?module_id=${moduleId}`
   }
@@ -67,7 +69,7 @@ export async function listServices(moduleId?: number): Promise<ApiResponse<McpSe
  * @param toolName 工具名称
  */
 export async function unloadTool(toolName: string) {
-  const response = await api.post(`${apiPrefix}/service/unload_tool`, {
+  const response = await api.post(`${runtimeServiceApiPrefix}/unload_tool`, {
     tool_name: toolName
   });
   return response.data;
@@ -78,7 +80,7 @@ export async function unloadTool(toolName: string) {
  * @param sseUrl 新的SSE URL
  */
 export async function updateSseUrl(sseUrl: string) {
-  const response = await api.put(`${apiPrefix}/service/sse_url`, {
+  const response = await api.put(`${runtimeServiceApiPrefix}/sse_url`, {
     sse_url: sseUrl
   });
   return response.data;
@@ -155,4 +157,4 @@ export async function testMcpSseConnection(sseUrl: string) {
       message: error.message || '连接测试失败'
     };
   }
-} 
+}

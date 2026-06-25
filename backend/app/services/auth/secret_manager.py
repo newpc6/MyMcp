@@ -9,8 +9,8 @@ from datetime import datetime, date
 from sqlalchemy import and_
 
 from app.models.engine import get_db
-from app.models.modules.mcp_services import McpService
-from app.models.auth.mcp_service_secret import McpServiceSecret
+from app.models.modules.published_service import McpService
+from app.models.auth.published_service_secret import McpServiceSecret
 from app.models.auth.mcp_secret_statistics import McpSecretStatistics
 from app.models.auth.mcp_access_log import McpAccessLog
 from app.utils.auth.secret_generator import SecretGenerator

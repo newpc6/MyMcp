@@ -18,7 +18,7 @@ from app.core.config import settings
 from app.utils.logging import mcp_logger
 from app.models.engine import get_db
 from app.models.modules.mcp_modules import McpModule
-from app.models.modules.mcp_services import McpService, ServiceType
+from app.models.modules.published_service import McpService, ServiceType
 from app.models.modules.users import User
 from mcp.server.fastmcp import FastMCP
 from mcp.server.sse import SseServerTransport
@@ -119,7 +119,7 @@ class McpServiceManager:
         return f"/mcp-{service_uuid}"
 
     def publish_service(self, module_id: int, user_id: Optional[int] = None,
-                        is_admin: bool = False, 
+                        is_admin: bool = False,
                         data: Optional[Dict] = None) -> McpService:
         """发布一个MCP模块服务
 
@@ -165,14 +165,14 @@ class McpServiceManager:
                 # 检查配置参数
                 try:
                     config_schema = (
-                        json.loads(module.config_schema) 
-                        if isinstance(module.config_schema, str) 
+                        json.loads(module.config_schema)
+                        if isinstance(module.config_schema, str)
                         else module.config_schema)
 
                     # 验证必填参数
                     for key, schema in config_schema.items():
                         if schema.get('required', False) and (
-                                not config_params or key not in config_params 
+                                not config_params or key not in config_params
                                 or not config_params[key]):
                             mcp_logger.error(f"缺少必填参数: {key}")
                             raise ValueError(f"缺少必填参数: {key}")
@@ -196,19 +196,19 @@ class McpServiceManager:
                     # 确保路径以/开头
                     if not custom_sse_path.startswith('/'):
                         custom_sse_path = '/' + custom_sse_path
-                    
+
                     # 验证自定义路径的合法性
                     import re
                     if not re.match(r'^/[a-zA-Z0-9\-_/]*$', custom_sse_path):
                         raise ValueError("自定义路径只能包含字母、数字、连字符、下划线和斜杠")
-                    
+
                     # 检查路径是否已被占用（完全匹配）
                     existing_service = db.query(McpService).filter(
                         McpService.sse_url == custom_sse_path
                     ).first()
                     if existing_service:
                         raise ValueError(f"路径 {custom_sse_path} 已被其他服务占用")
-                    
+
                     # 直接使用用户输入的路径
                     sse_path = custom_sse_path
                 else:
@@ -218,19 +218,19 @@ class McpServiceManager:
                         custom_sse_path = '/' + custom_sse_path
                     if custom_sse_path.endswith('/'):
                         custom_sse_path = custom_sse_path.rstrip('/')
-                    
+
                     # 验证自定义路径的合法性
                     import re
                     if not re.match(r'^/[a-zA-Z0-9\-_/]*$', custom_sse_path):
                         raise ValueError("自定义路径只能包含字母、数字、连字符、下划线和斜杠")
-                    
+
                     # 检查路径是否已被占用（前缀匹配）
                     existing_service = db.query(McpService).filter(
                         McpService.sse_url.like(f"/mcp{custom_sse_path}%")
                     ).first()
                     if existing_service:
                         raise ValueError(f"路径 /mcp{custom_sse_path} 已被其他服务占用")
-                    
+
                     # 构建完整的SSE路径
                     if protocol_type == 1:  # SSE协议
                         sse_path = f"/mcp{custom_sse_path}/sse"
@@ -286,7 +286,7 @@ class McpServiceManager:
                 raise e
 
     def publish_third_party_service(self, user_id: Optional[int] = None,
-                                    is_admin: bool = False, 
+                                    is_admin: bool = False,
                                     data: Optional[Dict] = None) -> McpService:
         """发布一个第三方MCP服务
 
@@ -319,7 +319,7 @@ class McpServiceManager:
         url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
         if not re.match(url_pattern, sse_url):
             raise ValueError("SSE URL格式不正确")
-            
+
         # 如果启用代理转发，验证自定义代理路径
         if proxy_enabled:
             if not custom_proxy_path:
@@ -358,7 +358,7 @@ class McpServiceManager:
                 mcp_logger.info(f"第三方服务启用代理转发: {custom_proxy_path}")
             return service_record
 
-    def stop_service(self, service_uuid: str, user_id: Optional[int] = None, 
+    def stop_service(self, service_uuid: str, user_id: Optional[int] = None,
                      is_admin: bool = False) -> bool:
         """停止MCP服务
 
@@ -379,7 +379,7 @@ class McpServiceManager:
                 return False
 
             # 检查权限：非管理员只能停止自己创建的服务
-            if (not is_admin and user_id is not None 
+            if (not is_admin and user_id is not None
                     and service.user_id != user_id):
                 raise ValueError("没有权限停止此服务")
 
@@ -403,10 +403,10 @@ class McpServiceManager:
                 try:
                     import asyncio
                     # 创建一个任务来异步关闭连接管理器
-                    
+
                     async def close_connection():
                         await service_info["connection_manager"].aclose()
-                    
+
                     # 在后台关闭连接
                     asyncio.create_task(close_connection())
                     mcp_logger.info(f"已关闭服务连接管理器: {service_uuid}")
@@ -414,7 +414,7 @@ class McpServiceManager:
                     mcp_logger.error(
                         f"关闭连接管理器失败: {service_uuid}, 错误: {str(e)}"
                     )
-            
+
             # 如果有任务，取消它们
             if "tasks" in service_info:
                 for task in service_info["tasks"]:
@@ -430,12 +430,12 @@ class McpServiceManager:
             if service:
                 # 使用数据库中存储的真实路径
                 sse_path = service.sse_url
-                
+
                 # 判断是否为完全自定义路径
-                is_full_custom = not (sse_path.startswith('/mcp') and 
-                                      (sse_path.endswith('/sse') or 
+                is_full_custom = not (sse_path.startswith('/mcp') and
+                                      (sse_path.endswith('/sse') or
                                        sse_path.endswith('/stream')))
-                
+
                 if is_full_custom:
                     # 完全自定义路径：直接添加/messages后缀
                     message_path = f"{sse_path.rstrip('/')}/messages"
@@ -466,7 +466,7 @@ class McpServiceManager:
 
         return True
 
-    def start_service(self, service_uuid: str, user_id: Optional[int] = None, 
+    def start_service(self, service_uuid: str, user_id: Optional[int] = None,
                       is_admin: bool = False) -> bool:
         """启动已停止的MCP服务
 
@@ -491,7 +491,7 @@ class McpServiceManager:
                 return False
 
             # 检查权限：非管理员只能启动自己创建的服务
-            if (not is_admin and user_id is not None 
+            if (not is_admin and user_id is not None
                     and service.user_id != user_id):
                 mcp_logger.warning(
                     f"用户 {user_id} 尝试启动非自己创建的服务 "
@@ -512,7 +512,7 @@ class McpServiceManager:
                         service.error_message = f"创建代理路由失败: {str(e)}"
                         db.commit()
                         return False
-                
+
                 # 更新服务状态
                 service.status = "running"
                 service.error_message = ""
@@ -543,7 +543,7 @@ class McpServiceManager:
                     mcp_logger.error(f"启动服务失败 {service_uuid}: {str(e)}")
                     return False
 
-    def delete_service(self, service_uuid: str, user_id: Optional[int] = None, 
+    def delete_service(self, service_uuid: str, user_id: Optional[int] = None,
                        is_admin: bool = False) -> bool:
         """完全删除MCP服务
 
@@ -564,7 +564,7 @@ class McpServiceManager:
                 return False
 
             # 检查权限：非管理员只能删除自己创建的服务
-            if (not is_admin and user_id is not None 
+            if (not is_admin and user_id is not None
                     and service.user_id != user_id):
                 mcp_logger.warning(
                     f"用户 {user_id} 尝试删除非自己创建的服务 "
@@ -581,33 +581,33 @@ class McpServiceManager:
             ).first()
             if service:
                 # 先删除关联的记录
-                from app.models.auth.mcp_service_secret import McpServiceSecret
+                from app.models.auth.published_service_secret import McpServiceSecret
                 from app.models.auth.mcp_access_log import McpAccessLog
                 from app.models.auth.mcp_secret_statistics import (
                     McpSecretStatistics
                 )
-                
+
                 # 删除访问日志
                 access_logs = db.query(McpAccessLog).filter(
                     McpAccessLog.service_id == service.id
                 ).all()
                 for log in access_logs:
                     db.delete(log)
-                
+
                 # 删除统计信息
                 statistics = db.query(McpSecretStatistics).filter(
                     McpSecretStatistics.service_id == service.id
                 ).all()
                 for stat in statistics:
                     db.delete(stat)
-                
+
                 # 删除密钥记录
                 secrets = db.query(McpServiceSecret).filter(
                     McpServiceSecret.service_id == service.id
                 ).all()
                 for secret in secrets:
                     db.delete(secret)
-                
+
                 # 删除服务记录
                 db.delete(service)
                 db.commit()
@@ -616,7 +616,7 @@ class McpServiceManager:
         return False
 
     def update_service_visibility(self, id: int, is_public: bool,
-                                  user_id: Optional[int] = None, 
+                                  user_id: Optional[int] = None,
                                   is_admin: bool = False) -> Dict[str, Any]:
         """更新服务的公开/私有状态
 
@@ -641,7 +641,7 @@ class McpServiceManager:
                 raise ValueError("服务不存在")
 
             # 检查权限：非管理员只能修改自己创建的服务
-            if (not is_admin and user_id is not None 
+            if (not is_admin and user_id is not None
                     and service.user_id != user_id):
                 raise ValueError("没有权限修改此服务")
 
@@ -655,7 +655,7 @@ class McpServiceManager:
             }
 
     def update_service_description(self, service_uuid: str, description: str,
-                                   user_id: Optional[int] = None, 
+                                   user_id: Optional[int] = None,
                                    is_admin: bool = False) -> bool:
         """更新服务描述
 
@@ -680,7 +680,7 @@ class McpServiceManager:
                 raise ValueError("服务不存在")
 
             # 检查权限：非管理员只能修改自己创建的服务
-            if (not is_admin and user_id is not None 
+            if (not is_admin and user_id is not None
                     and service.user_id != user_id):
                 raise ValueError("没有权限修改此服务")
 
@@ -721,13 +721,13 @@ class McpServiceManager:
     def _get_third_sse_url(self, service,
                            request: Optional[Request] = None) -> str:
         """获取第三方服务的SSE URL
-        
+
         如果开启了代理转发，返回代理路由；否则返回原始SSE URL
-        
+
         Args:
             service: 服务对象
             request: HTTP请求对象，用于构建完整URL
-            
+
         Returns:
             str: 完整的SSE URL或代理路由
         """
@@ -741,7 +741,7 @@ class McpServiceManager:
             # 否则返回原始SSE URL
             return self._get_full_sse_url(service.sse_url, request)
 
-    def _get_full_sse_url(self, sse_url: str, 
+    def _get_full_sse_url(self, sse_url: str,
                           request: Optional[Request] = None) -> str:
         """获取完整的SSE URL
 
@@ -772,9 +772,9 @@ class McpServiceManager:
         # 如果既不是完整URL也没有请求对象，返回原始URL
         return sse_url
 
-    def get_service_status(self, service_uuid: str, 
+    def get_service_status(self, service_uuid: str,
                            request: Optional[Request] = None,
-                           user_id: Optional[int] = None, 
+                           user_id: Optional[int] = None,
                            is_admin: bool = False) -> Optional[Dict]:
         """获取服务状态
 
@@ -843,9 +843,9 @@ class McpServiceManager:
 
         return None
 
-    def list_services(self, module_id: Optional[int] = None, 
+    def list_services(self, module_id: Optional[int] = None,
                       user_id: Optional[int] = None,
-                      is_admin: bool = False, 
+                      is_admin: bool = False,
                       request: Optional[Request] = None) -> List[Dict]:
         """获取服务列表
 
@@ -895,11 +895,11 @@ class McpServiceManager:
                 )
 
             services = query.all()
-            
+
             # 批量获取模块和用户信息，避免在循环中重复查询
             module_ids = [s.module_id for s in services if s.module_id]
             user_ids = [s.user_id for s in services if s.user_id]
-            
+
             # 批量查询模块信息
             module_info = {}
             if module_ids:
@@ -907,10 +907,10 @@ class McpServiceManager:
                     McpModule.id.in_(module_ids)
                 ).all()
                 module_info = {
-                    m.id: {'name': m.name, 'description': m.description} 
+                    m.id: {'name': m.name, 'description': m.description}
                     for m in modules
                 }
-            
+
             # 批量查询用户信息
             user_info = {}
             if user_ids:
@@ -918,10 +918,10 @@ class McpServiceManager:
                     User.id.in_(user_ids)
                 ).all()
                 user_info = {
-                    u.id: {'username': u.username} 
+                    u.id: {'username': u.username}
                     for u in users
                 }
-            
+
             result = []
 
             # 获取每个服务的详细信息
@@ -1046,7 +1046,7 @@ class McpServiceManager:
             # 批量获取模块和用户信息，避免在循环中重复查询
             module_ids = [s.module_id for s in services if s.module_id]
             user_ids = [s.user_id for s in services if s.user_id]
-            
+
             # 批量查询模块信息
             module_info = {}
             if module_ids:
@@ -1054,10 +1054,10 @@ class McpServiceManager:
                     McpModule.id.in_(module_ids)
                 ).all()
                 module_info = {
-                    m.id: {'name': m.name, 'description': m.description} 
+                    m.id: {'name': m.name, 'description': m.description}
                     for m in modules
                 }
-            
+
             # 批量查询用户信息
             user_info = {}
             if user_ids:
@@ -1065,7 +1065,7 @@ class McpServiceManager:
                     User.id.in_(user_ids)
                 ).all()
                 user_info = {
-                    u.id: {'username': u.username} 
+                    u.id: {'username': u.username}
                     for u in users
                 }
 
@@ -1137,7 +1137,7 @@ class McpServiceManager:
                 code = code.replace(placeholder, str(value))
         return code
 
-    def register_mcp_tool(self, service_uuid: str, service: McpService, 
+    def register_mcp_tool(self, service_uuid: str, service: McpService,
                           module: McpModule):
         """注册指定服务UUID对应模块的工具函数
 
@@ -1191,7 +1191,7 @@ class McpServiceManager:
                 # 获取服务实例
                 server = self._running_services[service_uuid]["server"]
                 registered_tools = []
-                
+
                 # 遍历模块中的所有函数
                 for name, func in inspect.getmembers(
                         module_obj, inspect.isfunction):
@@ -1210,13 +1210,13 @@ class McpServiceManager:
                         except Exception as e:
                             mcp_logger.error(
                                 f"注册工具 {name} 失败: {str(e)}")
-                
+
                 # 记录注册的工具列表
                 mcp_logger.info(
                     f"服务 {service_uuid} 成功注册了 {len(registered_tools)} 个工具: "
                     f"{registered_tools}"
                 )
-                
+
                 # 验证工具是否真的注册到了服务实例中
                 try:
                     if (hasattr(server, '_tool_manager')):
@@ -1318,12 +1318,12 @@ class McpServiceManager:
 
         # 直接使用数据库中存储的sse_url路径
         sse_path = service.sse_url
-        
+
         # 判断是否为完全自定义路径（不包含/mcp前缀和/sse后缀）
-        is_full_custom = not (sse_path.startswith('/mcp') and 
-                              (sse_path.endswith('/sse') or 
+        is_full_custom = not (sse_path.startswith('/mcp') and
+                              (sse_path.endswith('/sse') or
                                sse_path.endswith('/stream')))
-        
+
         if is_full_custom:
             # 完全自定义路径：直接添加/messages后缀
             message_path = f"{sse_path.rstrip('/')}/messages/"
@@ -1357,17 +1357,17 @@ class McpServiceManager:
         async def handle_sse(request: Request) -> None:
             try:
                 mcp_logger.info(f"开始处理SSE请求: service_uuid={service_uuid}")
-                
+
                 # 验证服务是否正在运行
                 if not self._running_services.get(service_uuid):
                     mcp_logger.error(f"服务 {service_uuid} 不存在或已停止")
                     return
-                
+
                 # 获取服务实例和MCP服务器
                 service_info = self._running_services[service_uuid]
                 server = service_info["server"]
                 mcp_server = server._mcp_server
-                
+
                 # 验证工具是否已注册
                 try:
                     if hasattr(mcp_server, '_tool_manager'):
@@ -1384,7 +1384,7 @@ class McpServiceManager:
                     mcp_logger.error(
                         f"获取服务 {service_uuid} 工具列表失败: {str(e)}"
                     )
-                
+
                 async with sse.connect_sse(
                         request.scope,
                         request.receive,
@@ -1434,7 +1434,7 @@ class McpServiceManager:
 
         # 直接使用数据库中存储的sse_url路径
         streamable_http_path = service.sse_url
-        
+
         # 删除现有路由（如果存在）
         routes_to_delete = []
         for route in self._main_app.routes:
@@ -1461,7 +1461,7 @@ class McpServiceManager:
         # 创建连接管理器
         connection_manager = AsyncExitStack()
         connection_ready = asyncio.Event()
-        
+
         async def setup_connection():
             """设置并维持MCP连接"""
             try:
@@ -1472,10 +1472,10 @@ class McpServiceManager:
                     context_manager
                 )
                 read_stream, write_stream = streams
-                
+
                 # 标记连接已准备好
                 connection_ready.set()
-                
+
                 # 运行MCP服务器
                 await mcp_server.run(
                     read_stream,
@@ -1510,12 +1510,12 @@ class McpServiceManager:
                 # 如果事件循环未运行，创建新的事件循环并在后台运行任务
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
-                
+
                 def run_in_background():
                     """在后台运行连接任务"""
                     asyncio.set_event_loop(loop)
                     loop.run_until_complete(setup_connection())
-                
+
                 # 在线程中运行连接任务
                 import threading
                 thread = threading.Thread(target=run_in_background)
@@ -1533,16 +1533,16 @@ class McpServiceManager:
                 mcp_logger.info(f"处理流式HTTP请求: {service_uuid}")
                 # 等待连接准备就绪
                 await connection_ready.wait()
-                
+
                 # 创建响应流
                 from starlette.responses import StreamingResponse
                 import asyncio
-                
+
                 # 创建队列来收集响应数据
                 response_queue = asyncio.Queue()
                 response_headers = {}
                 response_status = 200
-                
+
                 async def custom_send(message):
                     """自定义发送函数来捕获响应"""
                     nonlocal response_headers, response_status
@@ -1553,7 +1553,7 @@ class McpServiceManager:
                         await response_queue.put(message.get('body', b''))
                         if not message.get('more_body', False):
                             await response_queue.put(None)  # 结束标记
-                
+
                 # 创建后台任务处理transport请求
                 async def handle_transport():
                     try:
@@ -1563,10 +1563,10 @@ class McpServiceManager:
                     except Exception as e:
                         mcp_logger.error(f"Transport处理失败: {e}")
                         await response_queue.put(None)
-                
+
                 # 启动transport处理任务
                 transport_task = asyncio.create_task(handle_transport())
-                
+
                 async def generate_response():
                     """生成响应数据"""
                     try:
@@ -1578,14 +1578,14 @@ class McpServiceManager:
                     finally:
                         if not transport_task.done():
                             transport_task.cancel()
-                
+
                 # 返回流式响应
                 return StreamingResponse(
                     generate_response(),
                     status_code=response_status,
                     headers=response_headers
                 )
-                
+
             except Exception as e:
                 mcp_logger.error(
                     f"处理流式HTTP请求失败: {service_uuid}, 错误: {str(e)}"
@@ -1609,11 +1609,11 @@ class McpServiceManager:
         mcp_logger.info(
             f"插入流式HTTP路由前，当前路由数量: {len(self._main_app.routes)}"
         )
-        
+
         # 直接插入到最前面，与SSE路由相同的处理方式
         self._main_app.routes.insert(0, route)
         mcp_logger.info(f"流式HTTP路由已插入到位置0: {streamable_http_path}")
-        
+
         # 验证路由是否正确注册
         route_found = False
         for i, existing_route in enumerate(self._main_app.routes):
@@ -1625,7 +1625,7 @@ class McpServiceManager:
                     f"{existing_route.path}"
                 )
                 break
-        
+
         if not route_found:
             mcp_logger.error(
                 f"流式HTTP路由注册失败: {streamable_http_path}"
@@ -1633,7 +1633,7 @@ class McpServiceManager:
             raise RuntimeError(
                 f"流式HTTP路由注册失败: {streamable_http_path}"
             )
-        
+
         # 将任务和连接管理器保存到运行服务中，以便后续清理
         if "tasks" not in self._running_services[service_uuid]:
             self._running_services[service_uuid]["tasks"] = []
@@ -1641,7 +1641,7 @@ class McpServiceManager:
             self._running_services[service_uuid]["tasks"].append(
                 connection_task
             )
-        
+
         # 保存transport实例和连接管理器以便后续使用
         running_service = self._running_services[service_uuid]
         running_service["transport"] = streamable_http_transport
@@ -1665,14 +1665,14 @@ class McpServiceManager:
 
     def _create_third_party_proxy_routes(self, service: McpService):
         """为第三方服务创建代理转发路由
-        
+
         Args:
             service: 第三方MCP服务记录
         """
         if not service.proxy_enabled or not service.custom_proxy_path:
             mcp_logger.info(f"第三方服务 {service.service_uuid} 未启用代理转发")
             return
-            
+
         service_uuid = service.service_uuid
         # 使用用户自定义的代理路径，如果不以/开头则自动添加
         proxy_path = service.custom_proxy_path if service.custom_proxy_path.startswith('/') else f'/{service.custom_proxy_path}'
@@ -1684,37 +1684,37 @@ class McpServiceManager:
         else:
             base_url = sse_url
         target_url = base_url
-        
+
         # 从SSE URL中提取UUID路径
         uuid_path = None
         if '/mcp-' in sse_url:
             uuid_part = sse_url.split('/mcp-')[1].split('/')[0]
             uuid_path = f'/mcp-{uuid_part}'
-        
+
         mcp_logger.info(f"为第三方服务 {service_uuid} 创建代理路由: {proxy_path} -> {target_url}")
         if uuid_path:
             mcp_logger.info(f"同时支持UUID路径: {uuid_path} -> {target_url}")
-        
+
         # 删除现有代理路由（如果存在）
         routes_to_delete = []
         for route in self._main_app.routes:
             if hasattr(route, 'path') and (route.path.startswith(proxy_path) or (uuid_path and route.path.startswith(uuid_path))):
                 routes_to_delete.append(route)
-                
+
         for route in routes_to_delete:
             try:
                 self._main_app.routes.remove(route)
                 mcp_logger.info(f"已删除现有代理路由: {route.path}")
             except Exception as e:
                 mcp_logger.error(f"删除代理路由失败: {route.path}, 错误: {str(e)}")
-        
+
         # 创建代理处理函数
         async def proxy_handler(request: Request):
             """代理转发处理函数"""
             try:
                 # 构建目标URL
                 request_path = request.url.path
-                
+
                 if request_path == proxy_path or request_path.startswith(f"{proxy_path}/"):
                     # 简化路径匹配，转发到第三方服务
                     if request_path == proxy_path:
@@ -1734,17 +1734,17 @@ class McpServiceManager:
                 else:
                     # 默认转发到SSE端点
                     target_full_url = sse_url
-                
+
                 # 复制请求头，排除一些不需要的头
                 headers = dict(request.headers)
                 headers.pop('host', None)
                 headers.pop('content-length', None)
-                
+
                 # 获取请求体
                 body = await request.body()
-                
+
                 mcp_logger.info(f"代理转发请求: {request.method} {target_full_url}")
-                
+
                 # 使用requests进行同步请求转发，支持流式响应
                 try:
                     # 发起请求
@@ -1757,10 +1757,10 @@ class McpServiceManager:
                         stream=True,
                         timeout=30
                     )
-                    
+
                     # 检查响应状态
                     response.raise_for_status()
-                    
+
                     # 检查是否是SSE响应
                     content_type = response.headers.get('content-type', '')
                     if 'text/event-stream' in content_type:
@@ -1772,7 +1772,7 @@ class McpServiceManager:
                             'Access-Control-Allow-Origin': '*',
                             'Access-Control-Allow-Headers': 'Cache-Control'
                         }
-                        
+
                         # 创建生成器来处理流式响应
                         def stream_generator():
                             try:
@@ -1781,7 +1781,7 @@ class McpServiceManager:
                                         yield chunk
                             finally:
                                 response.close()
-                        
+
                         return StreamingResponse(
                             stream_generator(),
                             status_code=response.status_code,
@@ -1792,7 +1792,7 @@ class McpServiceManager:
                         # 普通响应 - 直接返回内容
                         content = response.content
                         response.close()
-                        
+
                         return StreamingResponse(
                             iter([content]),
                             status_code=response.status_code,
@@ -1802,7 +1802,7 @@ class McpServiceManager:
                     if 'response' in locals():
                         response.close()
                     raise e
-                        
+
             except httpx.TimeoutException:
                 mcp_logger.error(f"代理转发超时: {target_full_url}")
                 from starlette.responses import JSONResponse
@@ -1824,7 +1824,7 @@ class McpServiceManager:
                     {"error": f"代理转发失败: {str(e)}"},
                     status_code=502
                 )
-        
+
         # 创建代理路由，支持所有HTTP方法和路径
         # 同时支持精确匹配和路径匹配
         proxy_routes = [
@@ -1843,7 +1843,7 @@ class McpServiceManager:
                 methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
             ),
         ]
-        
+
         # 如果有UUID路径，也添加UUID路径的路由
         if uuid_path:
             proxy_routes.extend([
@@ -1862,11 +1862,11 @@ class McpServiceManager:
                      methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS", "HEAD"]
                  )
              ])
-        
+
         # 在所有路由之前插入代理路由
         for route in proxy_routes:
             self._main_app.routes.insert(0, route)
-        
+
         mcp_logger.info(f"成功创建第三方服务 {service_uuid} 的代理路由: {proxy_path}")
 
     def _remove_service_routes(self, service_uuid: str):
@@ -1890,7 +1890,7 @@ class McpServiceManager:
                 mcp_logger.info(f"移除路由: {route.path}")
                 self._main_app.routes.remove(route)
 
-    def get_modules_for_select(self, user_id: Optional[int] = None, 
+    def get_modules_for_select(self, user_id: Optional[int] = None,
                                is_admin: bool = False) -> List[Dict[str, Any]]:
         """获取模块列表用于下拉选择器
 
@@ -1927,7 +1927,7 @@ class McpServiceManager:
                 for module in modules
             ]
 
-    def get_users_for_select(self, user_id: Optional[int] = None, 
+    def get_users_for_select(self, user_id: Optional[int] = None,
                              is_admin: bool = False) -> List[Dict[str, Any]]:
         """获取用户列表用于下拉选择器
 

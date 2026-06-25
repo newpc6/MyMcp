@@ -1,11 +1,11 @@
 <template>
   <aside class="sidebar-container" :class="{ 'is-collapsed': collapsed }">
     <el-menu router :default-active="$route.path" class="nav-menu" :collapse="collapsed" :collapse-transition="false">
-      <el-menu-item index="/marketplace" @mouseup="handleMouseUp($event, '/marketplace')">
+      <el-menu-item index="/mcp-templates" @mouseup="handleMouseUp($event, '/mcp-templates')">
         <span class="menu-icon-box is-soft">
           <el-icon><Collection /></el-icon>
         </span>
-        <span class="text">MCP模板广场</span>
+        <span class="text">MCP 模板广场</span>
       </el-menu-item>
 
       <el-sub-menu index="mcp-manage">

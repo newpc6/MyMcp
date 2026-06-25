@@ -13,9 +13,9 @@ class ServiceType(Enum):
 
 class McpService(Base):
     """已发布的MCP服务表"""
-    
+
     __tablename__ = "mcp_services"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     module_id = Column(Integer, nullable=True, index=True)  # 模块ID，第三方服务时为空
     service_uuid = Column(String(64), unique=True, index=True, nullable=False)
@@ -32,42 +32,42 @@ class McpService(Base):
     is_public = Column(Boolean, default=False)  # 是否公开，True为公开，False为私有
     service_type = Column(Integer, default=1)  # 服务类型：1=内置服务(基于模板), 2=第三方服务
     description = Column(Text, nullable=True)  # 服务描述，第三方服务时使用
-    
+
     # 新增鉴权相关字段
     auth_required = Column(Boolean, default=False)  # 是否需要鉴权
     auth_mode = Column(String(20), default='')  # 鉴权模式: '', 'secret', 'token'
-    
+
     # 新增代理转发相关字段
     proxy_enabled = Column(Boolean, default=False)  # 是否启用代理转发
     custom_proxy_path = Column(String(255), nullable=True)  # 自定义代理路由路径
-    
+
     # 关系定义
     secrets = []
-    
+
     def get_module_name(self):
         """获取关联的模块名称"""
         if not self.module_id:
             return "第三方服务"
-            
+
         with get_db() as db:
             # 使用原生SQL查询避免循环导入
             query = "SELECT name FROM mcp_modules WHERE id = :id"
             sql = text(query).bindparams(id=self.module_id)
             result = db.execute(sql).first()
             return result[0] if result else None
-            
+
     def get_user_name(self):
         """获取创建者用户名"""
         if not self.user_id:
             return None
-            
+
         with get_db() as db:
             # 使用原生SQL查询避免循环导入
             query = "SELECT username FROM users WHERE id = :id"
             sql = text(query).bindparams(id=self.user_id)
             result = db.execute(sql).first()
             return result[0] if result else None
-    
+
     def get_service_type_name(self):
         """获取服务类型名称"""
         type_map = {
@@ -75,32 +75,32 @@ class McpService(Base):
             2: "第三方服务"
         }
         return type_map.get(self.service_type, "未知类型")
-    
+
     def get_auth_mode_name(self):
         """获取鉴权模式名称"""
         if not self.auth_required:
             return "免密访问"
-        
+
         mode_map = {
             'secret': '密钥访问',
             'token': '令牌访问',
             '': '免密访问'
         }
         return mode_map.get(self.auth_mode, "未知模式")
-    
+
     def get_active_secrets_count(self):
         """获取有效密钥数量"""
-        from app.models.auth.mcp_service_secret import McpServiceSecret
+        from app.models.auth.published_service_secret import McpServiceSecret
         with get_db() as db:
             secrets_count = db.query(McpServiceSecret).filter(
                 McpServiceSecret.service_id == self.id,
                 McpServiceSecret.is_active.is_(True)
             ).count()
             return secrets_count
-            
+
     def to_dict(self, module_info=None, user_info=None, show_secret_count=False):
         """转换为字典格式
-        
+
         Args:
             module_info: 模块信息字典 {module_id: {'name': str, 'description': str}}
             user_info: 用户信息字典 {user_id: {'username': str}}
@@ -110,15 +110,15 @@ class McpService(Base):
             module_name = module_info[self.module_id]['name']
         else:
             module_name = self.get_module_name()
-        
+
         # 获取用户名称
         if self.user_id and user_info and self.user_id in user_info:
             user_name = user_info[self.user_id]['username']
         else:
             user_name = self.get_user_name()
-        
+
         service_type_name = self.get_service_type_name()
-        
+
         # 解析config_params JSON字符串
         config_params = None
         if self.config_params:
@@ -129,7 +129,7 @@ class McpService(Base):
                 config_params = {}
         else:
             config_params = {}
-        
+
         return {
             "id": self.id,
             "module_id": self.module_id,
@@ -145,11 +145,11 @@ class McpService(Base):
             "error_message": self.error_message,
             "protocol_type": self.protocol_type,
             "created_at": (
-                self.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                self.created_at.strftime("%Y-%m-%d %H:%M:%S")
                 if self.created_at else None
             ),
             "updated_at": (
-                self.updated_at.strftime("%Y-%m-%d %H:%M:%S") 
+                self.updated_at.strftime("%Y-%m-%d %H:%M:%S")
                 if self.updated_at else None
             ),
             "is_public": self.is_public,

@@ -39,11 +39,11 @@ def init_db():
     """初始化数据库，创建所有表"""
     # 导入所有模型以确保它们被注册到Base中
     from app.models.tools.tool_execution import ToolExecution  # noqa: F401
-    # 导入MCP广场相关模型
+    # 导入 MCP 模板与分组模型
     from app.models.modules.mcp_modules import McpModule
     from app.models.modules.mcp_tool import McpTool
     from app.models.group.group import McpGroup  # noqa: F401
-    from app.models.modules.mcp_services import McpService  # noqa: F401
+    from app.models.modules.published_service import McpService  # noqa: F401
     # 导入用户和租户模型
     from app.models.modules.users import User, Tenant, UserTenant  # noqa: F401
     # 导入统计相关模型
@@ -90,10 +90,10 @@ def sync_db_model():
     if tables_to_create:
         tables_str = ", ".join(tables_to_create)
         mcp_logger.info(f"发现新表，准备创建: {tables_str}")
-        
+
         # 按外键依赖关系排序表创建顺序
         sorted_tables = _sort_tables_by_dependencies(tables_to_create, metadata)
-        
+
         # 按正确顺序创建新表
         for table_name in sorted_tables:
             try:
@@ -121,19 +121,19 @@ def _sort_tables_by_dependencies(table_names, metadata):
     for table_name in table_names:
         dependencies[table_name] = set()
         table = metadata.tables[table_name]
-        
+
         # 检查该表的外键依赖
         for fk in table.foreign_keys:
             referenced_table = fk.column.table.name
             # 只考虑需要创建的表之间的依赖关系
             if referenced_table in table_names:
                 dependencies[table_name].add(referenced_table)
-    
+
     # 拓扑排序
     sorted_tables = []
     visited = set()
     temp_visited = set()
-    
+
     def visit(table_name):
         if table_name in temp_visited:
             # 检测到循环依赖，记录警告但继续处理
@@ -141,23 +141,23 @@ def _sort_tables_by_dependencies(table_names, metadata):
             return
         if table_name in visited:
             return
-            
+
         temp_visited.add(table_name)
-        
+
         # 先访问依赖的表
         for dep_table in dependencies.get(table_name, set()):
             if dep_table in table_names:  # 确保依赖的表也在待创建列表中
                 visit(dep_table)
-        
+
         temp_visited.remove(table_name)
         visited.add(table_name)
         sorted_tables.append(table_name)
-    
+
     # 对所有表进行拓扑排序
     for table_name in table_names:
         if table_name not in visited:
             visit(table_name)
-    
+
     mcp_logger.info(f"表创建顺序: {' -> '.join(sorted_tables)}")
     return sorted_tables
 

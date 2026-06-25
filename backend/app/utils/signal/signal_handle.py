@@ -1,5 +1,5 @@
 import signal
-from app.server.mcp_server import stop_mcp_server
+from app.server.mcp_runtime_server import stop_mcp_server
 from app.utils.logging import mcp_logger
 
 

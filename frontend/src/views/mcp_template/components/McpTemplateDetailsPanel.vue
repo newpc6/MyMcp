@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import { defineProps } from 'vue';
 import VueMarkdownRender from 'vue-markdown-render';
-import type { McpModuleInfo } from '../../../types/marketplace';
+import type { McpModuleInfo } from '../../../types/mcp_template';
 
 defineProps<{
   moduleInfo: McpModuleInfo;
@@ -26,6 +26,9 @@ export default {
 
 <style scoped>
 .markdown-content {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: auto;
   padding: 16px;
   background-color: var(--common-panel-background-color);
   border-radius: var(--common-radius-lg);
@@ -40,10 +43,12 @@ export default {
 }
 
 .markdown-body {
+  max-width: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
   font-size: 14px;
   line-height: 1.6;
   color: var(--common-text-color);
+  overflow-wrap: anywhere;
 }
 
 .markdown-body h1,
@@ -81,8 +86,9 @@ export default {
 
 .markdown-body ul,
 .markdown-body ol {
-  padding-left: 2em;
-  margin-bottom: 1em;
+  padding-left: 24px;
+  margin: 8px 0 16px;
+  list-style-position: outside;
 }
 
 .markdown-body li {
@@ -98,6 +104,7 @@ export default {
 }
 
 .markdown-body pre {
+  max-width: 100%;
   background-color: #f6f8fa;
   border-radius: 3px;
   padding: 1em;
@@ -123,6 +130,9 @@ export default {
 }
 
 .markdown-body table {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   width: 100%;
   margin-bottom: 1em;
@@ -145,5 +155,28 @@ export default {
   margin: 24px 0;
   background-color: #e1e4e8;
   border: 0;
+}
+
+:deep(.markdown-body *) {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+:deep(.markdown-body ul),
+:deep(.markdown-body ol) {
+  padding-left: 24px;
+  margin: 8px 0 16px;
+  list-style-position: outside;
+}
+
+:deep(.markdown-body li) {
+  padding-left: 2px;
+  overflow-wrap: anywhere;
+}
+
+:deep(.markdown-body table),
+:deep(.markdown-body pre) {
+  max-width: 100%;
+  overflow-x: auto;
 }
 </style>

@@ -81,9 +81,9 @@ const hasCodeChanged = computed(() => {
   // 确保两个值都是字符串类型
   const currentCode = typeof internalCode.value === 'string' ? internalCode.value : '';
   const originalCodeStr = typeof props.originalCode === 'string' ? props.originalCode : '';
-  
+
   const changed = currentCode !== originalCodeStr;
-  
+
   return changed;
 });
 

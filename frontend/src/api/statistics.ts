@@ -3,7 +3,7 @@
  */
 import api from './index';
 import { apiPrefix } from './index';
-import type { ApiResponse } from '../types/marketplace';
+import type { ApiResponse } from '../types/mcp_template';
 
 /**
  * 服务统计数据接口
@@ -215,7 +215,7 @@ export async function getModuleStatsRanking(
   page: number = 1,
   size: number = 10
 ): Promise<ApiResponse<any>> {
-  const response = await api.post(`${apiPrefix}/marketplace/modules/stat`, {
+  const response = await api.post(`${apiPrefix}/mcp-template/modules/stat`, {
     order_by: order_by,
     desc: desc,
     paging: {

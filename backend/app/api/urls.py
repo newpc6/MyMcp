@@ -9,8 +9,8 @@ from starlette.routing import Mount
 from starlette.responses import FileResponse
 import os
 from . import (
-    auth, tools, mcp_service, history,
-    execution, log, marketplace, statistics, static, group, system, mcp_auth
+    auth, tools, published_service, history,
+    execution, log, mcp_template, statistics, static, group, system, mcp_auth
 )
 from app.utils.logging import mcp_logger
 
@@ -26,118 +26,118 @@ async def api_root(request):
 def get_router(app) -> None:
     """
     注册所有API路由
-    
+
     Args:
         app: 应用实例
     """
     # 添加API根路由
     app.add_route(f"{settings.API_PREFIX}", api_root)
-    
+
     # 添加认证中间件
     from app.middleware.auth import AuthMiddleware
     app.add_middleware(AuthMiddleware)
-    
+
     # 添加认证路由
     for route in auth.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/auth{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/auth{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加工具路由
     for route in tools.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/tools{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/tools{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
-    # 添加MCP服务路由
-    for route in mcp_service.get_router():
-        path = f"{settings.API_PREFIX}/service{route.path}"
-        mcp_logger.info(f"添加MCP服务路由: {path}")
+
+    # 添加已发布 MCP 服务路由。
+    for route in published_service.get_router():
+        path = f"{settings.API_PREFIX}/published-service{route.path}"
+        mcp_logger.info(f"添加已发布MCP服务路由: {path}")
         app.add_route(
-            path, 
-            route.endpoint, 
-            methods=route.methods, 
+            path,
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加历史记录路由
     for route in history.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/history{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/history{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加执行路由
     for route in execution.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/execute{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/execute{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加日志路由
     for route in log.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/log{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/log{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
-    # 添加MCP广场路由
-    for route in marketplace.get_router():
+
+    # 添加 MCP 模板路由。
+    for route in mcp_template.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/marketplace{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/mcp-template{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加MCP鉴权管理路由
     for route in mcp_auth.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/mcp-auth{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/mcp-auth{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加分组路由
     for route in group.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-        
+
     # 添加统计路由
     for route in statistics.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/statistics{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/statistics{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加系统管理路由
     for route in system.get_router():
         app.add_route(
-            f"{settings.API_PREFIX}/system{route.path}", 
-            route.endpoint, 
-            methods=route.methods, 
+            f"{settings.API_PREFIX}/system{route.path}",
+            route.endpoint,
+            methods=route.methods,
             name=route.name
         )
-    
+
     # 添加静态资源路由 - 移到最后注册，确保API路由优先匹配
     try:
         # 添加静态文件路由

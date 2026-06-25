@@ -17,7 +17,7 @@ from app.models.statistics import (
     ToolStatistics,
     ServiceCallStatistics
 )
-from app.models.modules.mcp_services import McpService
+from app.models.modules.published_service import McpService
 from app.models.modules.mcp_modules import McpModule
 from app.models.tools.tool_execution import ToolExecution
 from app.models.group.group import McpGroup
@@ -44,7 +44,7 @@ class StatisticsService:
             try:
                 today = date.today()
                 tz = timezone('Asia/Shanghai')
-                
+
                 # 查询MCP模板分组统计
                 total_template_groups = db.query(McpGroup).count()
                 today_new_template_groups = db.query(McpGroup).filter(
@@ -88,7 +88,7 @@ class StatisticsService:
                 stats = db.query(ServiceStatistics).filter(
                     ServiceStatistics.statistics_date == today
                 ).first()
-                
+
                 if not stats:
                     stats = ServiceStatistics(statistics_date=today)
                     db.add(stats)
@@ -351,7 +351,7 @@ class StatisticsService:
         """
         # 首先更新统计数据
         stats = self.update_service_statistics()
-        
+
         return stats.to_dict()
 
     def get_module_rankings(
@@ -592,7 +592,7 @@ class StatisticsService:
                     "status": ex.status,
                     "execution_time": ex.execution_time,
                     "created_at": (
-                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S")
                         if ex.created_at else None
                     )
                 })
@@ -700,7 +700,7 @@ class StatisticsService:
                     "status": ex.status,
                     "execution_time": ex.execution_time,
                     "created_at": (
-                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S")
                         if ex.created_at else None
                     )
                 })
@@ -833,7 +833,7 @@ class StatisticsService:
                     "status": ex.status,
                     "execution_time": ex.execution_time,
                     "created_at": (
-                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S") 
+                        ex.created_at.strftime("%Y-%m-%d %H:%M:%S")
                         if ex.created_at else None
                     )
                 })
@@ -891,7 +891,7 @@ class StatisticsService:
         """
         try:
             tz = timezone('Asia/Shanghai')
-            
+
             # 更新服务统计
             service_stats = self.update_service_statistics()
 
@@ -916,7 +916,7 @@ class StatisticsService:
             raise
 
     def get_daily_statistics(
-            self, 
+            self,
             target_date: Optional[date] = None) -> Dict[str, Any]:
         """
         获取指定日期的统计数据
@@ -929,13 +929,13 @@ class StatisticsService:
         """
         if target_date is None:
             target_date = date.today()
-        
+
         with get_db() as db:
             try:
                 stats = db.query(ServiceStatistics).filter(
                     ServiceStatistics.statistics_date == target_date
                 ).first()
-                
+
                 if not stats:
                     # 如果没有记录，返回空统计
                     return {
@@ -953,7 +953,7 @@ class StatisticsService:
                         "stopped_services": 0,
                         "error_services": 0
                     }
-                
+
                 return stats.to_dict()
             except Exception as e:
                 mcp_logger.error(f"获取日期统计数据时出错: {str(e)}")
@@ -979,14 +979,14 @@ class StatisticsService:
                     ServiceStatistics.statistics_date >= start_date,
                     ServiceStatistics.statistics_date <= end_date
                 ).order_by(ServiceStatistics.statistics_date).all()
-                
+
                 # 确保每一天都有数据
                 result = []
                 current_date = start_date.date()
                 stats_dict = {
                     stats.statistics_date: stats for stats in stats_list
                 }
-                
+
                 while current_date <= end_date.date():
                     if current_date in stats_dict:
                         result.append(stats_dict[current_date].to_dict())
@@ -1014,7 +1014,7 @@ class StatisticsService:
                             "today_new_tools_calls": 0
                         })
                     current_date += timedelta(days=1)
-                
+
                 return result
             except Exception as e:
                 mcp_logger.error(f"获取统计趋势数据时出错: {str(e)}")

@@ -115,11 +115,11 @@
               <el-button type="primary" size="small" @click="$emit('view-params', scope.row)" title="查看参数">
                 参数
               </el-button>
-              <el-button 
-                v-if="scope.row.auth_required" 
-                type="warning" 
-                size="small" 
-                @click="$emit('manage-auth', scope.row)" 
+              <el-button
+                v-if="scope.row.auth_required"
+                type="warning"
+                size="small"
+                @click="$emit('manage-auth', scope.row)"
                 title="管理密钥"
               >
                 密钥
@@ -138,7 +138,7 @@
 <script setup lang="ts">
 import { DocumentCopy, Connection } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
-import type { McpServiceInfo } from '../../../types/marketplace';
+import type { McpServiceInfo } from '../../../types/mcp_template';
 import { ref, onMounted } from 'vue';
 import { copyTextToClipboard } from '../../../utils/copy';
 

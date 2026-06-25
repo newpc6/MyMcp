@@ -1,11 +1,9 @@
-"""
-MCP广场相关API
-"""
+"""MCP 模板广场相关 API。"""
 from starlette.routing import Route
 from starlette.requests import Request
 from app.utils.response import success_response, error_response
 
-from app.services.marketplace.service import marketplace_service
+from app.services.mcp_template.service import mcp_template_service
 from app.utils.logging import mcp_logger
 from app.utils.permissions import get_user_info
 from app.utils.http.utils import body_page_params
@@ -22,7 +20,7 @@ async def page_modules(request: Request):
         user_id, is_admin = get_user_info(request)
 
         # 调用服务层方法
-        result = marketplace_service.page_modules(
+        result = mcp_template_service.page_modules(
             page_params=page_params,
             condition=condition,
             user_id=user_id,
@@ -43,7 +41,7 @@ async def list_modules(request: Request):
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
     # 调用服务层方法，获取包含编辑权限的结果
-    result = marketplace_service.list_modules(
+    result = mcp_template_service.list_modules(
         user_id=user_id,
         is_admin=is_admin
     )
@@ -58,7 +56,7 @@ async def get_module(request: Request):
     user_id, is_admin = get_user_info(request)
 
     # 调用服务层方法，获取包含编辑权限的结果
-    result = marketplace_service.get_module(
+    result = mcp_template_service.get_module(
         module_id=module_id,
         user_id=user_id,
         is_admin=is_admin
@@ -71,7 +69,7 @@ async def get_module(request: Request):
 async def get_module_tools(request: Request):
     """获取指定MCP模块下的所有工具"""
     module_id = int(request.path_params["module_id"])
-    result = marketplace_service.get_module_tools(module_id)
+    result = mcp_template_service.get_module_tools(module_id)
     if result is None:
         return error_response("模块不存在", code=404, http_status_code=404)
     return success_response(result)
@@ -80,7 +78,7 @@ async def get_module_tools(request: Request):
 async def get_tool(request: Request):
     """获取指定MCP工具的详情"""
     tool_id = int(request.path_params["tool_id"])
-    result = marketplace_service.get_tool(tool_id)
+    result = mcp_template_service.get_tool(tool_id)
     if not result:
         return error_response("工具不存在", code=404, http_status_code=404)
     return success_response(result)
@@ -88,7 +86,7 @@ async def get_tool(request: Request):
 
 async def scan_repository_modules(request: Request):
     """扫描仓库中的MCP模块并更新数据库"""
-    result = marketplace_service.scan_repository_modules()
+    result = mcp_template_service.scan_repository_modules()
     return success_response(result)
 
 
@@ -103,7 +101,7 @@ async def create_module(request: Request):
             return error_response("请先登录后再创建MCP模块", code=401, http_status_code=401)
 
         data["user_id"] = user_id
-        result = marketplace_service.create_module(data)
+        result = mcp_template_service.create_module(data)
         return success_response(result, code=0, http_status_code=200)
     except Exception as e:
         mcp_logger.error(f"创建MCP模块失败: {str(e)}")
@@ -122,7 +120,7 @@ async def update_module(request: Request):
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
 
-    result = marketplace_service.update_module(
+    result = mcp_template_service.update_module(
         module_id=module_id,
         data=data,
         user_id=user_id,
@@ -140,7 +138,7 @@ async def delete_module(request: Request):
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
 
-    success = marketplace_service.delete_module(
+    success = mcp_template_service.delete_module(
         module_id=module_id,
         user_id=user_id,
         is_admin=is_admin
@@ -165,7 +163,7 @@ async def publish_module(request: Request):
         if not name:
             return error_response("服务名称不能为空", code=400, http_status_code=400)
 
-        from app.services.mcp_service import service_manager
+        from app.services.published_service import service_manager
 
         # 发布服务
         service = service_manager.publish_service(
@@ -205,7 +203,7 @@ async def clone_module(request: Request):
         pass
 
     # 复制模块
-    result = marketplace_service.clone_module(module_id, user_id, custom_data)
+    result = mcp_template_service.clone_module(module_id, user_id, custom_data)
     if not result:
         return error_response(
             "复制模块失败，模块可能不存在",
@@ -218,14 +216,14 @@ async def clone_module(request: Request):
 
 async def stat_modules(request: Request):
     """获取模块统计信息排行榜（支持分页）
-    
+
     请求体参数:
         order_by (str): 排序字段，可选值: services_count, call_count
         desc (bool): 是否降序排列，默认true
         paging (object): 分页参数
             page (int): 页码，从1开始，默认1
             size (int): 每页条数，默认10，最大50
-    
+
     示例:
         POST /modules/stat
         Content-Type: application/json
@@ -237,42 +235,42 @@ async def stat_modules(request: Request):
                 "size": 10
             }
         }
-    
+
     返回:
-        成功: {"code": 0, "data": {"items": [...], "total": 100, "page": 1, 
+        成功: {"code": 0, "data": {"items": [...], "total": 100, "page": 1,
                "size": 10}, "message": "success"}
         失败: {"code": 400/500, "data": null, "message": "错误信息"}
     """
     try:
         # 获取用户信息
         user_id, is_admin = get_user_info(request)
-        
+
         # 获取POST请求的JSON数据
         data = await request.json()
-        
+
         # 解析分页参数
         page_params = body_page_params(data, default_size=10, max_size=50)
-        
+
         # 解析其他参数
         order_by = data.get("order_by", "services_count")
         desc = data.get("desc", True)
-        
+
         # 参数验证
         valid_order_fields = ["services_count", "call_count"]
         if order_by not in valid_order_fields:
             fields_str = ', '.join(valid_order_fields)
             msg = f"无效的排序字段: {order_by}，支持: {fields_str}"
             return error_response(msg, code=400, http_status_code=400)
-        
+
         # 调用服务层方法
-        result = marketplace_service.get_module_stats_ranking(
+        result = mcp_template_service.get_module_stats_ranking(
             page_params=page_params,
             order_by=order_by,
             desc=desc,
             user_id=user_id,
             is_admin=is_admin
         )
-        
+
         return success_response(result)
     except ValueError as e:
         return error_response(

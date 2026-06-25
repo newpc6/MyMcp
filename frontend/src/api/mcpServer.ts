@@ -1,6 +1,8 @@
-import { ApiResponse } from '@/types/marketplace'
+import { ApiResponse } from '@/types/mcp_template'
 import api from '.'
 import { apiPrefix } from './index'
+
+const publishedServiceApiPrefix = `${apiPrefix}/published-service`
 
 /**
  * 更新服务参数
@@ -15,7 +17,7 @@ export async function updateServiceParams(
     message: string
   }>
 > {
-  const response = await api.put(`${apiPrefix}/service/${id}/params`, configParams)
+  const response = await api.put(`${publishedServiceApiPrefix}/${id}/params`, configParams)
   return response.data
 }
 
@@ -30,7 +32,7 @@ export async function updateServiceVisibility(id: number, isPublic: boolean): Pr
     is_public: boolean
   }>
 > {
-  const response = await api.put(`${apiPrefix}/service/${id}/visibility`, {
+  const response = await api.put(`${publishedServiceApiPrefix}/${id}/visibility`, {
     is_public: isPublic
   });
   return response.data;

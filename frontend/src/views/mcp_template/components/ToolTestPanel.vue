@@ -1,5 +1,5 @@
 <template>
-    <div class="flex">
+    <div class="tool-test-layout">
         <!-- 左侧工具列表 -->
         <div class="mcp-tool-list border-r">
             <div class="mb-4">
@@ -20,57 +20,56 @@
             </div>
         </div>
 
-        <!-- 侧边区域：模板配置参数 -->
-        <div v-if="hasConfigParams" class="config-params-section">
-            <el-card shadow="hover" class="config-params-card">
-                <template #header>
-                    <div class="flex justify-between items-center">
-                        <div class="flex items-center gap-2">
-                            <span class="font-medium text-sm">模板配置</span>
-                            <el-tag :type="configParamsValid ? 'success' : 'warning'" size="small">
-                                {{ configParamsValid ? '已配置' : '待配置' }}
-                            </el-tag>
-                        </div>
-                        <el-button type="danger" size="small" text @click="clearConfigParams" class="clear-config-btn">
-                            清空
-                        </el-button>
-                    </div>
-                </template>
-
-                <el-alert type="info" :closable="false" show-icon title="测试环境配置" class="mb-3" size="small" />
-
-                <el-form :model="configParams" label-position="top" size="small">
-                    <el-form-item v-for="param in getConfigParams()" :key="param.key"
-                        :label="param.title || param.key + (param.required ? ' *' : '')"
-                        :class="{ 'required-param': param.required }" class="compact-form-item">
-                        <div class="text-xs text-gray-500 mb-1">
-                            {{ param.description || '无描述' }}
-                        </div>
-                        <el-input v-if="param.type === 'password'" v-model="configParams[param.key]"
-                            :placeholder="param.placeholder || `请输入${param.title || param.key}`" type="password"
-                            show-password size="small"
-                            :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }" />
-                        <el-input-number v-else-if="param.type === 'integer'" v-model="configParams[param.key]"
-                            :placeholder="param.placeholder || `请输入${param.title || param.key}`" class="w-full"
-                            size="small"
-                            :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }" />
-                        <el-input v-else v-model="configParams[param.key]"
-                            :placeholder="param.placeholder || `请输入${param.title || param.key}`" size="small"
-                            :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }" />
-                    </el-form-item>
-                </el-form>
-            </el-card>
-        </div>
-        
         <!-- 中间区域：工具测试 -->
         <div class="tool-test-content">
             <div v-if="currentTool" class="tool-test-area">
-                <div class="mb-6">
+                <div class="tool-test-inner">
                     <h2 class="text-xl font-bold mb-2 text-primary">{{ currentTool.name }}</h2>
                     <p class="text-gray-600 mb-4 whitespace-pre-line">{{ currentTool.description }}</p>
 
                     <!-- 参数配置区域 - 优化布局 -->
                     <div class="params-layout">
+                        <div v-if="hasConfigParams" class="inline-config-section">
+                            <el-card shadow="hover" class="config-params-card">
+                                <template #header>
+                                    <div class="flex justify-between items-center">
+                                        <div class="flex items-center gap-2">
+                                            <span class="font-medium text-sm">模板配置</span>
+                                            <el-tag :type="configParamsValid ? 'success' : 'warning'" size="small">
+                                                {{ configParamsValid ? '已配置' : '待配置' }}
+                                            </el-tag>
+                                        </div>
+                                        <el-button type="danger" size="small" text @click="clearConfigParams" class="clear-config-btn">
+                                            清空
+                                        </el-button>
+                                    </div>
+                                </template>
+
+                                <el-alert type="info" :closable="false" show-icon title="测试环境配置" class="mb-3" size="small" />
+
+                                <el-form :model="configParams" label-position="top" size="small">
+                                    <el-form-item v-for="param in getConfigParams()" :key="param.key"
+                                        :label="param.title || param.key + (param.required ? ' *' : '')"
+                                        :class="{ 'required-param': param.required }" class="compact-form-item">
+                                        <div class="text-xs text-gray-500 mb-1">
+                                            {{ param.description || '无描述' }}
+                                        </div>
+                                        <el-input v-if="param.type === 'password'" v-model="configParams[param.key]"
+                                            :placeholder="param.placeholder || `请输入${param.title || param.key}`" type="password"
+                                            show-password size="small"
+                                            :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }" />
+                                        <el-input-number v-else-if="param.type === 'integer'" v-model="configParams[param.key]"
+                                            :placeholder="param.placeholder || `请输入${param.title || param.key}`" class="w-full"
+                                            size="small"
+                                            :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }" />
+                                        <el-input v-else v-model="configParams[param.key]"
+                                            :placeholder="param.placeholder || `请输入${param.title || param.key}`" size="small"
+                                            :class="{ 'required-input': param.required && (!configParams[param.key] || String(configParams[param.key]).trim() === '') }" />
+                                    </el-form-item>
+                                </el-form>
+                            </el-card>
+                        </div>
+
                         <!-- 主要区域：工具参数 -->
                         <div class="main-params-section">
                             <el-card shadow="hover" class="tool-params-card">
@@ -159,12 +158,12 @@
                     <el-empty description="请选择工具查看代码" :image-size="60" />
                 </div>
                 <div v-else-if="currentToolCode" class="code-editor-wrapper">
-                    <Codemirror 
-                        v-model="currentToolCode" 
-                        :extensions="codeExtensions" 
-                        class="code-editor" 
+                    <Codemirror
+                        v-model="currentToolCode"
+                        :extensions="codeExtensions"
+                        class="code-editor"
                         :readonly="true"
-                        style="height: 500px;" 
+                        style="height: 500px;"
                     />
                 </div>
                 <div v-else class="code-empty">
@@ -192,7 +191,7 @@ import { lineNumbers, highlightActiveLineGutter } from '@codemirror/view';
 import { searchKeymap, search } from '@codemirror/search';
 import { history, historyKeymap } from '@codemirror/commands';
 import { bracketMatching, indentOnInput, foldGutter } from '@codemirror/language';
-import type { McpToolInfo, McpToolParameter } from '../../../types/marketplace';
+import type { McpToolInfo, McpToolParameter } from '../../../types/mcp_template';
 
 const props = defineProps<{
     tools: McpToolInfo[];
@@ -237,7 +236,7 @@ const codeExtensions = [
     lintGutter(),
     EditorView.theme({
         ".cm-scroller": { overflow: "auto" },
-        ".cm-editor": { 
+        ".cm-editor": {
             backgroundColor: "rgba(30, 30, 30, 0.95)",
         },
         ".cm-content": {
@@ -930,21 +929,21 @@ export default {
         max-width: none;
         min-width: auto;
     }
-    
+
     .mcp-tool-list {
         width: 300px;
     }
-    
+
     .code-display-section {
         width: 300px;
     }
 }
 
 @media (max-width: 992px) {
-    .flex {
+    .tool-test-layout {
         flex-direction: column;
     }
-    
+
     .mcp-tool-list,
     .tool-test-content,
     .code-display-section {
@@ -953,11 +952,95 @@ export default {
         margin-bottom: 20px;
         border: none;
     }
-    
+
     .config-params-section {
         margin-left: 0;
         border-right: none;
         padding-right: 0;
+    }
+}
+
+/* Final detail layout */
+.tool-test-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(420px, 1fr) minmax(560px, 0.9fr);
+    gap: 16px;
+    align-items: stretch;
+    min-width: 0;
+}
+
+.mcp-tool-list,
+.tool-test-content,
+.code-display-section {
+    min-width: 0;
+}
+
+.mcp-tool-list {
+    width: auto;
+    padding-right: 16px;
+}
+
+.tool-test-content {
+    padding: 0;
+}
+
+.tool-test-inner {
+    min-width: 0;
+}
+
+.code-display-section {
+    width: auto;
+    min-width: 560px;
+    padding-left: 16px;
+}
+
+.code-display-card {
+    height: 100%;
+}
+
+.code-display-card :deep(.el-card__header) {
+    min-height: 48px;
+    padding: 12px 16px;
+}
+
+.code-editor-wrapper {
+    height: 560px;
+    border-radius: 0;
+}
+
+:deep(.code-editor .cm-scroller) {
+    overflow: auto !important;
+}
+
+:deep(.code-editor .cm-content) {
+    min-width: max-content;
+    padding: 8px 0 8px 4px;
+}
+
+.params-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.8fr) minmax(280px, 1fr);
+    gap: 16px;
+}
+
+.inline-config-section,
+.main-params-section {
+    min-width: 0;
+}
+
+.tool-card h3 {
+    margin: 0 0 4px;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+@media (max-width: 1500px) {
+    .tool-test-layout {
+        grid-template-columns: 260px minmax(420px, 1fr) minmax(500px, 0.9fr);
+    }
+
+    .code-display-section {
+        min-width: 500px;
     }
 }
 </style>

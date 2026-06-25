@@ -10,7 +10,7 @@ import anyio
 from sqlalchemy import update
 import uvicorn
 
-from app.models.modules.mcp_services import McpService
+from app.models.modules.published_service import McpService
 from app.models.engine import get_db
 
 # 导入配置和基础模块
@@ -307,7 +307,7 @@ def start_mcp_server():
         lifespan="on"
     )
     uni_server = uvicorn.Server(config)
-    from app.services.mcp_service import service_manager
+    from app.services.published_service import service_manager
     service_manager.init_app(app, lifespan_manager)
 
     # 启动统计数据定时任务

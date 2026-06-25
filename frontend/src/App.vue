@@ -58,7 +58,7 @@
                 :key="tab.path"
                 :label="tab.title"
                 :name="tab.path"
-                :closable="tab.path !== '/marketplace'"
+                :closable="tab.path !== '/mcp-templates'"
               />
             </el-tabs>
           </div>
@@ -146,7 +146,7 @@ const handleTabRemove = (name: TabPaneName) => {
 
   if (path === route.path) {
     const nextTab = openedTabs.value[index] || openedTabs.value[index - 1]
-    router.push(nextTab?.path || '/marketplace')
+    router.push(nextTab?.path || '/mcp-templates')
   }
 }
 

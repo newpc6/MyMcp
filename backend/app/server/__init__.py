@@ -1,8 +1,6 @@
-"""
-MCP服务模块，提供MCP服务器管理功能
-"""
+"""MCP 运行时服务模块。"""
 
-from .mcp_server import (
+from .mcp_runtime_server import (
     add_tool,
     remove_tool,
     get_enabled_tools,
@@ -24,4 +22,4 @@ __all__ = [
     'stop_mcp_server',
     'restart_mcp_server',
     'server_instance'
-] 
+]

@@ -3,7 +3,7 @@
  */
 import api from './index'
 import { apiPrefix } from './index'
-import type { ApiResponse } from '../types/marketplace'
+import type { ApiResponse } from '../types/mcp_template'
 import type {
     McpSecretInfo,
     McpSecretStatistics,
@@ -137,4 +137,4 @@ export const mcpAuthApi = {
     getSecretInfo
 }
 
-export default mcpAuthApi 
+export default mcpAuthApi

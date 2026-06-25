@@ -1,7 +1,7 @@
 <template>
-  <el-container class="marketplace-container">
+  <el-container class="mcp-template-container">
     <!-- 左侧分类列表，增加宽度 -->
-    <el-aside width="280px" class="marketplace-aside">
+    <el-aside width="280px" class="mcp-template-aside">
       <el-card shadow="never" class="category-panel">
         <template #header>
           <div class="flex items-center justify-between">
@@ -54,7 +54,7 @@
     </el-aside>
 
     <!-- 右侧内容 -->
-    <el-main class="marketplace-main">
+    <el-main class="mcp-template-main">
       <!-- 操作和搜索区域 -->
       <ActionSearchCard>
         <template #search>
@@ -99,7 +99,7 @@
         </template>
       </ActionSearchCard>
 
-      <section class="marketplace-list-panel">
+      <section class="mcp-template-list-panel">
         <div class="list-panel-header">
           <div>
             <h2 class="list-panel-title">MCP模板列表</h2>
@@ -229,7 +229,7 @@
             <h3 class="section-title">分类信息</h3>
             <p class="section-subtitle">创建新的服务分类</p>
           </div>
-          
+
           <el-form-item label="分类名称" prop="name">
             <el-input v-model.trim="categoryForm.name" placeholder="请输入分类名称" clearable></el-input>
             <div class="form-item-tip">分类名称用于组织和管理服务</div>
@@ -280,9 +280,9 @@ import {
 import {
   pageModules, listGroup, createModule, deleteModule, cloneModule,
   createGroup, updateGroup, deleteGroup
-} from '../../api/marketplace';
+} from '../../api/mcp_template';
 import { getAllUsers } from '../../api/auth';
-import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/marketplace';
+import type { McpModuleInfo, ScanResult, McpCategoryInfo } from '../../types/mcp_template';
 import { defineAsyncComponent } from 'vue';
 import { Page } from '@/types/page';
 
@@ -598,7 +598,7 @@ function getModuleIcon(module: McpModuleInfo) {
 
 // 跳转到模块详情页
 function goToModuleDetail(moduleId: number) {
-  router.push(`/marketplace/${moduleId}`);
+  router.push(`/mcp-templates/${moduleId}`);
 }
 
 // 格式化日期
@@ -1045,7 +1045,7 @@ function handleResetSearch() {
 </script>
 
 <style scoped>
-.marketplace-container {
+.mcp-template-container {
   min-height: 100%;
   gap: 16px;
   padding: 16px;
@@ -1055,7 +1055,7 @@ function handleResetSearch() {
   box-shadow: var(--common-shadow-xs);
 }
 
-.marketplace-aside {
+.mcp-template-aside {
   padding: 0;
   border-radius: var(--common-radius-lg);
   overflow: hidden;
@@ -1132,7 +1132,7 @@ function handleResetSearch() {
   white-space: nowrap;
 }
 
-.marketplace-main {
+.mcp-template-main {
   min-width: 0;
   padding: 0;
   display: flex;
@@ -1140,7 +1140,7 @@ function handleResetSearch() {
   gap: 16px;
 }
 
-.marketplace-list-panel {
+.mcp-template-list-panel {
   min-height: calc(100vh - 208px);
   display: flex;
   flex-direction: column;
@@ -1367,11 +1367,11 @@ function handleResetSearch() {
 }
 
 @media (max-width: 960px) {
-  .marketplace-container {
+  .mcp-template-container {
     display: block;
   }
 
-  .marketplace-aside {
+  .mcp-template-aside {
     width: 100% !important;
     margin-bottom: 16px;
   }

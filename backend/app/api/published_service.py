@@ -4,13 +4,13 @@ from pydantic import BaseModel, ValidationError
 import importlib
 
 from app.utils.response import success_response, error_response
-from app.server.mcp_server import (
+from app.server.mcp_runtime_server import (
     add_tool, remove_tool, restart_mcp_server, check_mcp_status, get_enabled_tools, update_service_params
 )
 from app.utils.permissions import add_edit_permission, get_user_info
 from app.utils.logging import mcp_logger
 from app.utils.http.utils import body_page_params
-from app.services.mcp_service import service_manager
+from app.services.published_service import service_manager
 
 
 class ToolLoadRequest(BaseModel):
@@ -161,9 +161,6 @@ async def update_params(request: Request):
         )
 
 
-# 以下是从marketplace.py迁移过来的service相关接口
-
-
 async def list_services(request: Request):
     """列出所有服务"""
     # 获取模块ID参数
@@ -207,7 +204,7 @@ async def create_third_party_service(request: Request):
             return error_response("服务名称不能为空", code=400, http_status_code=400)
         if not sse_url:
             return error_response("SSE URL不能为空", code=400, http_status_code=400)
-        
+
         # 验证代理转发配置
         if proxy_enabled:
             if not custom_proxy_path:
@@ -217,7 +214,7 @@ async def create_third_party_service(request: Request):
             if not re.match(path_pattern, custom_proxy_path.lstrip('/')):
                 return error_response("自定义代理路径格式不正确，只允许字母、数字、连字符、下划线和斜杠", code=400, http_status_code=400)
 
-        from app.services.mcp_service import service_manager
+        from app.services.published_service import service_manager
 
         # 创建第三方服务
         service = service_manager.publish_third_party_service(
@@ -396,10 +393,10 @@ async def uninstall_service(request: Request):
 async def update_service_description(request: Request):
     """更新服务描述"""
     service_uuid = request.path_params["service_uuid"]
-    
+
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
-    
+
     try:
         data = await request.json()
         description = data.get("description", "")
@@ -411,14 +408,14 @@ async def update_service_description(request: Request):
             user_id=user_id,
             is_admin=is_admin
         )
-        
+
         if success:
             return success_response(message="服务说明已更新")
         else:
             return error_response(
                 "更新服务说明失败", code=500, http_status_code=500
             )
-            
+
     except ValueError as e:
         return error_response(str(e), code=400, http_status_code=400)
     except Exception as e:
@@ -431,19 +428,19 @@ async def update_service_description(request: Request):
 async def update_service_visibility(request: Request):
     """更新服务公开/私有状态"""
     id = request.path_params["id"]
-    
+
     # 获取用户信息
     user_id, is_admin = get_user_info(request)
-    
+
     try:
         data = await request.json()
         is_public = data.get("is_public")
-        
+
         if is_public is None:
             return error_response(
                 "缺少is_public参数", code=400, http_status_code=400
             )
-        
+
         # 调用service_manager更新可见性
         result = service_manager.update_service_visibility(
             id=id,
@@ -451,13 +448,13 @@ async def update_service_visibility(request: Request):
             user_id=user_id,
             is_admin=is_admin
         )
-        
+
         visibility_text = "公开" if result["is_public"] else "私有"
         return success_response(
-            result, 
+            result,
             message=f"服务已设置为{visibility_text}"
         )
-            
+
     except ValueError as e:
         return error_response(str(e), code=400, http_status_code=400)
     except Exception as e:
@@ -519,7 +516,6 @@ def get_router():
         Route("/enabled_tools", endpoint=enabled_tools, methods=["GET"]),
         Route("/{id:int}/params", endpoint=update_params, methods=["PUT"]),
 
-        # 从marketplace.py迁移过来的服务相关路由
         # 注意：静态路由必须放在动态路由之前，避免路由冲突
         Route("/online", get_online_services, methods=["GET"]),
         Route("/list", list_services, methods=["GET"]),

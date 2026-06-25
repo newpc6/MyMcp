@@ -216,7 +216,7 @@ async def get_auth_config(request: Request) -> JSONResponse:
     """获取服务鉴权配置"""
     try:
         from app.models.engine import get_db
-        from app.models.modules.mcp_services import McpService
+        from app.models.modules.published_service import McpService
 
         service_id = int(request.path_params.get('service_id'))
 
@@ -251,7 +251,7 @@ async def update_auth_config(request: Request) -> JSONResponse:
     """更新服务鉴权配置"""
     try:
         from app.models.engine import get_db
-        from app.models.modules.mcp_services import McpService
+        from app.models.modules.published_service import McpService
 
         service_id = int(request.path_params.get('service_id'))
 
