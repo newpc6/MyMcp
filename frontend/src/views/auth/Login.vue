@@ -158,34 +158,82 @@ const handleLogin = async () => {
 
 <style scoped>
 .login-container {
+  position: relative;
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  padding: 40px;
-  background: var(--common-background-color);
+  padding: 48px;
+  overflow: hidden;
+  background:
+    linear-gradient(115deg, rgb(30 119 226 / 95%) 0%, rgb(37 130 239 / 95%) 42%, transparent 42.2%),
+    linear-gradient(180deg, #f7fbff 0%, #eef4fb 100%);
+}
+
+.login-container::before,
+.login-container::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: '';
+}
+
+.login-container::before {
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 10%) 0 1px, transparent 1px 48px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 9%) 0 1px, transparent 1px 48px);
+  clip-path: polygon(0 0, 56% 0, 42% 100%, 0 100%);
+}
+
+.login-container::after {
+  background:
+    linear-gradient(90deg, transparent 0 52%, rgb(36 122 230 / 8%) 52% 52.15%, transparent 52.15%),
+    repeating-linear-gradient(0deg, transparent 0 39px, rgb(25 96 185 / 5%) 39px 40px),
+    repeating-linear-gradient(90deg, transparent 0 39px, rgb(25 96 185 / 5%) 39px 40px);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 42%, #000 100%);
 }
 
 .login-shell {
-  width: min(980px, 100%);
-  min-height: 560px;
+  position: relative;
+  z-index: 1;
+  width: min(1180px, calc(100vw - 96px));
+  min-height: min(680px, calc(100vh - 96px));
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) 420px;
+  grid-template-columns: minmax(0, 1.28fr) 440px;
   overflow: hidden;
   background: var(--common-panel-background-color);
   border: 1px solid var(--common-border-color);
   border-radius: var(--common-radius-lg);
-  box-shadow: var(--common-shadow-sm);
+  box-shadow: 0 26px 70px rgb(15 55 105 / 18%);
 }
 
 .login-brand-panel {
+  position: relative;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 40px;
+  overflow: hidden;
+  padding: 52px;
   color: var(--common-on-primary-color);
-  background: var(--common-primary-gradient);
+  background:
+    linear-gradient(145deg, rgb(37 117 226 / 94%) 0%, rgb(49 143 250 / 92%) 100%),
+    var(--common-primary-gradient);
+}
+
+.login-brand-panel::before {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 16%) 0 1px, transparent 1px 44px),
+    repeating-linear-gradient(90deg, rgb(255 255 255 / 10%) 0 1px, transparent 1px 68px);
+  opacity: 0.6;
+  content: '';
+}
+
+.login-brand-panel > * {
+  position: relative;
+  z-index: 1;
 }
 
 .brand-mark {
@@ -204,9 +252,9 @@ const handleLogin = async () => {
 
 .login-brand-panel h1 {
   margin: 0;
-  font-size: 30px;
+  font-size: 34px;
   font-weight: 700;
-  line-height: 40px;
+  line-height: 44px;
 }
 
 .login-brand-panel p {
@@ -219,14 +267,17 @@ const handleLogin = async () => {
 
 .brand-meta {
   display: grid;
-  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .brand-meta div {
-  padding: 14px 16px;
-  background: rgb(255 255 255 / 10%);
-  border: 1px solid rgb(255 255 255 / 18%);
+  min-height: 92px;
+  padding: 18px;
+  background: rgb(255 255 255 / 13%);
+  border: 1px solid rgb(255 255 255 / 22%);
   border-radius: var(--common-radius-md);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%);
 }
 
 .brand-meta span,
@@ -250,7 +301,7 @@ const handleLogin = async () => {
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 48px 40px;
+  padding: 56px 48px;
   background: var(--common-panel-background-color);
 }
 
