@@ -109,11 +109,11 @@
               <span class="status-indicator" :class="getStatusClass(service.status)" aria-label="服务状态"></span>
             </el-tooltip>
 
-            <div class="service-type-badge">
+            <!-- <div class="service-type-badge">
               <el-tag :type="service.service_type === 2 ? 'warning' : 'primary'" size="small" effect="light">
-                {{ service.service_type_name || '内置服务' }}
+                {{ service.service_type_name || '内置' }}
               </el-tag>
-            </div>
+            </div> -->
 
             <div class="visibility-badge">
               <el-tooltip :content="canManageService(service) ? '点击切换公开/私有状态' : (service.is_public ? '公开服务' : '私有服务')"
@@ -190,10 +190,10 @@
               </span>
               <div class="service-title-text">
                 <h3 class="service-name">{{ service.name || '默认服务' }}</h3>
-                <p class="service-module">{{ service.module_name || '未命名模块' }}</p>
+                <!-- <p class="service-module">{{ service.module_name || '未命名模块' }}</p> -->
               </div>
             </div>
-            <p class="service-description">{{ service.description || '暂无描述' }}</p>
+            <!-- <p class="service-description">{{ service.description || '暂无描述' }}</p> -->
           </div>
 
           <div class="service-meta">
@@ -2264,7 +2264,7 @@ onMounted(() => {
 
 .service-info {
   flex: 1;
-  min-height: 78px;
+  min-height: 18px;
 }
 
 .service-title-row {
