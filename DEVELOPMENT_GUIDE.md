@@ -100,6 +100,7 @@ api route -> service -> repository -> model/database
 
 按修改范围选择验证项：
 
+- 全量快速验证：`powershell -ExecutionPolicy Bypass -File scripts/verify.ps1`
 - 后端结构或服务逻辑：`conda run -n mcp python -m py_compile ...`
 - 后端启动链路：`conda run -n mcp python -m py_compile run.py`
 - 前端结构或样式：`cd frontend && yarn build`

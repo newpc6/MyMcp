@@ -89,7 +89,7 @@ class PageParams(BaseModel):
         return cls(page=page, size=size, offset=offset)
 
 
-class PageResult(Generic[T], BaseModel):
+class PageResult(BaseModel, Generic[T]):
     """分页结果模型"""
     items: List[T]
     total: int
@@ -138,4 +138,4 @@ class PageResult(Generic[T], BaseModel):
             "total": self.total,
             "page": self.page,
             "size": self.size
-        } 
+        }

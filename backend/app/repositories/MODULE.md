@@ -10,6 +10,7 @@
 - `tenant_repository.py`：租户数据访问。
 - `mcp_template_group_repository.py`：MCP 模板分组计数、统计和分组排行榜查询。
 - `mcp_template_repository.py`：MCP 模板统计、排行榜查询。
+- `mcp_auth_repository.py`：MCP 鉴权/密钥数据访问，包含服务查询、密钥查询/计数、密钥统计查询/创建、访问日志分页查询、creator name 查询。
 
 ## 设计约束
 
@@ -26,11 +27,13 @@
 cd backend
 python -m py_compile app/repositories/mcp_template_repository.py
 python -m py_compile app/repositories/mcp_template_group_repository.py
+python -m py_compile app/repositories/mcp_auth_repository.py
 ```
 
 - 如涉及 Service 调用链，补充 import 检查或接口冒烟测试。
 
 ## 改动记录
 
+- 2026-06-30：新增 `McpAuthRepository`，承接 MCP 鉴权/密钥相关的服务查询、密钥查询/计数、密钥统计查询/创建、访问日志分页查询和 creator name 批量查询。
 - 2026-06-30：新增 `McpTemplateGroupRepository`，承接分组模板计数、分组统计和分组排行榜查询。
 - 2026-06-30：新增 `McpTemplateRepository`，承接模板统计（to_stat_dict）和模板排行榜 SQL，从 `McpModule` 模型迁移。

@@ -12,7 +12,72 @@
 - `PageHeader.vue`：紧凑页面标题区，支持图标、说明和操作区。
 - `SearchToolbar.vue`：统一搜索/筛选工具栏，支持左侧、主体和操作区插槽。
 - `StatusDot.vue`：状态圆点，支持 `type` 和 `status` 映射，可只显示圆点或附带文本。
+- `DataTable.vue`：基于 Element Plus `el-table` + `el-pagination` 的通用数据表格组件，封装 loading、空态、分页和操作插槽，不绑定具体业务。
 - `index.ts`：公共组件导出入口。
+
+## DataTable 使用说明
+
+### Props
+
+| 属性 | 类型 | 默认值 | 说明 |
+|---|---|---|---|
+| `data` | `unknown[]` | `[]` | 表格数据 |
+| `loading` | `boolean` | `false` | 加载状态 |
+| `total` | `number` | `0` | 总条目数 |
+| `page` | `number` | `1` | 当前页码（支持 `v-model:page`） |
+| `pageSize` | `number` | `10` | 每页条数（支持 `v-model:pageSize`） |
+| `pageSizes` | `number[]` | `[10,20,50,100]` | 每页条数选项 |
+| `rowKey` | `string` | `'id'` | 行标识字段 |
+| `showPagination` | `boolean` | `true` | 是否显示分页 |
+| `emptyText` | `string` | `'暂无数据'` | 空数据提示文案 |
+| `compact` | `boolean` | `false` | 紧凑模式（减小内边距） |
+| `paginationLayout` | `string` | `'total, sizes, prev, pager, next, jumper'` | 分页组件布局 |
+| `paginationBackground` | `boolean` | `true` | 分页按钮是否带背景色 |
+
+### Emits
+
+| 事件 | 参数 | 说明 |
+|---|---|---|
+| `update:page` | `number` | 页码变化（v-model 双向绑定） |
+| `update:pageSize` | `number` | 每页条数变化（v-model 双向绑定） |
+| `page-change` | `number` | 页码变化（与 update:page 同步触发） |
+| `size-change` | `number` | 每页条数变化（与 update:pageSize 同步触发） |
+| `refresh` | - | 刷新事件（通过工具栏 slot 手动触发） |
+| `sort-change` | `any` | 排序变化（透传 el-table sort-change） |
+| `selection-change` | `any` | 选择变化（透传 el-table selection-change） |
+
+### Slots
+
+| 插槽 | 说明 |
+|---|---|
+| `default` | 列定义（直接放入 `el-table-column`） |
+| `toolbar` | 表格上方工具栏 |
+| `empty` | 自定义空数据展示 |
+| `pagination-extra` | 分页左侧额外内容 |
+
+### 使用示例
+
+```vue
+<DataTable
+  v-model:page="page"
+  v-model:pageSize="size"
+  :data="tableData"
+  :total="total"
+  :loading="loading"
+  row-key="id"
+>
+  <template #toolbar>
+    <el-button type="primary" @click="fetchData">查询</el-button>
+  </template>
+  <el-table-column type="index" label="#" width="60" />
+  <el-table-column prop="name" label="名称" />
+  <el-table-column label="操作" width="120">
+    <template #default="{ row }">
+      <el-button link type="primary" @click="handleEdit(row)">编辑</el-button>
+    </template>
+  </el-table-column>
+</DataTable>
+```
 
 ## 设计约束
 
@@ -29,3 +94,4 @@
 ## 改动记录
 
 - 2026-06-30：新增 `PageContainer`、`PageHeader`、`SearchToolbar`、`StatusDot` 和公共导出入口，用于沉淀平台统一页面结构和状态展示。
+- 2026-06-30：新增 `DataTable` 通用数据表格组件，基于 Element Plus `el-table` + `el-pagination`，封装 loading、空态、分页和操作插槽。

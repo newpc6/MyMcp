@@ -1,8 +1,8 @@
-@import '@/styles/variables.scss';
-@import '@/styles/mixins.scss';
-@import '@/styles/card.scss';
-@import '@/styles/table.scss';
-@import '@/styles/components/index.scss';
+@use '@/styles/variables.scss' as *;
+@use '@/styles/mixins.scss' as *;
+@use '@/styles/card.scss';
+@use '@/styles/table.scss';
+@use '@/styles/components/index.scss';
 
 :root {
   --zartd-primary-color: #3388ff;

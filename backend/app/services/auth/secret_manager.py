@@ -6,13 +6,10 @@ MCP服务密钥管理服务
 
 from typing import Dict, List, Optional, Any, Tuple
 from datetime import datetime, date
-from sqlalchemy import and_
 
 from app.models.engine import get_db
-from app.models.modules.published_service import McpService
-from app.models.auth.published_service_secret import McpServiceSecret
-from app.models.auth.published_service_secret_statistics import McpSecretStatistics
 from app.models.auth.published_service_access_log import McpAccessLog
+from app.repositories.mcp_auth_repository import McpAuthRepository
 from app.utils.auth.secret_generator import SecretGenerator
 from app.utils.logging import mcp_logger
 from app.utils.const.error_code import error_code
@@ -21,6 +18,33 @@ from app.utils.http.pagination import PageParams
 
 class SecretManager:
     """密钥管理器"""
+
+    # 共享 Repository 实例
+    _repo = McpAuthRepository()
+
+    @staticmethod
+    def _to_dict_with_creator(
+        db, secret: "McpServiceSecret", include_full_key: bool = False
+    ) -> Dict[str, Any]:
+        """辅助：将密钥转为字典并附带 creator_name。"""
+        creator_name = SecretManager._repo.get_creator_name(db, secret.user_id)
+        return secret.to_dict(include_full_key=include_full_key,
+                              creator_name=creator_name)
+
+    @staticmethod
+    def _to_dict_list_with_creators(
+        db, secrets: list, include_full_key: bool = False
+    ) -> List[Dict[str, Any]]:
+        """辅助：批量将密钥列表转为字典并附带 creator_name。"""
+        user_ids = [s.user_id for s in secrets if s.user_id is not None]
+        names = SecretManager._repo.batch_get_creator_names(db, user_ids)
+        return [
+            s.to_dict(
+                include_full_key=include_full_key,
+                creator_name=names.get(s.user_id)
+            )
+            for s in secrets
+        ]
 
     @staticmethod
     def generate_secret(service_id: int, name: str, description: str = "",
@@ -44,21 +68,13 @@ class SecretManager:
         """
         with get_db() as db:
             # 检查服务是否存在
-            service = db.query(McpService).filter(
-                McpService.id == service_id
-            ).first()
+            service = SecretManager._repo.get_service_by_id(db, service_id)
             if not service:
                 raise ValueError(f"服务不存在: {service_id}")
 
             # 检查密钥数量限制
-            existing_count = db.query(McpServiceSecret).filter(
-                and_(
-                    McpServiceSecret.service_id == service_id,
-                    McpServiceSecret.is_active.is_(True)
-                )
-            ).count()
-
-            # 这里可以配置最大密钥数量
+            existing_count = SecretManager._repo.count_active_secrets(
+                db, service_id)
             max_secrets = 50  # 从配置获取
             if existing_count >= max_secrets:
                 raise ValueError(f"服务密钥数量已达上限: {max_secrets}")
@@ -68,6 +84,7 @@ class SecretManager:
             expires_at = SecretGenerator.calculate_expiry_date(expires_days)
 
             # 创建密钥记录
+            from app.models.auth.published_service_secret import McpServiceSecret
             secret_record = McpServiceSecret(
                 service_id=service_id,
                 secret_key=secret_key,
@@ -84,7 +101,8 @@ class SecretManager:
 
             mcp_logger.info(f"为服务 {service_id} 生成新密钥: {name}")
 
-            return secret_record.to_dict(include_full_key=True)
+            return SecretManager._to_dict_with_creator(
+                db, secret_record, include_full_key=True)
 
     @staticmethod
     def validate_secret(service_id: int,
@@ -99,13 +117,8 @@ class SecretManager:
             Optional[Dict]: 如果有效返回密钥信息，否则返回None
         """
         with get_db() as db:
-            secret_record = db.query(McpServiceSecret).filter(
-                and_(
-                    McpServiceSecret.service_id == service_id,
-                    McpServiceSecret.secret_key == secret,
-                    McpServiceSecret.is_active.is_(True)
-                )
-            ).first()
+            secret_record = SecretManager._repo.get_secret_by_key(
+                db, service_id, secret)
 
             if not secret_record:
                 return error_code.SUCCESS, None
@@ -116,18 +129,10 @@ class SecretManager:
 
             # 检查调用次数限制
             if secret_record.limit_count > 0:
-                # 获取今日调用次数
-                today = date.today()
-                today_stats = db.query(McpSecretStatistics).filter(
-                    and_(
-                        McpSecretStatistics.secret_id == secret_record.id,
-                        McpSecretStatistics.statistics_date == today
-                    )
-                ).first()
-
+                today_stats = SecretManager._repo.get_today_statistics(
+                    db, secret_record.id)
                 current_calls = today_stats.call_count if today_stats else 0
 
-                # 如果设置了限制且当前调用次数已达到限制，则拒绝访问
                 if current_calls >= secret_record.limit_count:
                     msg = (f"MCP服务: {service_id} "
                            f"密钥:{secret_record.secret_key} "
@@ -152,24 +157,17 @@ class SecretManager:
             List[Dict]: 密钥列表
         """
         with get_db() as db:
-            # 检查权限
-            service = db.query(McpService).filter(
-                McpService.id == service_id
-            ).first()
-
+            service = SecretManager._repo.get_service_by_id(db, service_id)
             if not service:
                 return []
 
-            # 非管理员只能查看自己创建的服务的密钥
             if not is_admin and user_id != service.user_id:
                 return []
 
-            secrets = db.query(McpServiceSecret).filter(
-                McpServiceSecret.service_id == service_id
-            ).order_by(McpServiceSecret.created_at.desc()).all()
-
-            return [secret.to_dict(include_full_key=is_admin)
-                    for secret in secrets]
+            secrets = SecretManager._repo.list_all_secrets_by_service(
+                db, service_id)
+            return SecretManager._to_dict_list_with_creators(
+                db, secrets, include_full_key=is_admin)
 
     @staticmethod
     def delete_secret(secret_id: int, user_id: Optional[int] = None,
@@ -185,22 +183,15 @@ class SecretManager:
             bool: 是否删除成功
         """
         with get_db() as db:
-            secret = db.query(McpServiceSecret).filter(
-                McpServiceSecret.id == secret_id
-            ).first()
-
+            secret = SecretManager._repo.get_secret_by_id(db, secret_id)
             if not secret:
                 return False
 
-            # 检查权限
-            service = db.query(McpService).filter(
-                McpService.id == secret.service_id
-            ).first()
-
+            service = SecretManager._repo.get_service_by_id(
+                db, secret.service_id)
             if not service:
                 return False
 
-            # 非管理员只能删除自己创建的服务的密钥
             if not is_admin and user_id != service.user_id:
                 return False
 
@@ -231,26 +222,18 @@ class SecretManager:
             Optional[Dict]: 更新后的密钥信息
         """
         with get_db() as db:
-            secret = db.query(McpServiceSecret).filter(
-                McpServiceSecret.id == secret_id
-            ).first()
-
+            secret = SecretManager._repo.get_secret_by_id(db, secret_id)
             if not secret:
                 return None
 
-            # 检查权限
-            service = db.query(McpService).filter(
-                McpService.id == secret.service_id
-            ).first()
-
+            service = SecretManager._repo.get_service_by_id(
+                db, secret.service_id)
             if not service:
                 return None
 
-            # 非管理员只能修改自己创建的服务的密钥
             if not is_admin and user_id != service.user_id:
                 return None
 
-            # 更新字段
             if name is not None:
                 secret.secret_name = name
             if description is not None:
@@ -265,7 +248,8 @@ class SecretManager:
             db.refresh(secret)
 
             mcp_logger.info(f"更新密钥: {secret_id} ({secret.secret_name})")
-            return secret.to_dict(include_full_key=is_admin)
+            return SecretManager._to_dict_with_creator(
+                db, secret, include_full_key=is_admin)
 
     @staticmethod
     def update_secret_statistics(secret_id: int, success: bool = True) -> None:
@@ -277,35 +261,15 @@ class SecretManager:
         """
         with get_db() as db:
             try:
-                # 获取密钥信息
-                secret = db.query(McpServiceSecret).filter(
-                    McpServiceSecret.id == secret_id
-                ).first()
-
+                secret = SecretManager._repo.get_secret_by_id(db, secret_id)
                 if not secret:
                     return
 
                 today = date.today()
+                stats = SecretManager._repo.get_or_create_statistics(
+                    db, secret_id, secret.service_id, today)
 
-                # 查找或创建今日统计记录
-                stats = db.query(McpSecretStatistics).filter(
-                    and_(
-                        McpSecretStatistics.secret_id == secret_id,
-                        McpSecretStatistics.statistics_date == today
-                    )
-                ).first()
-
-                if not stats:
-                    stats = McpSecretStatistics(
-                        secret_id=secret_id,
-                        service_id=secret.service_id,
-                        statistics_date=today
-                    )
-                    db.add(stats)
-
-                # 更新统计
                 stats.increment_call(success)
-
                 db.commit()
 
             except Exception as e:
@@ -347,7 +311,6 @@ class SecretManager:
                 db.add(log_record)
                 db.commit()
 
-                # 如果有密钥，更新统计
                 if secret_id:
                     SecretManager.update_secret_statistics(secret_id, success)
 
@@ -368,17 +331,8 @@ class SecretManager:
             List[Dict]: 统计数据列表
         """
         with get_db() as db:
-            end_date = date.today()
-            start_date = date.fromordinal(end_date.toordinal() - days)
-
-            stats = db.query(McpSecretStatistics).filter(
-                and_(
-                    McpSecretStatistics.secret_id == secret_id,
-                    McpSecretStatistics.statistics_date >= start_date,
-                    McpSecretStatistics.statistics_date <= end_date
-                )
-            ).order_by(McpSecretStatistics.statistics_date.desc()).all()
-
+            stats = SecretManager._repo.get_statistics_by_secret_id(
+                db, secret_id, days=days)
             return [stat.to_dict() for stat in stats]
 
     @staticmethod
@@ -395,49 +349,38 @@ class SecretManager:
             Dict: 密钥信息
         """
         with get_db() as db:
-            query = db.query(McpServiceSecret).filter(
-                McpServiceSecret.service_id == service_id
-            )
-            if is_admin:
-                pass
-            else:
-                query = query.where((McpServiceSecret.user_id == user_id)
-                                    | (McpServiceSecret.user_id.is_(None)))
-
-            secrets = query.all()
+            secrets = SecretManager._repo.list_secrets_by_service(
+                db, service_id, is_admin=is_admin, user_id=user_id)
             if not secrets:
                 return None
+
             result = {}
-            result['secrets'] = [secret.to_dict() for secret in secrets]
+            result['secrets'] = SecretManager._to_dict_list_with_creators(
+                db, secrets)
             result['secret_count'] = len(secrets)
-            active_secrets = [secret for secret in secrets if secret.is_active]
+            active_secrets = [s for s in secrets if s.is_active]
             result['active_secret_count'] = len(active_secrets)
-            inactive_secrets = [
-                secret for secret in secrets if not secret.is_active]
+            inactive_secrets = [s for s in secrets if not s.is_active]
             result['inactive_secret_count'] = len(inactive_secrets)
-            secrets_statistics = {}
-            for secret in secrets:
-                stats = SecretManager.get_secret_statistics(secret.id)
-                secrets_statistics[secret.id] = stats
 
-            # 计算统计数据，处理空列表的情况
-            all_stats = []
-            for stats_list in secrets_statistics.values():
-                all_stats.extend(stats_list)
+            # 批量获取统计数据
+            secret_ids = [s.id for s in secrets]
+            all_stats = SecretManager._repo.get_statistics_by_secret_ids(
+                db, secret_ids)
+            all_stats_dicts = [stat.to_dict() for stat in all_stats]
 
-            if all_stats:
+            if all_stats_dicts:
                 result['total_call_count'] = sum([
-                    stat['call_count'] for stat in all_stats
+                    stat['call_count'] for stat in all_stats_dicts
                 ])
                 result['total_success_count'] = sum([
-                    stat['success_count'] for stat in all_stats
+                    stat['success_count'] for stat in all_stats_dicts
                 ])
                 result['total_error_count'] = sum([
-                    stat['error_count'] for stat in all_stats
+                    stat['error_count'] for stat in all_stats_dicts
                 ])
-                # 过滤掉None值，避免max函数错误
                 access_times = [
-                    stat['last_access_at'] for stat in all_stats
+                    stat['last_access_at'] for stat in all_stats_dicts
                     if stat['last_access_at'] is not None
                 ]
                 result['last_access_time'] = max(
@@ -468,43 +411,23 @@ class SecretManager:
             List[Dict]: 访问日志列表
         """
         with get_db() as db:
-            query = db.query(McpAccessLog)
-            if service_id != 0:
-                query = query.filter(
-                    McpAccessLog.service_id == service_id
-                )
-
-            if secret_id:
-                query = query.filter(McpAccessLog.secret_id == secret_id)
-            if status:
-                query = query.filter(McpAccessLog.status == status)
-            if date_range:
-                query = query.filter(
-                    McpAccessLog.access_time >= date_range[0], McpAccessLog.access_time <= date_range[1])
-            total = query.count()
-            query = query.order_by(
-                McpAccessLog.access_time.desc()
-            ).offset(page_params.offset).limit(page_params.size)
-            logs = query.all()
+            logs, total = SecretManager._repo.query_access_logs(
+                db, service_id, page_params,
+                secret_id=secret_id, status=status, date_range=date_range)
             logs_list = [log.to_dict() for log in logs]
 
-            secert_ids = [log['secret_id'] for log in logs_list]
-            secrets = db.query(McpServiceSecret).filter(
-                McpServiceSecret.id.in_(secert_ids)
-            ).all()
-            secrets_dict = {
-                secret.id: secret.secret_name for secret in secrets}
+            # 批量补充密钥名称
+            secret_ids = [log['secret_id'] for log in logs_list]
+            secrets_dict = SecretManager._repo.batch_get_secret_names(
+                db, secret_ids)
             for log in logs_list:
                 log['secret_name'] = secrets_dict.get(log['secret_id'])
 
+            # 批量补充服务名称
             service_ids = [log['service_id'] for log in logs_list]
-            services = db.query(McpService).filter(
-                McpService.id.in_(service_ids)
-            ).all()
-            services_dict = {
-                service.id: service for service in services
-            }
+            services_dict = SecretManager._repo.batch_get_service_names(
+                db, service_ids)
             for log in logs_list:
-                log['service_name'] = services_dict.get(log['service_id']).name
+                log['service_name'] = services_dict.get(log['service_id'])
 
             return logs_list, total

@@ -1,4 +1,4 @@
-@import './variables.scss';
+@use 'variables' as *;
 
 // flex布局
 @mixin flex($direction: row, $justify: flex-start, $align: stretch, $wrap: nowrap) {

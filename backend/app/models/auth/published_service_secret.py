@@ -31,18 +31,11 @@ class McpServiceSecret(Base):
 
 
     def get_creator_name(self):
-        """获取创建者用户名"""
-        if not self.user_id:
-            return None
+        """获取创建者用户名（需由调用方通过 Repository 查询后传入 to_dict）。
 
-        from app.models.engine import get_db
-        from sqlalchemy.sql import text
-
-        with get_db() as db:
-            query = "SELECT username FROM users WHERE id = :id"
-            sql = text(query).bindparams(id=self.user_id)
-            result = db.execute(sql).first()
-            return result[0] if result else None
+        模型层不再自行打开数据库连接；返回 None 避免隐式副作用。
+        """
+        return None
 
     def is_expired(self):
         """检查密钥是否已过期"""
@@ -59,12 +52,15 @@ class McpServiceSecret(Base):
 
         return f"{self.secret_key[:4]}****{self.secret_key[-4:]}"
 
-    def to_dict(self, include_full_key=False):
+    def to_dict(self, include_full_key=False, creator_name=None):
         """转换为字典格式
 
         Args:
             include_full_key: 是否包含完整密钥（仅管理员可见）
+            creator_name: 创建者用户名，由调用方通过 Repository 查询传入。
+                          为 None 时回退到 get_creator_name()（已移除 DB 副作用）。
         """
+        name = creator_name if creator_name is not None else self.get_creator_name()
         return {
             "id": self.id,
             "service_id": self.service_id,
@@ -88,5 +84,5 @@ class McpServiceSecret(Base):
                 if self.expires_at else None
             ),
             "user_id": self.user_id,
-            "creator_name": self.get_creator_name()
+            "creator_name": name
         }
