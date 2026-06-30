@@ -91,7 +91,10 @@ backend/logs
 backend/test
 dist
 dist.zip
-docs
+docs/*
+!docs/
+!docs/**/
+!docs/**/*.md
 backend/data/publish/
 backend/data
 dist*zip

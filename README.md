@@ -39,9 +39,33 @@ qq 群：979958989
 
 开源介绍 https://blog.csdn.net/u012327423/article/details/147531100
 
+## 文档导航
+
+- [开发规范](DEVELOPMENT_GUIDE.md)
+- [项目协作规范](AGENTS.md)
+- [后端与前端详细规范](docs/开发规范.md)
+- [MCP 配置参数指南](docs/mcp_config_params_guide.md)
+- [优化与功能规划](docs/优化与功能规划.md)
+
 ## 软件架构
 
-软件架构说明
+项目采用前后端分离架构：
+
+- `backend/`：Python 后端，负责 MCP 服务运行、模板扫描、服务发布、密钥鉴权、访问日志、统计分析和系统管理。
+- `backend/app/api/`：HTTP API 路由层，只处理请求参数、权限依赖和响应封装。
+- `backend/app/services/`：业务服务层，负责模板、发布服务、鉴权、统计、系统管理等业务流程。
+- `backend/app/models/`：ORM 模型、数据库初始化和迁移脚本。
+- `backend/app/server/`：MCP 运行时服务启动和协议相关代码，现有 MCP HTTP 框架保持不替换。
+- `frontend/`：Vue 3 + TypeScript + Element Plus 前端控制台。
+- `frontend/src/api/`：按业务资源封装接口，例如 `mcp-template.ts`、`published-service.ts`、`mcp-auth.ts`。
+- `frontend/src/views/`：路由级页面，按业务模块组织，例如 `mcp-template/`、`published-service/`、`statistics/`。
+- `frontend/src/styles/`：全局样式、设计 token 和公共组件样式。
+
+核心流程：
+
+```text
+MCP 模板代码 -> 扫描入库 -> 配置参数 -> 发布服务 -> 密钥鉴权 -> 调用审计 -> 统计分析
+```
 
 ## 模块说明
 
