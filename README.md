@@ -43,6 +43,7 @@ qq 群：979958989
 
 - [开发规范](DEVELOPMENT_GUIDE.md)
 - [项目协作规范](AGENTS.md)
+- [模块索引](docs/模块索引.md)
 - [后端与前端详细规范](docs/开发规范.md)
 - [MCP 配置参数指南](docs/mcp_config_params_guide.md)
 - [优化与功能规划](docs/优化与功能规划.md)

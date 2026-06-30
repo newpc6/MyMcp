@@ -17,7 +17,7 @@
 
       <div class="table-container">
         <el-table :data="toolRankings" stripe style="width: 100%" v-loading="loading" class="ranking-table"
-          :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
+        :header-cell-style="{ background: 'var(--common-table-header-background-color)', color: 'var(--common-text-color)', fontWeight: '600' }">
           <el-table-column label="排名" width="60" align="center">
             <template #default="scope">
               <div class="ranking-badge" :class="getRankingClass(scope.$index)">
@@ -124,56 +124,49 @@ const handlePageChange = (page) => {
 }
 
 .ranking-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+  background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
+  transition: box-shadow 0.2s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
 }
 
 .ranking-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--common-shadow-sm);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid rgba(21, 101, 192, 0.1);
-  background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(25, 118, 210, 0.05) 100%);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
 }
 
 .header-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1565c0;
+  font-size: var(--common-font-size-title-md);
+  font-weight: 600;
+  color: var(--common-text-color-heavy);
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
 .header-icon {
-  font-size: 20px;
-  color: #2196f3;
+  font-size: 18px;
+  color: var(--common-primary-color);
 }
 
 .refresh-button {
   border-radius: 8px;
   transition: all 0.2s ease;
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+  border-radius: var(--common-radius-md);
   border: none;
-}
-
-.refresh-button:hover {
-  transform: scale(1.05);
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
 }
 
 .table-container {
@@ -186,14 +179,6 @@ const handlePageChange = (page) => {
   border-radius: 0;
 }
 
-.ranking-table :deep(.el-table__row:hover) {
-  background-color: rgba(33, 150, 243, 0.05) !important;
-}
-
-.ranking-table :deep(.el-table__row--striped) {
-  background-color: rgba(248, 250, 252, 0.8);
-}
-
 .tool-info {
   display: flex;
   align-items: center;
@@ -201,15 +186,13 @@ const handlePageChange = (page) => {
 
 .tool-name {
   font-weight: 600;
-  color: #1565c0;
+  color: var(--common-text-color-heavy);
 }
 
 .count-tag {
   font-weight: 600;
-  border-radius: 12px;
-  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-  color: #1565c0;
-  border: 1px solid rgba(21, 101, 192, 0.2);
+  border-radius: var(--common-radius-sm);
+  color: var(--common-text-color-heavy);
 }
 
 .success-rate {
@@ -222,16 +205,16 @@ const handlePageChange = (page) => {
 .rate-text {
   font-size: 12px;
   font-weight: 600;
-  color: #1565c0;
+  color: var(--common-text-color-heavy);
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .card-header {
-    padding: 16px;
+    padding: 12px;
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
   }
 }
-</style> 
+</style>

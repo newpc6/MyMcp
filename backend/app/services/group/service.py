@@ -8,6 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.models.engine import get_db
 from app.models.modules.mcp_template import McpModule
 from app.models.group.group import McpGroup
+from app.repositories.mcp_template_group_repository import McpTemplateGroupRepository
 from app.core.utils import now_beijing
 from app.utils.logging import mcp_logger
 from app.utils.permissions import add_edit_permission
@@ -23,7 +24,12 @@ class GroupService:
         with get_db() as db:
             query = select(McpGroup).order_by(McpGroup.order)
             categories = db.execute(query).scalars().all()
-            result = [c.to_dict() for c in categories]
+
+            repo = McpTemplateGroupRepository
+            result = [
+                c.to_dict(templates_count=repo.get_templates_count(db, c.id))
+                for c in categories
+            ]
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
 
@@ -34,12 +40,14 @@ class GroupService:
                    user_id: Optional[int] = None,
                    is_admin: bool = False) -> Dict[str, Any]:
         """获取MCP分组统计信息（分页）"""
-        # 使用模型层方法获取所有统计数据
-        all_stats = McpGroup.get_top_groups_by_stat(
-            order_by=order_by,
-            limit=10000,  # 先获取所有数据
-            desc=desc
-        )
+        with get_db() as db:
+            repo = McpTemplateGroupRepository
+            all_stats = repo.get_top_groups_by_stat(
+                db,
+                order_by=order_by,
+                limit=10000,  # 先获取所有数据
+                desc=desc
+            )
 
         # 计算分页
         total_count = len(all_stats)
@@ -61,7 +69,10 @@ class GroupService:
             query = select(McpGroup).where(McpGroup.id == category_id)
             category = db.execute(query).scalar_one_or_none()
             if category:
-                result = category.to_dict()
+                repo = McpTemplateGroupRepository
+                result = category.to_dict(
+                    templates_count=repo.get_templates_count(db, category_id)
+                )
                 # 添加可编辑字段
                 return add_edit_permission(result, user_id, is_admin)
             return None
@@ -96,7 +107,8 @@ class GroupService:
             db.commit()
             db.refresh(category)
 
-            return category.to_dict()
+            # 新分组模板数为0
+            return category.to_dict(templates_count=0)
 
     def update_category(
         self, category_id: int, data: Dict[str, Any],
@@ -140,7 +152,10 @@ class GroupService:
 
             # 返回更新后的分组信息
             updated_category = db.execute(category_query).scalar_one()
-            result = updated_category.to_dict()
+            repo = McpTemplateGroupRepository
+            result = updated_category.to_dict(
+                templates_count=repo.get_templates_count(db, category_id)
+            )
             # 添加可编辑字段
             return add_edit_permission(result, user_id, is_admin)
 

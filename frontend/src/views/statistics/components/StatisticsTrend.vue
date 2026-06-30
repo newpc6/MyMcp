@@ -265,20 +265,19 @@ onMounted(() => {
 }
 
 .trend-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    overflow: hidden;
+    background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
+  overflow: hidden;
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 32px 16px;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    padding: 16px 20px;
+  border-bottom: 1px solid var(--common-border-color);
 }
 
 .header-title {
@@ -286,13 +285,13 @@ onMounted(() => {
     align-items: center;
     font-size: 18px;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--common-text-color-heavy);
 }
 
 .header-icon {
     margin-right: 8px;
-    color: #3498db;
-    font-size: 20px;
+    color: var(--common-primary-color);
+  font-size: 18px;
 }
 
 .header-controls {
@@ -307,27 +306,26 @@ onMounted(() => {
 
 .refresh-button {
     border-radius: 8px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    color: white;
+    border-radius: var(--common-radius-md);
+  border: none;
 }
 
 .trend-content {
-    padding: 24px 32px 32px;
+    padding: 20px;
 }
 
 .trend-tables {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 24px;
-    margin-bottom: 32px;
+    gap: 16px;
+  margin-bottom: 20px;
 }
 
 .trend-section {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    background: var(--common-list-background-color);
+  border-radius: var(--common-radius-lg);
+  padding: 16px;
+  border: 1px solid var(--common-border-color);
 }
 
 .section-title {
@@ -335,13 +333,13 @@ onMounted(() => {
     align-items: center;
     font-size: 16px;
     font-weight: 600;
-    color: #2c3e50;
-    margin-bottom: 16px;
+    color: var(--common-text-color-heavy);
+    margin-bottom: 12px;
 }
 
 .section-title .el-icon {
     margin-right: 8px;
-    color: #3498db;
+    color: var(--common-primary-color);
 }
 
 .trend-table {
@@ -349,33 +347,33 @@ onMounted(() => {
 }
 
 .trend-summary {
-    background: rgba(255, 255, 255, 0.8);
-    border-radius: 12px;
-    padding: 24px;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    background: var(--common-list-background-color);
+  border-radius: var(--common-radius-lg);
+  padding: 20px;
+  border: 1px solid var(--common-border-color);
 }
 
 .summary-title {
     font-size: 18px;
     font-weight: 600;
-    color: #2c3e50;
+    color: var(--common-text-color-heavy);
     margin-bottom: 20px;
     text-align: center;
 }
 
 .summary-cards {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .summary-card {
     display: flex;
     align-items: center;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.9);
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    padding: 14px;
+  background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-md);
+  border: 1px solid var(--common-border-color);
 }
 
 .card-icon {
@@ -387,23 +385,9 @@ onMounted(() => {
     justify-content: center;
     margin-right: 16px;
     font-size: 20px;
-    color: white;
-}
-
-.card-icon.resource {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.card-icon.template {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.card-icon.service {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.card-icon.call {
-    background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+    color: var(--common-primary-color);
+  background: var(--common-primary-background-color);
+  border: 1px solid var(--zartd-primary-2);
 }
 
 .card-content {
@@ -413,14 +397,14 @@ onMounted(() => {
 .card-value {
     font-size: 24px;
     font-weight: bold;
-    color: #2c3e50;
+    color: var(--common-text-color-heavy);
     margin-bottom: 4px;
 }
 
 .card-label {
-    font-size: 14px;
-    color: #7f8c8d;
-    margin-bottom: 4px;
+    font-size: var(--common-font-size-base);
+  color: var(--common-text-color-light);
+  margin-bottom: 4px;
 }
 
 .card-change {
@@ -429,25 +413,25 @@ onMounted(() => {
 }
 
 .card-change.positive {
-    color: #27ae60;
+    color: var(--common-success-color);
 }
 
 .card-change.negative {
-    color: #e74c3c;
+    color: var(--common-error-color);
 }
 
 .card-change.neutral {
-    color: #95a5a6;
+    color: var(--common-text-color-lighter);
 }
 
 .card-success {
     font-size: 12px;
-    color: #27ae60;
+    color: var(--common-success-color);
 }
 
 .card-error {
     font-size: 12px;
-    color: #e74c3c;
+    color: var(--common-error-color);
 }
 
 /* 响应式设计 */
@@ -470,7 +454,7 @@ onMounted(() => {
 
 @media (max-width: 768px) {
     .statistics-trend {
-        margin-bottom: 16px;
+        margin-bottom: 12px;
     }
 
     .trend-card {
@@ -478,7 +462,7 @@ onMounted(() => {
     }
 
     .card-header {
-        padding: 16px 20px 12px;
+        padding: 12px;
     }
 
     .trend-content {

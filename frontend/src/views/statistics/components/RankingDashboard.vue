@@ -40,7 +40,7 @@
 
                 <div class="table-container">
                     <el-table :data="groupRankings" stripe v-loading="loadingGroups" class="ranking-table"
-                        :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
+                        :header-cell-style="{ background: 'var(--common-table-header-background-color)', color: 'var(--common-text-color)', fontWeight: '600' }">
                         <el-table-column label="排名" width="60" align="center">
                             <template #default="scope">
                                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
@@ -113,7 +113,7 @@
 
                 <div class="table-container">
                     <el-table :data="moduleRankings" stripe v-loading="loadingModules" class="ranking-table"
-                        :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
+                        :header-cell-style="{ background: 'var(--common-table-header-background-color)', color: 'var(--common-text-color)', fontWeight: '600' }">
                         <el-table-column label="排名" width="60" align="center">
                             <template #default="scope">
                                 <div class="ranking-badge" :class="getRankingClass(scope.$index)">
@@ -124,7 +124,7 @@
                         <el-table-column label="模板名称" min-width="140">
                             <template #default="scope">
                                 <div class="module-info">
-                                    <div class="module-name">{{ scope.row.name }}</div>
+                                    <div class="module-name">{{ scope.row.module_name || scope.row.name }}</div>
                                     <div class="module-description">{{ scope.row.description || '暂无描述' }}</div>
                                 </div>
                             </template>
@@ -329,9 +329,6 @@ onMounted(() => {
 
 <style scoped>
 .ranking-dashboard {
-    /* padding: 24px; */
-    /* background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); */
-    /* min-height: calc(100vh - 120px); */
     margin-bottom: 24px;
 }
 
@@ -340,17 +337,17 @@ onMounted(() => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 20px 24px;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    background: var(--common-panel-background-color);
+  padding: 16px 20px;
+  border-radius: var(--common-radius-lg);
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
 }
 
 .dashboard-title {
-    font-size: 24px;
-    font-weight: 700;
-    color: #1565c0;
+    font-size: 20px;
+  font-weight: 600;
+  color: var(--common-text-color-heavy);
     margin: 0;
     display: flex;
     align-items: center;
@@ -358,8 +355,8 @@ onMounted(() => {
 }
 
 .title-icon {
-    font-size: 28px;
-    color: #2196f3;
+    font-size: 22px;
+  color: var(--common-primary-color);
 }
 
 .control-section {
@@ -375,32 +372,30 @@ onMounted(() => {
 }
 
 .ranking-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    transition: all 0.3s ease;
-    display: flex;
-    flex-direction: column;
+    background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
+  transition: box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .ranking-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--common-shadow-sm);
 }
 
 .card-header {
-    padding: 20px 24px 16px;
-    border-bottom: 1px solid rgba(21, 101, 192, 0.1);
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(25, 118, 210, 0.05) 100%);
+    padding: 16px 20px;
+  border-bottom: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
 }
 
 .header-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1565c0;
+    font-size: var(--common-font-size-title-md);
+  font-weight: 600;
+  color: var(--common-text-color-heavy);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -408,8 +403,8 @@ onMounted(() => {
 }
 
 .header-icon {
-    font-size: 20px;
-    color: #2196f3;
+    font-size: 18px;
+  color: var(--common-primary-color);
 }
 
 .ranking-type-selector {
@@ -427,14 +422,6 @@ onMounted(() => {
     border-radius: 0;
 }
 
-.ranking-table :deep(.el-table__row:hover) {
-    background-color: rgba(33, 150, 243, 0.05) !important;
-}
-
-.ranking-table :deep(.el-table__row--striped) {
-    background-color: rgba(248, 250, 252, 0.8);
-}
-
 .group-info,
 .module-info {
     text-align: left;
@@ -443,13 +430,13 @@ onMounted(() => {
 .group-name,
 .module-name {
     font-weight: 600;
-    color: #2c3e50;
-    font-size: 14px;
+    color: var(--common-text-color-heavy);
+  font-size: var(--common-font-size-base);
 }
 
 .module-description {
     font-size: 12px;
-    color: #7f8c8d;
+    color: var(--common-text-color-light);
     margin-top: 2px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -469,14 +456,14 @@ onMounted(() => {
 
 .rank-value {
     font-weight: 700;
-    color: #e91e63;
+    color: var(--common-primary-color);
     font-size: 14px;
 }
 
 .pagination-section {
-    padding: 16px 24px;
-    border-top: 1px solid rgba(21, 101, 192, 0.1);
-    background: rgba(248, 250, 252, 0.5);
+    padding: 12px 20px;
+  border-top: 1px solid var(--common-border-color);
+  background: var(--common-surface-light-color);
 }
 
 /* 响应式设计 */

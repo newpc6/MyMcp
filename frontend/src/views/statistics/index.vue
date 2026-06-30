@@ -487,7 +487,7 @@ onMounted(() => {
 .statistics-container :deep(.stats-card:hover),
 .statistics-container :deep(.summary-card:hover) {
   transform: none !important;
-  box-shadow: none !important;
+  box-shadow: var(--common-shadow-sm) !important;
 }
 
 .statistics-container :deep(.card-content) {

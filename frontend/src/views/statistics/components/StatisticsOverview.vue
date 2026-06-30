@@ -216,33 +216,26 @@ const formatNumber = (num) => {
 }
 
 .overview-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
+  background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-lg);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  transition: all 0.3s ease;
-}
-
-.overview-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid rgba(21, 101, 192, 0.1);
-  background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(25, 118, 210, 0.05) 100%);
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
 }
 
 .header-title {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1565c0;
+  font-size: var(--common-font-size-title-md);
+  font-weight: 600;
+  color: var(--common-text-color-heavy);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -250,33 +243,28 @@ const formatNumber = (num) => {
 
 .header-icon {
   font-size: 20px;
-  color: #2196f3;
+  color: var(--common-primary-color);
 }
 
 .refresh-button {
-  border-radius: 8px;
-  transition: all 0.2s ease;
-  background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-  border: none;
+  border-radius: var(--common-radius-md);
 }
 
-.refresh-button:hover {
-  transform: scale(1.05);
-  background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
-}
+
 
 .stats-grid {
-  padding: 24px;
+  padding: 20px;
+  gap: 16px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+
 }
 
 .stats-section {
-  background: rgba(248, 250, 252, 0.5);
-  border-radius: 16px;
-  padding: 20px;
-  border: 1px solid rgba(21, 101, 192, 0.08);
+  background: var(--common-list-background-color);
+  border-radius: var(--common-radius-lg);
+  padding: 16px;
+  border: 1px solid var(--common-border-color);
 }
 
 .section-title {
@@ -284,9 +272,9 @@ const formatNumber = (num) => {
   align-items: center;
   gap: 8px;
   margin: 0 0 16px 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #1565c0;
+  color: var(--common-text-color-heavy);
 }
 
 .stats-row {
@@ -296,19 +284,16 @@ const formatNumber = (num) => {
 }
 
 .stats-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 16px;
-  padding: 20px;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  color: white;
+  background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-md);
+  padding: 16px;
+  border: 1px solid var(--common-border-color);
+  transition: box-shadow 0.2s ease;
+  color: var(--common-text-color);
 }
 
 .stats-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--common-shadow-sm);
 }
 
 .card-content {
@@ -316,18 +301,19 @@ const formatNumber = (num) => {
   flex-direction: row !important;
   align-items: center;
   gap: 16px;
-  position: relative;
-  z-index: 2;
+
 }
 
 .card-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.2);
+  width: 44px;
+  height: 44px;
+  border-radius: var(--common-radius-md);
+  background: var(--common-primary-background-color);
+  color: var(--common-primary-color);
+  border: 1px solid var(--zartd-primary-2);
   font-size: 24px;
 }
 
@@ -336,57 +322,23 @@ const formatNumber = (num) => {
 }
 
 .card-value {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 700;
-  line-height: 1;
+  color: var(--common-text-color-heavy);
+  line-height: 30px;
   margin-bottom: 4px;
 }
 
 .card-label {
   font-size: 14px;
-  opacity: 0.9;
   font-weight: 500;
+  color: var(--common-text-color-light);
 }
 
 .card-today {
   font-size: 12px;
-  opacity: 0.8;
+  color: var(--common-text-color-lighter);
   margin-top: 4px;
-}
-
-/* 服务状态卡片 */
-.stats-card.total {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.stats-card.running {
-  background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
-}
-
-.stats-card.stopped {
-  background: linear-gradient(135deg, #9e9e9e 0%, #757575 100%);
-}
-
-.stats-card.error {
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-}
-
-/* 模板卡片 */
-.stats-card.template-groups {
-  background: linear-gradient(135deg, #03a9f4 0%, #0288d1 100%);
-}
-
-.stats-card.templates {
-  background: linear-gradient(135deg, #00bcd4 0%, #0097a7 100%);
-}
-
-/* 调用卡片 */
-.stats-card.service-calls {
-  background: linear-gradient(135deg, #3f51b5 0%, #303f9f 100%);
-}
-
-.stats-card.tools-calls {
-  background: linear-gradient(135deg, #673ab7 0%, #512da8 100%);
 }
 
 /* 响应式设计 */
@@ -394,16 +346,16 @@ const formatNumber = (num) => {
   .stats-row {
     grid-template-columns: 1fr;
   }
-  
+
   .card-header {
-    padding: 16px;
+    padding: 12px;
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
   }
-  
+
   .stats-grid {
-    padding: 16px;
+    padding: 12px;
   }
 }
 </style> 

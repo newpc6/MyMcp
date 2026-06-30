@@ -68,6 +68,7 @@ api route -> service -> repository -> model/database
 - 应用采用左侧主导航 + 右侧内容区；页面根容器推荐使用 `.app-page`，内容面板推荐使用 `.app-panel` 或 `.app-content-panel`。
 - 页面之间统一 `16px` 间距，搜索栏、表格、分页、卡片使用白底、轻边框、轻阴影。
 - 页面背景采用统一浅灰蓝工作台底纹；卡片、表格、列表必须放在白色或浅色承载面板内，不允许大面积裸露空白底。
+- 页面级布局优先复用 `PageContainer`、`PageHeader`、`SearchToolbar`、`StatusDot`；表格分页和确认操作优先复用 `useTable`、`useConfirmAction`。
 - 卡片默认不悬浮上移；只有可点击卡片允许轻微边框/阴影变化，不使用明显 `translateY` 上浮。
 - 表格头部使用浅色背景，行 hover 只做浅主色底。
 - 按钮保留 Element Plus 类型语义，避免渐变按钮；Tag 使用浅底状态色，避免高饱和色块成片出现。

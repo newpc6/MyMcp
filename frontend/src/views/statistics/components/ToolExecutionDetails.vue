@@ -29,7 +29,7 @@
             <div class="table-container">
                 <el-table :data="toolExecutions.items" stripe style="width: 100%" v-loading="loading"
                     class="detail-table"
-                    :header-cell-style="{ background: '#f8fafc', color: '#4a5568', fontWeight: '600' }">
+                    :header-cell-style="{ background: 'var(--common-table-header-background-color)', color: 'var(--common-text-color)', fontWeight: '600' }">
                     <el-table-column label="序号" width="60" align="center">
                         <template #default="scope">
                             <div class="ranking-badge ranking-normal">
@@ -245,35 +245,34 @@ const handleCurrentChange = (page) => {
 }
 
 .detail-card {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--common-panel-background-color);
+  border-radius: var(--common-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--common-shadow-xs);
+  border: 1px solid var(--common-border-color);
 }
 
 .card-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 24px 24px 16px;
-    border-bottom: 1px solid rgba(21, 101, 192, 0.1);
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05) 0%, rgba(25, 118, 210, 0.05) 100%);
+    padding: 16px 20px;
+  border-bottom: 1px solid var(--common-border-color);
+  background: var(--common-panel-background-color);
 }
 
 .header-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #1565c0;
+    font-size: var(--common-font-size-title-md);
+  font-weight: 600;
+  color: var(--common-text-color-heavy);
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .header-icon {
-    font-size: 20px;
-    color: #2196f3;
+    font-size: 18px;
+  color: var(--common-primary-color);
 }
 
 .filter-input {
@@ -281,18 +280,17 @@ const handleCurrentChange = (page) => {
 }
 
 .filter-input :deep(.el-input__wrapper) {
-    border-radius: 12px;
-    border: 1px solid rgba(21, 101, 192, 0.2);
+    border-radius: var(--common-radius-md);
+  border: 1px solid var(--common-border-color);
 }
 
 .filter-input :deep(.el-input__wrapper:hover) {
-    border-color: #2196f3;
+    border-color: var(--common-primary-color);
 }
 
 .search-append-btn {
-    border-radius: 0 12px 12px 0;
-    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-    border: none;
+    border-radius: 0 var(--common-radius-md) var(--common-radius-md) 0;
+  border: none;
 }
 
 .table-container {
@@ -304,14 +302,6 @@ const handleCurrentChange = (page) => {
     border-radius: 0;
 }
 
-.detail-table :deep(.el-table__row:hover) {
-    background-color: rgba(33, 150, 243, 0.05) !important;
-}
-
-.detail-table :deep(.el-table__row--striped) {
-    background-color: rgba(248, 250, 252, 0.8);
-}
-
 .tool-info {
     display: flex;
     align-items: center;
@@ -319,71 +309,61 @@ const handleCurrentChange = (page) => {
 
 .tool-name {
     font-weight: 600;
-    color: #1565c0;
+    color: var(--common-text-color-heavy);
 }
 
 .service-tag {
-    border-radius: 12px;
-    font-weight: 500;
-    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
-    color: #2e7d32;
-    border: 1px solid rgba(46, 125, 50, 0.2);
+    border-radius: var(--common-radius-sm);
+  font-weight: 500;
 }
 
 .module-tag {
-    border-radius: 12px;
-    font-weight: 500;
-    background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
-    color: #2e7d32;
-    border: 1px solid rgba(46, 125, 50, 0.2);
+    border-radius: var(--common-radius-sm);
+  font-weight: 500;
 }
 
 .creator-name {
     font-weight: 500;
-    color: #1976d2;
+    color: var(--common-text-color);
 }
 
 .status-tag {
-    border-radius: 12px;
-    font-weight: 600;
+    border-radius: var(--common-radius-sm);
+  font-weight: 600;
 }
 
 .execution-time {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-weight: 600;
-    color: #1565c0;
+    color: var(--common-text-color-heavy);
 }
 
 .created-time {
     font-size: 13px;
-    color: #1976d2;
+    color: var(--common-text-color);
 }
 
 .no-data {
-    color: #90caf9;
+    color: var(--common-text-color-lighter);
     font-style: italic;
 }
 
 .details-button {
-    border-radius: 8px;
-    font-weight: 600;
-    background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
-    border: none;
-}
-
-.details-button:hover {
-    background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
+    border-radius: var(--common-radius-md);
+  font-weight: 600;
+  border: none;
 }
 
 /* 对话框样式 */
 .execution-dialog {
-    border-radius: 20px;
-    overflow: hidden;
+    border-radius: var(--common-radius-lg);
+  overflow: hidden;
 }
 
 .execution-dialog :deep(.el-dialog__header) {
-    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-    color: #1565c0;
+    background: var(--common-panel-background-color);
+    color: var(--common-text-color-heavy);
+    border-bottom: 1px solid var(--common-border-color);
 }
 
 .execution-header {
@@ -401,7 +381,7 @@ const handleCurrentChange = (page) => {
     margin: 0;
     font-size: 24px;
     font-weight: 700;
-    color: #1565c0;
+    color: var(--common-text-color-heavy);
 }
 
 .execution-meta {
@@ -418,12 +398,12 @@ const handleCurrentChange = (page) => {
 
 .meta-label {
     font-weight: 600;
-    color: #1976d2;
+    color: var(--common-text-color);
 }
 
 .meta-value {
     font-weight: 500;
-    color: #1565c0;
+    color: var(--common-text-color-heavy);
 }
 
 .content-section {
@@ -433,20 +413,20 @@ const handleCurrentChange = (page) => {
 .content-section h4 {
     margin-top: 0;
     margin-bottom: 10px;
-    color: #1565c0;
+    color: var(--common-text-color-heavy);
     font-weight: bold;
 }
 
 .code-container {
-    background: linear-gradient(135deg, #f8fbff 0%, #e3f2fd 100%);
-    border: 1px solid rgba(21, 101, 192, 0.1);
-    border-radius: 8px;
-    padding: 16px;
+    background: var(--common-list-background-color);
+  border: 1px solid var(--common-border-color);
+  border-radius: var(--common-radius-md);
+  padding: 12px;
 }
 
 .code-container.error {
-    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-    border-color: rgba(244, 67, 54, 0.2);
+    background: var(--common-error-background-color);
+  border-color: var(--common-error-color);
 }
 
 .code-container pre {
@@ -455,18 +435,18 @@ const handleCurrentChange = (page) => {
     white-space: pre-wrap;
     word-wrap: break-word;
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-    color: #1565c0;
+    color: var(--common-text-color-heavy);
     font-size: 13px;
 }
 
 .code-container.error pre {
-    color: #d32f2f;
+    color: var(--common-error-color);
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
     .card-header {
-        padding: 16px;
+        padding: 12px;
         flex-direction: column;
         gap: 12px;
         align-items: stretch;
